@@ -12,6 +12,7 @@ import {
   patchGuardianCaseStatus,
 } from '@/lib/api'
 import TrustedCircleEscalationPanel from '@/components/TrustedCircleEscalationPanel'
+import AssistedProofSession from '@/components/AssistedProofSession'
 import type {AdminCase, AdminCaseStatus, GuardianConsoleStatusResponse} from '@/lib/types'
 
 const statusLabels: Record<AdminCaseStatus, string> = {
@@ -227,6 +228,18 @@ export default function GuardianAdminConsole(){
                 }}
               />
 
+              <AssistedProofSession
+                caseItem={selected}
+                trustedCircleActive={
+                  selected.trusted_circle_status === 'simulated_notified' ||
+                  selected.trusted_circle_status === 'notified'
+                }
+                onCaseUpdated={updated=>{
+                  setCases(prev=>prev.map(item=>item.case_id === updated.case_id ? updated : item))
+                  setSelected(updated)
+                }}
+              />
+
               <Card>
                 <div className="app-label">Trilha da decisão</div>
                 <ol className="guardian-operational-timeline mt-4">
@@ -266,8 +279,8 @@ export default function GuardianAdminConsole(){
                   <Link href="/report" className="sm:col-span-1">
                     <Button variant="ghost" className="h-11 w-full">Gerar relatório</Button>
                   </Link>
-                  <Link href="/before-pix" className="sm:col-span-2">
-                    <Button variant="ghost" className="h-11 w-full">Iniciar Proof of Trust (demo)</Button>
+                  <Link href="/report" className="sm:col-span-2">
+                    <Button variant="ghost" className="h-11 w-full">Ver relatório após verificação</Button>
                   </Link>
                   <Button disabled={updating} variant="ghost" className="h-11 sm:col-span-2" onClick={()=>updateStatus('resolved')}>
                     Marcar como resolvido
@@ -275,7 +288,7 @@ export default function GuardianAdminConsole(){
                 </div>
               </Card>
 
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <Card className="!p-4">
                   <div className="app-label">Trust Lock</div>
                   <p className="mt-2 text-sm text-slate-200">{selected.trust_lock_status}</p>
@@ -287,6 +300,10 @@ export default function GuardianAdminConsole(){
                       ? 'Escalonamento simulado'
                       : selected.trusted_circle_status}
                   </p>
+                </Card>
+                <Card className="!p-4">
+                  <div className="app-label">Verificação segura</div>
+                  <p className="mt-2 text-sm text-slate-200">{selected.proof_of_trust_status}</p>
                 </Card>
                 <Card className="!p-4">
                   <div className="app-label">Recovery</div>

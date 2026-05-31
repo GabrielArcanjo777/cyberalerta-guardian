@@ -115,6 +115,60 @@ export type TrustedCircleStatusResponse = {
   __mock?: boolean
 }
 
+export type ProofTrustStepItem = {
+  id: string
+  title: string
+  status: 'pending' | 'completed' | 'skipped'
+  guidance?: string
+  note?: string
+}
+
+export type AssistedProofFinalDecision =
+  | 'verified_safe'
+  | 'confirmed_scam'
+  | 'inconclusive'
+  | 'blocked'
+
+export type AssistedProofSessionStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'verified_safe'
+  | 'confirmed_scam'
+  | 'inconclusive'
+  | 'blocked'
+
+export type AssistedProofSessionCreatePayload = {
+  case_id: string
+  protected_person_alias: string
+  guardian_alias: string
+  risk_level: string
+  suspected_request: string
+  trusted_contact_alias: string
+}
+
+export type AssistedProofStepUpdatePayload = {
+  step_id: string
+  status?: 'pending' | 'completed' | 'skipped'
+  note?: string
+  final_decision?: AssistedProofFinalDecision
+}
+
+export type AssistedProofSessionResponse = {
+  session_id: string
+  case_id: string
+  status: AssistedProofSessionStatus
+  current_step: string
+  steps: ProofTrustStepItem[]
+  final_decision: AssistedProofFinalDecision | null
+  guardian_note?: string | null
+  protected_person_alias?: string
+  guardian_alias?: string
+  trusted_contact_alias?: string
+  suspected_request?: string
+  demo_note: string
+  __mock?: boolean
+}
+
 export type TrustedCircleEscalationRecord = {
   escalation_id: string
   case_id: string

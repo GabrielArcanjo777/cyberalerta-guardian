@@ -16,6 +16,10 @@ import {
   TrustedCircleEscalateResponse,
   TrustedCircleEscalationRecord,
   TrustedCircleStatusResponse,
+  AssistedProofSessionCreatePayload,
+  AssistedProofSessionResponse,
+  AssistedProofStepUpdatePayload,
+  ProofTrustStepItem,
 } from './types'
 import { createMockOCRPreview, createMockURLCheck, mockConnectorStatuses } from './connectorMockData'
 import {
@@ -450,6 +454,169 @@ export async function getTrustedCircleEscalation(escalationId:string){
     return {...data, __mock: false} as TrustedCircleEscalationRecord
   }catch{
     throw new Error('not-found')
+  }
+}
+
+export function proofTrustRecommendedForRisk(riskLevel:string){
+  return escalationRecommendedForRisk(riskLevel)
+}
+
+const mockProofSessions: Record<string, AssistedProofSessionResponse> = {}
+
+function buildMockProofSteps(): ProofTrustStepItem[] {
+  return [
+    {
+      id: 'do_not_reply',
+      title: 'Não responder ao contato suspeito',
+      status: 'completed',
+      guidance: 'Não use o contato suspeito como fonte de verificação.',
+    },
+    {
+      id: 'confirm_independent_channel',
+      title: 'Confirmar pelo contato salvo',
+      status: 'pending',
+      guidance: 'Confirme por canal independente.',
+    },
+    {
+      id: 'identity_challenge',
+      title: 'Pergunta combinada',
+      status: 'pending',
+      guidance: 'Pergunta que só a pessoa real saberia.',
+    },
+    {
+      id: 'confirm_request_real',
+      title: 'Confirmar se o pedido é real',
+      status: 'pending',
+      guidance: 'Validar pedido financeiro sem usar o contato suspeito.',
+    },
+    {
+      id: 'record_decision',
+      title: 'Registrar decisão',
+      status: 'pending',
+      guidance: 'Registre o resultado (demo).',
+    },
+    {
+      id: 'release_or_block',
+      title: 'Liberar somente após confirmação',
+      status: 'pending',
+      guidance: 'Manter pausa se não houver confirmação segura.',
+    },
+  ]
+}
+
+function mockNextStepId(steps: ProofTrustStepItem[]){
+  const pending = steps.find(s=>s.status === 'pending')
+  return pending?.id || 'release_or_block'
+}
+
+function mockCreateProofSession(payload: AssistedProofSessionCreatePayload): AssistedProofSessionResponse {
+  if(!proofTrustRecommendedForRisk(payload.risk_level)){
+    throw new Error('risk-not-allowed')
+  }
+  const sessionId = `proof-mock-${Date.now().toString(36)}`
+  const session: AssistedProofSessionResponse = {
+    session_id: sessionId,
+    case_id: payload.case_id,
+    status: 'in_progress',
+    current_step: 'confirm_independent_channel',
+    steps: buildMockProofSteps(),
+    final_decision: null,
+    guardian_note: null,
+    protected_person_alias: payload.protected_person_alias,
+    guardian_alias: payload.guardian_alias,
+    trusted_contact_alias: payload.trusted_contact_alias,
+    suspected_request: payload.suspected_request,
+    demo_note: 'Verificação segura simulada (mock local).',
+    __mock: true,
+  }
+  mockProofSessions[sessionId] = session
+  return session
+}
+
+function mockUpdateProofStep(
+  sessionId: string,
+  payload: AssistedProofStepUpdatePayload,
+): AssistedProofSessionResponse {
+  const session = mockProofSessions[sessionId]
+  if(!session) throw new Error('not-found')
+
+  const step = session.steps.find(s=>s.id === payload.step_id)
+  if(!step || step.id !== session.current_step) throw new Error('step-order')
+
+  step.status = payload.status || 'completed'
+  if(payload.note) {
+    step.note = payload.note
+    session.guardian_note = session.guardian_note
+      ? `${session.guardian_note}\n${payload.note}`
+      : payload.note
+  }
+
+  if(payload.step_id === 'record_decision') {
+    if(!payload.final_decision) throw new Error('decision-required')
+    session.final_decision = payload.final_decision
+  }
+
+  session.current_step = mockNextStepId(session.steps)
+
+  if(payload.step_id === 'release_or_block' && session.final_decision) {
+    session.status = session.final_decision
+  }
+
+  mockProofSessions[sessionId] = session
+  return {...session}
+}
+
+export async function postAssistedProofSession(payload: AssistedProofSessionCreatePayload){
+  try{
+    const res = await fetch(`${API}/proof-trust/assisted-session`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    })
+    if(!res.ok){
+      if(res.status === 400) throw new Error('proof-risk-not-allowed')
+      throw new Error('api-error')
+    }
+    const data = await res.json()
+    return {...data, __mock: false} as AssistedProofSessionResponse
+  }catch(error){
+    if(error instanceof Error && error.message === 'proof-risk-not-allowed') throw error
+    try{
+      return mockCreateProofSession(payload)
+    }catch{
+      throw error
+    }
+  }
+}
+
+export async function getAssistedProofSession(sessionId: string){
+  try{
+    const res = await fetch(`${API}/proof-trust/assisted-session/${sessionId}`)
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as AssistedProofSessionResponse
+  }catch{
+    const session = mockProofSessions[sessionId]
+    if(!session) throw new Error('not-found')
+    return session
+  }
+}
+
+export async function postAssistedProofSessionStep(
+  sessionId: string,
+  payload: AssistedProofStepUpdatePayload,
+){
+  try{
+    const res = await fetch(`${API}/proof-trust/assisted-session/${sessionId}/step`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    })
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as AssistedProofSessionResponse
+  }catch{
+    return mockUpdateProofStep(sessionId, payload)
   }
 }
 

@@ -40,11 +40,42 @@ export const assistedDemoMeta = {
 }
 
 export const proofOfTrustChecklist = [
-  'Não responder ao número suspeito',
-  'Confirmar pelo contato salvo',
-  'Verificar identidade por pergunta combinada',
-  'Confirmar se o pedido financeiro é real',
-  'Registrar decisão no console',
+  {
+    id: 'do_not_reply',
+    title: 'Não responder ao contato suspeito',
+    guidance: 'Não use o contato suspeito — o responsável conduz a verificação.',
+    status: 'completed' as const,
+  },
+  {
+    id: 'confirm_independent_channel',
+    title: 'Confirmar pelo contato salvo',
+    guidance: 'Confirme por canal independente (telefone salvo ou presencial).',
+    status: 'pending' as const,
+  },
+  {
+    id: 'identity_challenge',
+    title: 'Pergunta combinada',
+    guidance: 'Pergunta que só a pessoa real saberia responder.',
+    status: 'pending' as const,
+  },
+  {
+    id: 'confirm_request_real',
+    title: 'Confirmar se o pedido financeiro é real',
+    guidance: 'Validar o pedido de Pix sem usar o número suspeito.',
+    status: 'pending' as const,
+  },
+  {
+    id: 'record_decision',
+    title: 'Registrar decisão',
+    guidance: 'O responsável registra o resultado no Guardian Console.',
+    status: 'pending' as const,
+  },
+  {
+    id: 'release_or_block',
+    title: 'Liberar somente após confirmação',
+    guidance: 'Manter pausa protetiva se não houver confirmação segura.',
+    status: 'pending' as const,
+  },
 ]
 
 export const decisionTraceTimeline = [

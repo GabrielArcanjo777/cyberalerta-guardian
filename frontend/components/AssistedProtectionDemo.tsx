@@ -6,6 +6,7 @@ import Button from '@/components/Button'
 import Card from '@/components/Card'
 import {AppBadge, AppCardTitle, AppSectionTitle} from '@/components/AppPrimitives'
 import {riskStatusClass} from '@/lib/appStatus'
+import ProofOfTrustChecklist from '@/components/ProofOfTrustChecklist'
 import {
   assistedDemoMeta,
   assistedDemoSteps,
@@ -239,17 +240,19 @@ export default function AssistedProtectionDemo(){
         </Card>
       </DemoStep>
 
-      <DemoStep order={7} id="step-proof-of-trust" title="Proof of Trust">
-        <Card>
-          <div className="app-label">Checklist recomendado</div>
-          <ul className="assisted-demo-checklist mt-4">
-            {proofOfTrustChecklist.map(item=> (
-              <li key={item}>
-                <span className="assisted-demo-check" aria-hidden="true">✓</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+      <DemoStep order={7} id="step-proof-of-trust" title="Verificação segura">
+        <Card className="border-emerald-400/20">
+          <ProofOfTrustChecklist
+            steps={proofOfTrustChecklist}
+            currentStepId="confirm_independent_channel"
+            subtitle="O responsável conduz o protocolo no Guardian Console — a pessoa protegida não precisa operar checklist complexo."
+          />
+          <p className="app-muted-text mt-4 text-sm">
+            Liberar somente após confirmação por canal independente. Sem consulta a banco, governo ou CPF real.
+          </p>
+          <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-emerald-200/70">
+            Decisão registrada · manter pausa protetiva se inconclusivo
+          </p>
         </Card>
       </DemoStep>
 

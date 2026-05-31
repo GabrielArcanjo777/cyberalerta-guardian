@@ -26,6 +26,12 @@ from app.trusted_circle.trusted_circle_models import (
     TrustedCircleStatusResponse,
 )
 from app.trusted_circle.trusted_circle_service import TrustedCircleService
+from app.proof_trust.assisted_proof_session import (
+    AssistedProofSessionCreateRequest,
+    AssistedProofSessionResponse,
+    AssistedProofStepUpdateRequest,
+    AssistedProofTrustService,
+)
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.schemas.recovery import RecoveryRequest, RecoveryResponse
 from app.schemas.report import ReportRequest, ReportResponse
@@ -38,6 +44,7 @@ simple_channel_service = SimpleChannelService()
 protected_person_response_service = ProtectedPersonResponseService()
 admin_case_service = AdminCaseService()
 trusted_circle_service = TrustedCircleService()
+assisted_proof_trust_service = AssistedProofTrustService()
 
 @app.get("/health")
 def health():
@@ -120,3 +127,18 @@ def trusted_circle_escalate(payload: TrustedCircleEscalateRequest):
 @app.get("/trusted-circle/escalations/{escalation_id}", response_model=TrustedCircleEscalationRecord)
 def trusted_circle_escalation_detail(escalation_id: str):
     return trusted_circle_service.get_escalation(escalation_id)
+
+
+@app.post("/proof-trust/assisted-session", response_model=AssistedProofSessionResponse)
+def proof_trust_create_assisted_session(payload: AssistedProofSessionCreateRequest):
+    return assisted_proof_trust_service.create_session(payload)
+
+
+@app.get("/proof-trust/assisted-session/{session_id}", response_model=AssistedProofSessionResponse)
+def proof_trust_get_assisted_session(session_id: str):
+    return assisted_proof_trust_service.get_session(session_id)
+
+
+@app.post("/proof-trust/assisted-session/{session_id}/step", response_model=AssistedProofSessionResponse)
+def proof_trust_update_assisted_step(session_id: str, payload: AssistedProofStepUpdateRequest):
+    return assisted_proof_trust_service.update_step(session_id, payload)
