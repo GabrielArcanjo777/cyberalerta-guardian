@@ -1,6 +1,8 @@
 import './globals.css'
 import React from 'react'
 import Header from '@/components/Header'
+import DemoModeBanner from '@/components/DemoModeBanner'
+import GlobalAmbientBackground from '@/components/GlobalAmbientBackground'
 
 export const metadata = {
   title: 'CyberAlerta Guardian',
@@ -11,10 +13,20 @@ export default function RootLayout({children}:{children:React.ReactNode}){
   return (
     <html lang="pt-BR">
       <body>
-        <div className="min-h-screen bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="guardian-app-shell">
+          <GlobalAmbientBackground />
+          <a
+            href="#conteudo-principal"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[120] focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-slate-950 focus:shadow-lg focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-slate-950"
+          >
+            Pular para o conteudo principal
+          </a>
+          <div className="guardian-content-shell">
+            <DemoModeBanner />
+          </div>
+          <div className="guardian-content-shell mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
             <Header />
-            <main className="mt-8 mb-12">{children}</main>
+            <main id="conteudo-principal" className="relative z-10 mb-14 mt-8" tabIndex={-1}>{children}</main>
           </div>
         </div>
       </body>

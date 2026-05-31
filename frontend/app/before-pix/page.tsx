@@ -1,5 +1,7 @@
 "use client"
+
 import React, {useState} from 'react'
+import Link from 'next/link'
 import {analyzeMessage} from '@/lib/api'
 import TrustLockCard from '@/components/TrustLockCard'
 import TrustEvidenceCard from '@/components/TrustEvidenceCard'
@@ -10,11 +12,47 @@ import ProofOfTrust from '@/components/ProofOfTrust'
 import TrustedCircleAlert from '@/components/TrustedCircleAlert'
 import ReportCard from '@/components/ReportCard'
 import RiskScore from '@/components/RiskScore'
+import FamilyConsole from '@/components/FamilyConsole'
+import AIModeIndicator from '@/components/AIModeIndicator'
+import MLScamIntelligenceCard from '@/components/MLScamIntelligenceCard'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
+import type {TrustedCircleAlert as TrustedCircleAlertModel} from '@/lib/types'
+import {TrustPipeline} from '@/components/AppPrimitives'
+import {OperationalTimeline, PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
+
+const initialMessage = 'Mae, troquei de numero. Meu celular quebrou. Preciso pagar uma conta urgente. Faz um Pix de R$ 780? Nao liga agora porque estou em reuniao.'
+
+const actionOptions = [
+  {value: 'pix', label: 'Pix'},
+  {value: 'link', label: 'Link'},
+  {value: 'password', label: 'Senha'},
+  {value: 'document', label: 'Documento'},
+  {value: 'app', label: 'App remoto'},
+  {value: 'sms_code', label: 'Codigo SMS'},
+]
+
+function humanize(value:string){
+  return value.replace(/_/g, ' ')
+}
+
+const fallbackTrustedAlert: TrustedCircleAlertModel = {
+  should_alert: false,
+  contact_name: 'Gabriel',
+  relationship: 'neto',
+  urgency: 'low',
+  person_at_risk: 'Dona Lucia',
+  risk_summary: 'Nenhum alerta familiar necessario neste momento.',
+  scam_type: 'sem golpe critico confirmado',
+  recommended_action: 'Monitore e confirme por outro canal antes de qualquer acao.',
+  suggested_message: 'Dona Lucia, vamos confirmar essa mensagem juntos antes de voce agir.',
+  status: 'monitoring',
+  is_simulated: true,
+  message: 'Nenhum alerta familiar necessario neste momento.'
+}
 
 export default function BeforePix(){
-  const [message,setMessage]=useState('Mae, troquei de numero. Meu celular quebrou. Preciso pagar uma conta urgente. Faz um Pix de R$ 780? Nao liga agora porque estou em reuniao.')
+  const [message,setMessage]=useState(initialMessage)
   const [action,setAction]=useState('pix')
   const [result,setResult]=useState<any>(null)
   const [loading,setLoading]=useState(false)
@@ -37,109 +75,190 @@ export default function BeforePix(){
       const res = await analyzeMessage(payload)
       setResult(res)
     }catch(err:any){
-      setError('Erro ao conectar com o servidor. Usando dados de demonstração.')
+      setError('Erro ao conectar com o servidor. Usando dados de demonstracao.')
     }finally{
       setLoading(false)
     }
   }
 
+  const trustedAlert = result?.trusted_circle_alert || {
+    ...fallbackTrustedAlert
+  }
+
+  function openFamilyConsole(){
+    if(typeof window !== 'undefined'){
+      window.localStorage.setItem('cyberalerta:lastTrustedCircleAlert', JSON.stringify(trustedAlert))
+      window.location.assign('/family-console')
+    }
+  }
+
   return (
-    <main>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Antes do Pix</h1>
-        <p className="text-gray-600 mt-2">Caso principal: Dona Lucia (72 anos)</p>
+    <PageShell>
+      <PageHeader
+        eyebrow="Before Pix command flow"
+        title="Antes do Pix"
+        description="Caso principal: Dona Lucia, 72 anos. O Guardian avalia a mensagem antes da acao perigosa, ativa pausa protetiva e cria uma trilha de decisao para o responsavel."
+        detail="A demo simula uma mensagem de numero novo, urgencia, pedido financeiro e isolamento da vitima sem executar Pix real."
+        aside={
+          <div className="space-y-5">
+            <StatusRail
+              items={[
+                {label:'Canal', value:'WhatsApp', tone:'neutral'},
+                {label:'Contato seguro', value:'Gabriel', tone:'ready'},
+                {label:'Acao', value:humanize(action), tone:'warn'},
+              ]}
+            />
+            <OperationalTimeline
+              items={[
+                {title:'Intent scan ready'},
+                {title:'Manipulation analysis ready'},
+                {title:'Trust Lock armed'},
+                {title:'Proof of Trust ready'},
+              ]}
+            />
+          </div>
+        }
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+        <Card className="overflow-hidden p-0">
+          <div className="border-b border-slate-200 px-5 py-4 sm:px-6">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Mensagem recebida</div>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Analise antes da transferencia</h2>
+          </div>
+          <div className="space-y-5 p-5 sm:p-6">
+            <label className="block">
+              <span className="mb-2 block text-sm font-bold text-slate-700">Conteudo da mensagem</span>
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 shadow-inner">
+                <div className="mb-3 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-wide text-emerald-700">
+                  <span>Recebida agora</span>
+                  <span>numero novo</span>
+                </div>
+                <textarea
+                  value={message}
+                  onChange={e=>setMessage(e.target.value)}
+                  className="min-h-[170px] w-full resize-y border-0 bg-transparent p-0 text-base leading-7 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+                  aria-label="Mensagem"
+                />
+              </div>
+            </label>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Tipo de acao perigosa</label>
+              <select
+                value={action}
+                onChange={e=>setAction(e.target.value)}
+                className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              >
+                {actionOptions.map((option)=> (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <Button onClick={onAnalyze} disabled={loading} className="h-14 w-full text-base">
+              {loading ? 'Analisando...' : 'Analisar com Guardian'}
+            </Button>
+          </div>
+        </Card>
+
+        <div className="space-y-4">
+          <Card>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Caso</div>
+            <div className="mt-4 flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-950 text-lg font-black text-white">DL</div>
+              <div>
+                <div className="text-lg font-bold text-slate-950">Dona Lucia</div>
+                <div className="text-sm font-medium text-slate-500">72 anos, acao financeira iminente</div>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Pessoa de confianca</div>
+                <div className="mt-1 text-sm font-bold text-slate-900">Gabriel, neto</div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Estado</div>
+                <div className="mt-1 text-sm font-bold text-slate-900">{result ? 'Analise concluida' : 'Aguardando analise'}</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <TrustPipeline />
+          </Card>
+        </div>
       </div>
 
-      <Card className="mb-6">
-        <div className="mb-4">
-          <label className="block text-sm font-semibold mb-2">Mensagem</label>
-          <textarea 
-            value={message} 
-            onChange={e=>setMessage(e.target.value)} 
-            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent" 
-            rows={6} 
-            aria-label="Mensagem" 
-          />
-        </div>
-
-        <div className="mb-4 flex gap-4 items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-semibold mb-2">Tipo de ação perigosa</label>
-            <select 
-              value={action} 
-              onChange={e=>setAction(e.target.value)} 
-              className="w-full p-3 border border-gray-200 rounded-lg"
-            >
-              <option value="pix">Pix</option>
-              <option value="link">Link</option>
-              <option value="password">Senha</option>
-              <option value="document">Documento</option>
-              <option value="app">App remoto</option>
-              <option value="sms_code">Código SMS</option>
-            </select>
-          </div>
-          <Button onClick={onAnalyze} disabled={loading}>
-            {loading ? 'Analisando...' : 'Analisar com Guardian'}
-          </Button>
-        </div>
-      </Card>
-
       {error && (
-        <Card className="mb-6 bg-yellow-50 border-l-4 border-yellow-300">
-          <p className="text-yellow-800">{error}</p>
+        <Card className="border-amber-200 bg-amber-50">
+          <p className="text-sm font-semibold text-amber-800">{error}</p>
         </Card>
       )}
 
-      {result && (
+      {result?.__mock && (
+        <Card className="border-sky-200 bg-sky-50">
+          <p className="text-sm font-semibold text-sky-800">Dados em modo demonstracao porque o backend nao respondeu.</p>
+        </Card>
+      )}
+
+      {result ? (
         <>
-          {result.__mock && (
-            <Card className="mb-4 bg-blue-50">
-              <p className="text-sm text-blue-800">ℹ️ Dados em modo demonstração (backend indisponível)</p>
-            </Card>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="space-y-4">
+          <AIModeIndicator mode={result.ai_mode} />
+          <div className="grid gap-6 lg:grid-cols-[minmax(280px,0.92fr)_minmax(0,1.55fr)]">
+            <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
               <RiskScore score={result.risk_score} level={result.risk_level} />
-              <TrustLockCard 
-                activated={result.trust_lock.activated} 
-                reason={result.trust_lock.reason} 
-                message={result.trust_lock.message} 
+              <TrustLockCard
+                activated={result.trust_lock.activated}
+                reason={result.trust_lock.reason}
+                message={result.trust_lock.message}
               />
-              <TrustedCircleAlert alert={result.trusted_circle_alert} />
-            </div>
+              <TrustedCircleAlert alert={trustedAlert} onOpenConsole={openFamilyConsole} />
+              <FamilyConsole
+                alert={trustedAlert}
+                backHref="/before-pix"
+                backLabel="Voltar para analise"
+              />
+            </aside>
 
-            <div className="md:col-span-2 space-y-4">
+            <div className="space-y-4">
               <Card>
-                <div className="mb-2">
-                  <h3 className="font-semibold">Tipo de Golpe</h3>
-                  <p className="text-sm text-gray-700 mt-1">{result.scam_type}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm">Estágio</h4>
-                  <p className="text-sm text-gray-700">{result.scam_stage}</p>
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Classificação de ameaça</div>
+                <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                    <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Tipo de golpe</div>
+                    <p className="mt-2 text-lg font-bold leading-6 text-slate-950">{result.scam_type}</p>
+                  </div>
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <div className="text-xs font-bold uppercase tracking-wide text-red-400">Estagio</div>
+                    <p className="mt-2 text-sm font-bold leading-5 text-red-700">{result.scam_stage}</p>
+                  </div>
                 </div>
               </Card>
 
-              <TrustEvidenceCard 
-                confidence={result.trust_evidence.confidence} 
-                evidence={result.trust_evidence.evidence} 
+              <TrustEvidenceCard
+                confidence={result.trust_evidence.confidence}
+                evidence={result.trust_evidence.evidence}
               />
 
               <Card>
-                <h4 className="font-semibold mb-2">Manipulações detectadas</h4>
-                <ManipulationBadges items={result.manipulations} />
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Manipulation Badges</div>
+                <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Padroes detectados</h3>
+                <div className="mt-5">
+                  <ManipulationBadges items={result.manipulations} />
+                </div>
               </Card>
 
-              <AgentDecisionTrace items={result.agent_decision_trace} />
-              <InterventionPlaybook playbook={result.intervention_playbook} />
+                <AgentDecisionTrace items={result.agent_decision_trace} decisionLedger={result.decision_ledger} />
+              <MLScamIntelligenceCard ml={result.ml_analysis} url={result.url_analysis} />
               <ProofOfTrust items={result.proof_of_trust} />
+              <InterventionPlaybook playbook={result.intervention_playbook} />
               <ReportCard report={result.report} />
             </div>
           </div>
 
-          <div className="flex gap-3 mt-6">
-            <Button 
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
               variant="ghost"
               onClick={()=>{
                 setResult(null)
@@ -149,19 +268,37 @@ export default function BeforePix(){
             >
               Reiniciar demo
             </Button>
-            <Button 
+            <Link href="/help-network">
+              <Button variant="ghost" className="w-full sm:w-auto">
+                Gerar plano de ajuda
+              </Button>
+            </Link>
+            <Button
               variant="ghost"
               onClick={()=>{
-                setMessage('Mae, troquei de numero. Meu celular quebrou. Preciso pagar uma conta urgente. Faz um Pix de R$ 780? Nao liga agora porque estou em reuniao.')
+                setMessage(initialMessage)
                 setAction('pix')
                 setResult(null)
+                setError('')
               }}
             >
-              Testar outro cenário
+              Restaurar caso principal
             </Button>
           </div>
         </>
+      ) : (
+        <Card className="border-dashed border-slate-300 bg-slate-50/70">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Output console</div>
+              <p className="mt-2 text-lg font-bold text-slate-950">Aguardando primeira analise do Guardian</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600">
+              POST /analyze ready
+            </div>
+          </div>
+        </Card>
       )}
-    </main>
+    </PageShell>
   )
 }
