@@ -11,19 +11,20 @@ const defaultMessage = 'Mae, troquei de numero. Preciso fazer um Pix urgente.'
 
 type ChatMessage = {
   id: string
-  role: 'protected' | 'guardian' | 'system'
+  role: 'protected' | 'guardian' | 'system' | 'typing'
   text: string
 }
 
 export default function SimpleChannelChat(){
   const [alias,setAlias]=useState('Dona Lucia')
+  const [trustedContact,setTrustedContact]=useState('Gabriel')
   const [draft,setDraft]=useState(defaultMessage)
   const [consent,setConsent]=useState(false)
   const [messages,setMessages]=useState<ChatMessage[]>([
     {
       id: 'welcome',
       role: 'system',
-      text: 'Conversa simulada — WhatsApp real nao esta conectado neste MVP.',
+      text: 'Conversa simulada — WhatsApp real não está conectado neste MVP.',
     },
   ])
   const [status,setStatus]=useState<SimpleChannelStatusResponse | null>(null)
@@ -42,72 +43,82 @@ export default function SimpleChannelChat(){
       return
     }
     if(!draft.trim()){
-      setError('Digite a mensagem suspeita que voce quer revisar.')
+      setError('Digite a mensagem suspeita que você quer revisar.')
       return
     }
 
+    const userText = draft.trim()
     const userMessage:ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'protected',
-      text: draft.trim(),
+      text: userText,
     }
-    setMessages(prev=>[...prev, userMessage])
+    const analyzingId = `typing-${Date.now()}`
+
+    setMessages(prev=>[
+      ...prev,
+      userMessage,
+      {id: analyzingId, role: 'typing', text: 'Guardian está analisando com calma...'},
+    ])
     setLoading(true)
+    setDraft('')
 
     const response = await postSimpleChannelSubmit({
       protected_person_alias: alias.trim() || 'Pessoa protegida',
       channel: 'whatsapp_mock',
       content_type: 'text',
-      content: draft.trim(),
+      content: userText,
       consent: true,
+      trusted_contact_alias: trustedContact.trim() || undefined,
     })
 
     setLoading(false)
     setLastResult(response)
 
-    if(response.__mock){
-      setMessages(prev=>[
-        ...prev,
+    setMessages(prev=>{
+      const withoutTyping = prev.filter(message=>message.id !== analyzingId)
+      const next:ChatMessage[] = [
+        ...withoutTyping,
         {
           id: `guardian-${Date.now()}`,
           role: 'guardian',
           text: response.simple_reply,
         },
-        {
+      ]
+      if(response.admin_case_created){
+        next.push({
           id: `status-${Date.now()}`,
           role: 'system',
-          text: 'Modo demonstracao local: backend indisponivel, resposta simulada.',
-        },
-      ])
-      return
-    }
-
-    setMessages(prev=>[
-      ...prev,
-      {
-        id: `guardian-${Date.now()}`,
-        role: 'guardian',
-        text: response.simple_reply,
-      },
-      {
-        id: `status-${Date.now()}`,
-        role: 'system',
-        text: response.admin_case_created
-          ? `Caso ${response.channel_case_id} enviado ao responsavel no Guardian Console (simulado).`
-          : 'Analise concluida sem abertura de caso administrativo.',
-      },
-    ])
-    setDraft('')
+          text: response.__mock
+            ? `Caso simulado enviado ao responsável (${trustedContact || 'contato de confiança'}). Modo demonstração local.`
+            : `Caso ${response.channel_case_id} enviado ao responsável. ${trustedContact || 'Seu contato de confiança'} pode acompanhar no console.`,
+        })
+      } else {
+        next.push({
+          id: `status-${Date.now()}`,
+          role: 'system',
+          text: 'Análise concluída. Nenhuma ação urgente é necessária agora.',
+        })
+      }
+      if(response.__mock){
+        next.push({
+          id: `mock-${Date.now()}`,
+          role: 'system',
+          text: 'Resposta gerada em modo demonstração (backend indisponível).',
+        })
+      }
+      return next
+    })
   }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-      <Card className="flex flex-col p-0 overflow-hidden">
+      <Card className="flex flex-col overflow-hidden p-0">
         <div className="border-b border-white/10 bg-slate-950/70 px-4 py-3 sm:px-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="app-label text-emerald-300/90">WhatsApp mock</div>
-              <div className="mt-1 text-sm font-semibold text-white">Guardian — canal simples</div>
+              <div className="mt-1 text-sm font-semibold text-white">Canal simples · só para você</div>
             </div>
             <AppStatus status="mock" />
           </div>
@@ -122,7 +133,9 @@ export default function SimpleChannelChat(){
                   ? 'ml-auto max-w-[88%] rounded-md border border-emerald-400/25 bg-emerald-950/35 px-3 py-2.5 text-sm leading-6 text-emerald-50'
                   : message.role === 'guardian'
                     ? 'mr-auto max-w-[88%] rounded-md border border-cyan-400/25 bg-cyan-950/30 px-3 py-2.5 text-sm leading-6 text-cyan-50'
-                    : 'mx-auto max-w-[95%] rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-center text-xs leading-5 text-slate-400'
+                    : message.role === 'typing'
+                      ? 'mr-auto max-w-[88%] rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm italic text-slate-400'
+                      : 'mx-auto max-w-[95%] rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-center text-xs leading-5 text-slate-400'
               }
             >
               {message.role === 'protected' && (
@@ -148,7 +161,8 @@ export default function SimpleChannelChat(){
               onChange={event=>setDraft(event.target.value)}
               rows={3}
               className="app-input app-textarea mt-2"
-              placeholder="Cole ou digite a mensagem que voce recebeu..."
+              placeholder="Cole ou digite o que você recebeu..."
+              disabled={loading}
             />
           </label>
           <label className="mt-3 flex items-start gap-2 text-sm text-slate-300">
@@ -157,9 +171,10 @@ export default function SimpleChannelChat(){
               checked={consent}
               onChange={event=>setConsent(event.target.checked)}
               className="mt-1"
+              disabled={loading}
             />
             <span>
-              Autorizo o envio voluntario deste trecho para analise defensiva. O Guardian nao monitora conversas privadas.
+              Autorizo o envio voluntário deste trecho para análise defensiva. O Guardian não monitora conversas privadas.
             </span>
           </label>
           {error && <p className="mt-3 text-sm font-medium text-amber-200">{error}</p>}
@@ -178,8 +193,15 @@ export default function SimpleChannelChat(){
             className="app-input mt-2"
             aria-label="Nome da pessoa protegida"
           />
+          <div className="app-label mt-4">Contato de confiança</div>
+          <input
+            value={trustedContact}
+            onChange={event=>setTrustedContact(event.target.value)}
+            className="app-input mt-2"
+            aria-label="Nome do contato de confiança"
+          />
           <p className="app-muted-text mt-3">
-            Experiencia pensada para quem precisa de um canal simples — sem console complexo.
+            Experiência simples: você envia, o Guardian responde com calma e avisa o responsável se houver risco.
           </p>
         </Card>
 
@@ -198,36 +220,23 @@ export default function SimpleChannelChat(){
 
         {lastResult && (
           <Card>
-            <div className="app-label">Resultado da analise</div>
+            <div className="app-label">Resumo (para você)</div>
             <div className="mt-3 grid gap-2 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-slate-400">Caso</span>
-                <span className="font-mono text-xs text-slate-200">{lastResult.channel_case_id}</span>
-              </div>
               <div className="flex justify-between gap-3">
                 <span className="text-slate-400">Risco</span>
                 <span className="font-semibold capitalize text-white">{lastResult.risk_level}</span>
               </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-slate-400">Caso ao responsavel</span>
-                <span className="text-slate-200">{lastResult.admin_case_created ? 'Sim' : 'Nao'}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-slate-400">Trust Lock</span>
-                <span className="text-slate-200">{lastResult.trust_lock_recommended ? 'Recomendado' : 'Nao necessario'}</span>
-              </div>
+              {lastResult.trust_lock_recommended && (
+                <p className="app-body-text text-amber-100/90">Pausa recomendada antes de qualquer Pix ou clique.</p>
+              )}
             </div>
-            {lastResult.__mock && (
-              <p className="app-muted-text mt-3 text-xs">Resposta gerada localmente (fallback).</p>
-            )}
           </Card>
         )}
 
         <Card className="border-dashed border-amber-400/25">
-          <div className="app-label text-amber-200/90">Integracao futura</div>
+          <div className="app-label text-amber-200/90">Integração futura</div>
           <p className="app-body-text mt-2">
-            WhatsApp Business real, tokens e webhooks ficam fora deste MVP. Esta tela demonstra apenas o fluxo voluntario
-            de encaminhamento e a resposta curta antes do dano.
+            WhatsApp Business real e envio automático ficam fora deste MVP. Nada aqui conversa com golpista nem envia mensagem real.
           </p>
         </Card>
       </div>

@@ -9,13 +9,19 @@ from fastapi import HTTPException
 from app.agents.intent_detection_agent import IntentDetectionAgent
 from app.agents.manipulation_analysis_agent import ManipulationAnalysisAgent
 from app.agents.risk_scoring_agent import RiskScoringAgent
-from app.channels.protected_person_response import build_simple_reply, risk_level_to_pt
+from app.channels.protected_person_response import risk_level_to_pt
 from app.channels.simple_channel_models import (
     SimpleChannelStatusResponse,
     SimpleChannelSubmitRequest,
     SimpleChannelSubmitResponse,
 )
 from app.channels.whatsapp_mock_channel import WhatsAppMockChannel
+from app.protected_response.response_schemas import ProtectedResponseGenerateRequest
+from app.protected_response.response_service import (
+    ProtectedPersonResponseService,
+    infer_category,
+    map_manipulations_to_signals,
+)
 from app.services.safety_policy import SafetyPolicyService
 
 _CASE_STORE: Dict[str, Dict[str, Any]] = {}
@@ -28,6 +34,7 @@ class SimpleChannelService:
         self.intent_agent = IntentDetectionAgent()
         self.manipulation_agent = ManipulationAnalysisAgent()
         self.risk_agent = RiskScoringAgent()
+        self.protected_response = ProtectedPersonResponseService()
 
     def get_status(self) -> SimpleChannelStatusResponse:
         return SimpleChannelStatusResponse(
@@ -65,13 +72,22 @@ class SimpleChannelService:
         trust_lock_recommended = risk_score >= 81
         admin_case_created = payload.consent and risk_score >= 41
 
-        simple_reply = build_simple_reply(
-            payload.protected_person_alias,
-            risk_level_pt,
-            dangerous_action,
-            manipulations,
-            trust_lock_recommended,
+        category = infer_category(
+            dangerous_action=dangerous_action,
+            content=content,
+            manipulations=manipulations,
         )
+        signals = map_manipulations_to_signals(manipulations)
+
+        protected = self.protected_response.generate(
+            ProtectedResponseGenerateRequest(
+                risk_level=risk_level_pt,
+                category=category,
+                signals=signals,
+                trusted_contact_alias=payload.trusted_contact_alias,
+            )
+        )
+        simple_reply = protected.short_reply
 
         case_id = f"ch-{uuid4().hex[:12]}"
         _CASE_STORE[case_id] = {
@@ -84,6 +100,9 @@ class SimpleChannelService:
             "risk_level": risk_level_pt,
             "dangerous_action": dangerous_action,
             "manipulations": manipulations,
+            "category": category,
+            "signals": signals,
+            "protected_response": protected.model_dump(),
             "admin_case_created": admin_case_created,
             "trust_lock_recommended": trust_lock_recommended,
             "created_at": datetime.now(timezone.utc).isoformat(),

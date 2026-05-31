@@ -4,6 +4,22 @@ export type SimpleChannelSubmitPayload = {
   content_type: 'text'
   content: string
   consent: boolean
+  trusted_contact_alias?: string
+}
+
+export type ProtectedResponseGeneratePayload = {
+  risk_level: string
+  category: string
+  signals: string[]
+  trusted_contact_alias?: string
+}
+
+export type ProtectedResponseGenerateResponse = {
+  short_reply: string
+  tone: string
+  do_not_do: string[]
+  next_step: string
+  __mock?: boolean
 }
 
 export type SimpleChannelSubmitResponse = {

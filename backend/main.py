@@ -6,6 +6,11 @@ from app.channels.simple_channel_models import (
     SimpleChannelSubmitResponse,
 )
 from app.channels.simple_channel_service import SimpleChannelService
+from app.protected_response.response_schemas import (
+    ProtectedResponseGenerateRequest,
+    ProtectedResponseGenerateResponse,
+)
+from app.protected_response.response_service import ProtectedPersonResponseService
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.schemas.recovery import RecoveryRequest, RecoveryResponse
 from app.schemas.report import ReportRequest, ReportResponse
@@ -15,6 +20,7 @@ from app.services.safety_policy import SafetyPolicyService
 app = FastAPI(title="CyberAlerta Guardian Backend")
 orchestrator = GuardianOrchestrator()
 simple_channel_service = SimpleChannelService()
+protected_person_response_service = ProtectedPersonResponseService()
 
 @app.get("/health")
 def health():
@@ -52,3 +58,8 @@ def simple_channel_status():
 @app.post("/simple-channel/submit", response_model=SimpleChannelSubmitResponse)
 def simple_channel_submit(payload: SimpleChannelSubmitRequest):
     return simple_channel_service.submit(payload)
+
+
+@app.post("/protected-response/generate", response_model=ProtectedResponseGenerateResponse)
+def protected_response_generate(payload: ProtectedResponseGenerateRequest):
+    return protected_person_response_service.generate(payload)

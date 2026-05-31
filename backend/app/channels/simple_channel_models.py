@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -9,6 +9,7 @@ class SimpleChannelSubmitRequest(BaseModel):
     content_type: Literal["text"] = "text"
     content: str = Field(min_length=1, max_length=4000)
     consent: bool
+    trusted_contact_alias: Optional[str] = Field(default=None, max_length=120)
 
 
 class SimpleChannelSubmitResponse(BaseModel):
