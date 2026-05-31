@@ -31,6 +31,59 @@ export type SimpleChannelSubmitResponse = {
   __mock?: boolean
 }
 
+export type AdminCaseTraceStep = {
+  step: string
+  detail: string
+}
+
+export type AdminCaseStatus =
+  | 'open'
+  | 'reviewing'
+  | 'verified_safe'
+  | 'confirmed_scam'
+  | 'resolved'
+  | 'recovery_needed'
+
+export type AdminCase = {
+  case_id: string
+  protected_person_alias: string
+  guardian_alias: string
+  source_channel: string
+  received_content_summary: string
+  risk_score: number
+  risk_level: string
+  scam_category: string
+  detected_signals: string[]
+  agent_decision: string
+  agent_decision_trace: AdminCaseTraceStep[]
+  trust_lock_status: string
+  trusted_circle_status: string
+  proof_of_trust_status: string
+  recovery_status: string
+  recommended_action: string
+  protected_person_short_reply?: string
+  status: AdminCaseStatus
+  created_at: string
+  updated_at: string
+}
+
+export type GuardianConsoleStatusResponse = {
+  service: string
+  mode: string
+  storage: string
+  case_count: number
+  auth_enabled: boolean
+  notifications_enabled: boolean
+  demo_note: string
+  __mock?: boolean
+}
+
+export type AdminCaseListResponse = {
+  cases: AdminCase[]
+  total: number
+  __mock?: boolean
+}
+
 export type SimpleChannelStatusResponse = {
   service: string
   mode: string

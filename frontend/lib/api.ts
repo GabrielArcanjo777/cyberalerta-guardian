@@ -1,5 +1,9 @@
 import {
+  AdminCase,
+  AdminCaseListResponse,
+  AdminCaseStatus,
   AnalyzePayload,
+  GuardianConsoleStatusResponse,
   IntakePayload,
   RecoveryPayload,
   RedactPreviewPayload,
@@ -219,6 +223,120 @@ export async function postSimpleChannelSubmit(payload: SimpleChannelSubmitPayloa
     return {...data, __mock: false} as SimpleChannelSubmitResponse
   }catch{
     return createMockSimpleChannelSubmit(payload)
+  }
+}
+
+const mockGuardianCases: AdminCase[] = [
+  {
+    case_id: 'case-demo-001',
+    protected_person_alias: 'Dona Lucia',
+    guardian_alias: 'Gabriel',
+    source_channel: 'whatsapp_mock',
+    received_content_summary: 'Mensagem simulando falso filho pedindo Pix urgente.',
+    risk_score: 87,
+    risk_level: 'alto',
+    scam_category: 'golpe_pix',
+    detected_signals: ['urgencia', 'numero_novo', 'pedido_pix', 'isolamento'],
+    agent_decision: 'Trust Lock recomendado antes de qualquer transferência.',
+    agent_decision_trace: [
+      {step: 'Entrada recebida', detail: 'Conteúdo encaminhado por canal simples.'},
+      {step: 'Sinais detectados', detail: 'Urgência, pedido financeiro e identidade não verificada.'},
+      {step: 'Decisão', detail: 'Pausar ação e acionar responsável.'},
+    ],
+    trust_lock_status: 'recommended',
+    trusted_circle_status: 'pending',
+    proof_of_trust_status: 'not_started',
+    recovery_status: 'not_needed',
+    recommended_action: 'Confirmar com contato salvo antes de qualquer Pix.',
+    protected_person_short_reply: 'Não faça Pix agora. Essa mensagem tem sinais de golpe e estou avisando Gabriel.',
+    status: 'open',
+    created_at: '2026-01-01T10:00:00Z',
+    updated_at: '2026-01-01T10:00:00Z',
+  },
+  {
+    case_id: 'case-demo-002',
+    protected_person_alias: 'Seu Joao',
+    guardian_alias: 'Gabriel',
+    source_channel: 'whatsapp_mock',
+    received_content_summary: 'Link suspeito fingindo ser banco.',
+    risk_score: 62,
+    risk_level: 'medio',
+    scam_category: 'link_suspeito',
+    detected_signals: ['urgencia', 'link_externo'],
+    agent_decision: 'Orientar pausa antes de clicar.',
+    agent_decision_trace: [
+      {step: 'Entrada recebida', detail: 'Canal simples.'},
+      {step: 'Decisão', detail: 'Aguardar confirmação do responsável.'},
+    ],
+    trust_lock_status: 'not_needed',
+    trusted_circle_status: 'notified',
+    proof_of_trust_status: 'not_started',
+    recovery_status: 'not_needed',
+    recommended_action: 'Não clicar no link.',
+    status: 'reviewing',
+    created_at: '2026-01-02T14:20:00Z',
+    updated_at: '2026-01-02T15:05:00Z',
+  },
+]
+
+export async function getGuardianConsoleStatus(){
+  try{
+    const res = await fetch(`${API}/guardian-console/status`)
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as GuardianConsoleStatusResponse
+  }catch{
+    return {
+      service: 'guardian-admin-case-console',
+      mode: 'in_memory_demo',
+      storage: 'mock_store',
+      case_count: mockGuardianCases.length,
+      auth_enabled: false,
+      notifications_enabled: false,
+      demo_note: 'Modo demonstração local.',
+      __mock: true,
+    }
+  }
+}
+
+export async function getGuardianConsoleCases(){
+  try{
+    const res = await fetch(`${API}/guardian-console/cases`)
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as AdminCaseListResponse
+  }catch{
+    return {cases: mockGuardianCases, total: mockGuardianCases.length, __mock: true}
+  }
+}
+
+export async function getGuardianConsoleCase(caseId:string){
+  try{
+    const res = await fetch(`${API}/guardian-console/cases/${caseId}`)
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as AdminCase
+  }catch{
+    const found = mockGuardianCases.find(item=>item.case_id === caseId)
+    if(!found) throw new Error('not-found')
+    return {...found, __mock: true}
+  }
+}
+
+export async function patchGuardianCaseStatus(caseId:string, status:AdminCaseStatus){
+  try{
+    const res = await fetch(`${API}/guardian-console/cases/${caseId}/status`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({status}),
+    })
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as AdminCase
+  }catch{
+    const found = mockGuardianCases.find(item=>item.case_id === caseId)
+    if(!found) throw new Error('not-found')
+    return {...found, status, __mock: true}
   }
 }
 

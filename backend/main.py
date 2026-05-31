@@ -10,6 +10,14 @@ from app.protected_response.response_schemas import (
     ProtectedResponseGenerateRequest,
     ProtectedResponseGenerateResponse,
 )
+from app.guardian_console.admin_case_models import (
+    AdminCase,
+    AdminCaseFromChannelRequest,
+    AdminCaseListResponse,
+    AdminCaseStatusUpdateRequest,
+    GuardianConsoleStatusResponse,
+)
+from app.guardian_console.admin_case_service import AdminCaseService
 from app.protected_response.response_service import ProtectedPersonResponseService
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.schemas.recovery import RecoveryRequest, RecoveryResponse
@@ -21,6 +29,7 @@ app = FastAPI(title="CyberAlerta Guardian Backend")
 orchestrator = GuardianOrchestrator()
 simple_channel_service = SimpleChannelService()
 protected_person_response_service = ProtectedPersonResponseService()
+admin_case_service = AdminCaseService()
 
 @app.get("/health")
 def health():
@@ -63,3 +72,28 @@ def simple_channel_submit(payload: SimpleChannelSubmitRequest):
 @app.post("/protected-response/generate", response_model=ProtectedResponseGenerateResponse)
 def protected_response_generate(payload: ProtectedResponseGenerateRequest):
     return protected_person_response_service.generate(payload)
+
+
+@app.get("/guardian-console/status", response_model=GuardianConsoleStatusResponse)
+def guardian_console_status():
+    return admin_case_service.get_status()
+
+
+@app.get("/guardian-console/cases", response_model=AdminCaseListResponse)
+def guardian_console_cases():
+    return admin_case_service.list_cases()
+
+
+@app.get("/guardian-console/cases/{case_id}", response_model=AdminCase)
+def guardian_console_case_detail(case_id: str):
+    return admin_case_service.get_case(case_id)
+
+
+@app.patch("/guardian-console/cases/{case_id}/status", response_model=AdminCase)
+def guardian_console_case_status(case_id: str, payload: AdminCaseStatusUpdateRequest):
+    return admin_case_service.update_status(case_id, payload)
+
+
+@app.post("/guardian-console/cases/from-channel", response_model=AdminCase)
+def guardian_console_case_from_channel(payload: AdminCaseFromChannelRequest):
+    return admin_case_service.create_from_channel(payload)

@@ -22,6 +22,7 @@ from app.protected_response.response_service import (
     infer_category,
     map_manipulations_to_signals,
 )
+from app.guardian_console.admin_case_service import AdminCaseService
 from app.services.safety_policy import SafetyPolicyService
 
 _CASE_STORE: Dict[str, Dict[str, Any]] = {}
@@ -35,6 +36,7 @@ class SimpleChannelService:
         self.manipulation_agent = ManipulationAnalysisAgent()
         self.risk_agent = RiskScoringAgent()
         self.protected_response = ProtectedPersonResponseService()
+        self.admin_cases = AdminCaseService()
 
     def get_status(self) -> SimpleChannelStatusResponse:
         return SimpleChannelStatusResponse(
@@ -90,9 +92,10 @@ class SimpleChannelService:
         simple_reply = protected.short_reply
 
         case_id = f"ch-{uuid4().hex[:12]}"
-        _CASE_STORE[case_id] = {
+        channel_record = {
             "channel_case_id": case_id,
             "protected_person_alias": payload.protected_person_alias,
+            "trusted_contact_alias": payload.trusted_contact_alias,
             "channel": payload.channel,
             "content_type": payload.content_type,
             "content": content,
@@ -107,6 +110,12 @@ class SimpleChannelService:
             "trust_lock_recommended": trust_lock_recommended,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
+        _CASE_STORE[case_id] = channel_record
+
+        if admin_case_created:
+            admin_case = self.admin_cases.create_from_simple_channel_record(channel_record)
+            if admin_case:
+                channel_record["guardian_case_id"] = admin_case.case_id
 
         return SimpleChannelSubmitResponse(
             channel_case_id=case_id,

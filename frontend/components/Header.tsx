@@ -20,7 +20,7 @@ const platformNav = [
   {href:'/intake', label:'Intake seguro'},
   {href:'/ml-lab', label:'ML Lab'},
   {href:'/help-network', label:'Rede de ajuda'},
-  {href:'/family-console', label:'Console da família'},
+  {href:'/family-console', label:'Guardian Console'},
   {href:'/pilot', label:'Prontidão do piloto'},
   {href:'/recovery', label:'Modo recuperação'},
 ]
