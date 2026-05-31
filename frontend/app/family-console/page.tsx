@@ -1,45 +1,36 @@
 "use client"
 
-import React, {useEffect, useState} from 'react'
-import FamilyConsole from '@/components/FamilyConsole'
-import Card from '@/components/Card'
-import {PageHeader, PageShell} from '@/components/CommandCenter'
-import {mockAnalyzeResult} from '@/lib/mockData'
-import type {TrustedCircleAlert} from '@/lib/types'
-
-const storageKey = 'cyberalerta:lastTrustedCircleAlert'
+import React from 'react'
+import Link from 'next/link'
+import Button from '@/components/Button'
+import GuardianAdminConsole from '@/components/GuardianAdminConsole'
+import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
 export default function FamilyConsolePage(){
-  const [alert,setAlert]=useState<TrustedCircleAlert>(mockAnalyzeResult.trusted_circle_alert)
-
-  useEffect(()=>{
-    try{
-      const raw = window.localStorage.getItem(storageKey)
-      if(raw){
-        setAlert(JSON.parse(raw))
-      }
-    }catch{
-      setAlert(mockAnalyzeResult.trusted_circle_alert)
-    }
-  },[])
-
   return (
-    <PageShell maxWidth="6xl">
+    <PageShell maxWidth="7xl">
       <PageHeader
-        eyebrow="Console do responsável"
-        title="Console da família"
-        description="Ação rápida para o contato de confiança. Esta tela transforma o alerta do Guardian em uma resposta simples para o familiar agir no momento certo — com foco em Pix, WhatsApp e pessoas vulneráveis."
-        detail="Simulação: nenhuma mensagem real é enviada e nenhum telefone é coletado."
+        eyebrow="Painel do responsável"
+        title="Guardian Console"
+        description="Central operacional para familiar, cuidador ou instituição acompanhar casos recebidos da pessoa protegida — com risco, trilha da decisão e ações seguras."
+        detail="Fluxo: pessoa protegida encaminha pelo canal simples → Guardian analisa → caso entra na fila → responsável age com pausa protetiva."
+        actions={
+          <Link href="/chatbot-demo">
+            <Button variant="ghost" className="h-12 w-full sm:w-auto">Ver canal da pessoa protegida</Button>
+          </Link>
+        }
+        aside={
+          <StatusRail
+            items={[
+              {label:'Operador', value:'responsável', tone:'ready'},
+              {label:'Armazenamento', value:'demo in-memory', tone:'neutral'},
+              {label:'Envio real', value:'desligado', tone:'warn'},
+            ]}
+          />
+        }
       />
 
-      <FamilyConsole alert={alert} backHref="/before-pix" backLabel="Voltar para análise" />
-
-      <Card className="border-dashed border-white/15">
-        <div className="app-label">Nota de segurança do MVP</div>
-        <p className="app-body-text mt-2">
-          Este console não envia mensagens reais e não coleta telefone. Ele mostra como o contato de confiança deve agir a partir da análise defensiva do CyberAlerta Guardian.
-        </p>
-      </Card>
+      <GuardianAdminConsole />
     </PageShell>
   )
 }

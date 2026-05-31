@@ -1,3 +1,100 @@
+export type SimpleChannelSubmitPayload = {
+  protected_person_alias: string
+  channel: 'whatsapp_mock'
+  content_type: 'text'
+  content: string
+  consent: boolean
+  trusted_contact_alias?: string
+}
+
+export type ProtectedResponseGeneratePayload = {
+  risk_level: string
+  category: string
+  signals: string[]
+  trusted_contact_alias?: string
+}
+
+export type ProtectedResponseGenerateResponse = {
+  short_reply: string
+  tone: string
+  do_not_do: string[]
+  next_step: string
+  __mock?: boolean
+}
+
+export type SimpleChannelSubmitResponse = {
+  channel_case_id: string
+  risk_level: string
+  simple_reply: string
+  admin_case_created: boolean
+  trust_lock_recommended: boolean
+  __mock?: boolean
+}
+
+export type AdminCaseTraceStep = {
+  step: string
+  detail: string
+}
+
+export type AdminCaseStatus =
+  | 'open'
+  | 'reviewing'
+  | 'verified_safe'
+  | 'confirmed_scam'
+  | 'resolved'
+  | 'recovery_needed'
+
+export type AdminCase = {
+  case_id: string
+  protected_person_alias: string
+  guardian_alias: string
+  source_channel: string
+  received_content_summary: string
+  risk_score: number
+  risk_level: string
+  scam_category: string
+  detected_signals: string[]
+  agent_decision: string
+  agent_decision_trace: AdminCaseTraceStep[]
+  trust_lock_status: string
+  trusted_circle_status: string
+  proof_of_trust_status: string
+  recovery_status: string
+  recommended_action: string
+  protected_person_short_reply?: string
+  status: AdminCaseStatus
+  created_at: string
+  updated_at: string
+}
+
+export type GuardianConsoleStatusResponse = {
+  service: string
+  mode: string
+  storage: string
+  case_count: number
+  auth_enabled: boolean
+  notifications_enabled: boolean
+  demo_note: string
+  __mock?: boolean
+}
+
+export type AdminCaseListResponse = {
+  cases: AdminCase[]
+  total: number
+  __mock?: boolean
+}
+
+export type SimpleChannelStatusResponse = {
+  service: string
+  mode: string
+  channels: string[]
+  whatsapp_real_enabled: boolean
+  monitoring_enabled: boolean
+  privacy_note: string
+  demo_note: string
+  __mock?: boolean
+}
+
 export type AnalyzePayload = {
   user_name:string
   age_group:string

@@ -1,6 +1,7 @@
 "use client"
 
 import React, {useState} from 'react'
+import Link from 'next/link'
 import {postIntakeAnalyze, postRedactPreview} from '@/lib/api'
 import AIModeIndicator from '@/components/AIModeIndicator'
 import AgentDecisionTrace from '@/components/AgentDecisionTrace'
@@ -116,6 +117,20 @@ export default function IntakePage(){
           </div>
         }
       />
+
+      <Card className="border-cyan-400/25">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="app-label">Sprint 18B · canal simples</div>
+            <p className="app-body-text mt-2">
+              Para demonstrar WhatsApp mock e resposta curta do Guardian, use o fluxo de chatbot em vez deste intake tecnico.
+            </p>
+          </div>
+          <Link href="/chatbot-demo">
+            <Button className="h-11 w-full sm:w-auto">Abrir WhatsApp mock</Button>
+          </Link>
+        </div>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <Card className="overflow-hidden p-0">
