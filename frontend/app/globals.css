@@ -1359,6 +1359,190 @@ html.guardian-high-contrast :focus-visible {
   color: #94a3b8;
 }
 
+/* —— Assisted protection demo (Sprint 18G) —— */
+.assisted-demo-step {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.55), rgba(2, 6, 23, 0.82));
+  padding: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .assisted-demo-step {
+    padding: 1.5rem;
+  }
+}
+
+.assisted-demo-step-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.assisted-demo-step-number {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  background: rgba(14, 165, 233, 0.12);
+  color: #bae6fd;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.assisted-demo-hero {
+  background:
+    linear-gradient(135deg, rgba(8, 47, 73, 0.42), rgba(2, 6, 23, 0.94)),
+    radial-gradient(circle at 78% 22%, rgba(56, 189, 248, 0.14), transparent 40%);
+}
+
+.assisted-demo-nav-pill {
+  display: block;
+  min-width: 6.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 0.45rem 0.65rem;
+  text-decoration: none;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.assisted-demo-nav-pill:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.assisted-demo-chat {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 6px;
+  background: rgba(2, 6, 23, 0.75);
+}
+
+.assisted-demo-chat-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.8);
+  padding: 0.85rem 1rem;
+}
+
+.assisted-demo-chat-body {
+  padding: 1rem;
+}
+
+.assisted-demo-chat-incoming {
+  margin-right: auto;
+  max-width: 92%;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  border-radius: 6px;
+  background: rgba(6, 78, 59, 0.28);
+  padding: 0.85rem 1rem;
+}
+
+.assisted-demo-chat-outgoing {
+  margin-left: auto;
+  max-width: 92%;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 6px;
+  background: rgba(8, 47, 73, 0.38);
+  padding: 0.85rem 1rem;
+}
+
+.assisted-demo-flow-arrow {
+  display: flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  background: rgba(14, 165, 233, 0.1);
+  font-size: 1.25rem;
+  color: #7dd3fc;
+}
+
+.assisted-demo-console-preview {
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 6px;
+  background:
+    linear-gradient(160deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.96)),
+    radial-gradient(circle at 12% 18%, rgba(56, 189, 248, 0.1), transparent 42%);
+  padding: 1.25rem;
+}
+
+.assisted-demo-console-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.assisted-demo-lock-icon {
+  display: flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  border-radius: 6px;
+  background: rgba(127, 29, 29, 0.35);
+  font-size: 1.35rem;
+}
+
+.assisted-demo-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.assisted-demo-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #e2e8f0;
+}
+
+.assisted-demo-check {
+  display: inline-flex;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 4px;
+  background: rgba(6, 78, 59, 0.3);
+  color: #6ee7b7;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.assisted-demo-report {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 1.25rem;
+}
+
+.assisted-demo-cta {
+  background:
+    linear-gradient(135deg, rgba(6, 78, 59, 0.22), rgba(2, 6, 23, 0.94)),
+    radial-gradient(circle at 88% 12%, rgba(56, 189, 248, 0.12), transparent 38%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

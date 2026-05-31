@@ -7,6 +7,7 @@ import AccessibilityControls from '@/components/AccessibilityControls'
 import {defaultLocale, getMessages, Locale, supportedLocales} from '@/lib/i18n'
 
 const primaryNav = [
+  {href:'/assisted-demo', label:'Demo guiada'},
   {href:'/before-pix', label:'Analisar'},
   {href:'/global', label:'Radar'},
   {href:'/simulator', label:'Casos'},
