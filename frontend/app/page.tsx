@@ -55,6 +55,11 @@ export default function Home(){
                   Testar console de intervenção
                 </Button>
               </Link>
+            <Link href="/assisted-demo">
+                <Button variant="ghost" className="h-12 w-full px-6 sm:w-auto">
+                  Demo de proteção assistida
+                </Button>
+              </Link>
             <Link href="/global">
                 <Button variant="ghost" className="h-12 w-full px-6 sm:w-auto">
                   Ver visão global

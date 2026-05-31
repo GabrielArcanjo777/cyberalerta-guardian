@@ -4,7 +4,17 @@
 
 CyberAlerta Guardian é um projeto de intervenção pre-dano para golpes digitais, focado em proteger pessoas vulneráveis antes que um pagamento ou ação maliciosa seja concluída.
 
-Status: Sprint 0 - setup
+Status: Sprints 18A–18G — proteção assistida (demo MVP)
+
+## Demo principal recomendada
+
+Apresente o fluxo completo de proteção assistida na rota:
+
+**[/assisted-demo](http://localhost:3000/assisted-demo)** (com `npm run dev` no frontend)
+
+Roteiro de apresentação: [docs/assisted-protection-demo-script.md](docs/assisted-protection-demo-script.md)
+
+Fluxo: mensagem suspeita → canal simples → resposta curta → Guardian Console → Trust Lock → Trusted Circle (simulado) → Proof of Trust → Agent Decision Trace → relatório.
 
 Stack planejada:
 - FastAPI

@@ -84,6 +84,105 @@ export type AdminCaseListResponse = {
   __mock?: boolean
 }
 
+export type TrustedCircleEscalatePayload = {
+  case_id: string
+  risk_level: string
+  protected_person_alias: string
+  trusted_contacts: string[]
+  reason: string
+}
+
+export type TrustedCircleEscalateResponse = {
+  escalation_id: string
+  status: 'simulated_notified' | 'review_suggested' | 'not_escalated'
+  message_to_guardian: string
+  trusted_contacts: string[]
+  proof_of_trust_recommended: boolean
+  sent_real_notification: boolean
+  demo_note: string
+  case_id?: string
+  risk_level?: string
+  escalation_recommended?: boolean
+  __mock?: boolean
+}
+
+export type TrustedCircleStatusResponse = {
+  service: string
+  mode: string
+  real_notifications_enabled: boolean
+  escalation_count: number
+  demo_note: string
+  __mock?: boolean
+}
+
+export type ProofTrustStepItem = {
+  id: string
+  title: string
+  status: 'pending' | 'completed' | 'skipped'
+  guidance?: string
+  note?: string
+}
+
+export type AssistedProofFinalDecision =
+  | 'verified_safe'
+  | 'confirmed_scam'
+  | 'inconclusive'
+  | 'blocked'
+
+export type AssistedProofSessionStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'verified_safe'
+  | 'confirmed_scam'
+  | 'inconclusive'
+  | 'blocked'
+
+export type AssistedProofSessionCreatePayload = {
+  case_id: string
+  protected_person_alias: string
+  guardian_alias: string
+  risk_level: string
+  suspected_request: string
+  trusted_contact_alias: string
+}
+
+export type AssistedProofStepUpdatePayload = {
+  step_id: string
+  status?: 'pending' | 'completed' | 'skipped'
+  note?: string
+  final_decision?: AssistedProofFinalDecision
+}
+
+export type AssistedProofSessionResponse = {
+  session_id: string
+  case_id: string
+  status: AssistedProofSessionStatus
+  current_step: string
+  steps: ProofTrustStepItem[]
+  final_decision: AssistedProofFinalDecision | null
+  guardian_note?: string | null
+  protected_person_alias?: string
+  guardian_alias?: string
+  trusted_contact_alias?: string
+  suspected_request?: string
+  demo_note: string
+  __mock?: boolean
+}
+
+export type TrustedCircleEscalationRecord = {
+  escalation_id: string
+  case_id: string
+  risk_level: string
+  protected_person_alias: string
+  trusted_contacts: string[]
+  reason: string
+  status: TrustedCircleEscalateResponse['status']
+  message_to_guardian: string
+  proof_of_trust_recommended: boolean
+  sent_real_notification: boolean
+  created_at: string
+}
+
 export type SimpleChannelStatusResponse = {
   service: string
   mode: string
