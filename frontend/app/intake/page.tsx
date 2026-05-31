@@ -9,17 +9,18 @@ import Card from '@/components/Card'
 import RiskScore from '@/components/RiskScore'
 import TrustLockCard from '@/components/TrustLockCard'
 import type {IntakeAnalysisResponse, IntakeChannel, RedactPreviewResponse} from '@/lib/types'
+import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
 const initialMessage = 'Mae, troquei de numero. Faz um Pix urgente para essa chave: exemplo@email.com. Meu CPF e 123.456.789-00 e meu telefone e (21) 99999-9999.'
 
 const channelOptions: {value:IntakeChannel,label:string,status:string,description:string}[] = [
-  {value:'manual_text', label:'Colar mensagem manualmente', status:'Disponivel no MVP', description:'Cole apenas o trecho suspeito que voce quer analisar.'},
-  {value:'screenshot_upload', label:'Enviar print', status:'Visao futura', description:'Upload com redaction antes da analise.'},
-  {value:'email_forward', label:'Encaminhar e-mail suspeito', status:'Visao futura', description:'Encaminhamento voluntario de e-mail.'},
-  {value:'browser_extension', label:'Extensao do navegador', status:'Visao futura', description:'Compartilhamento manual de pagina suspeita.'},
-  {value:'share_sheet', label:'Share sheet', status:'Visao futura', description:'Compartilhar conteudo pelo menu do aparelho.'},
-  {value:'whatsapp_business_opt_in', label:'WhatsApp Business opt-in', status:'Visao futura', description:'Somente com opt-in explicito e controlado.'},
-  {value:'microsoft_graph_opt_in', label:'Microsoft Graph opt-in', status:'Visao futura', description:'Somente com permissao granular do usuario.'},
+  {value:'manual_text', label:'Colar mensagem manualmente', status:'Disponível no MVP', description:'Cole apenas o trecho suspeito que você quer analisar.'},
+  {value:'screenshot_upload', label:'Enviar print', status:'Visão futura', description:'Upload com redação antes da análise.'},
+  {value:'email_forward', label:'Encaminhar e-mail suspeito', status:'Visão futura', description:'Encaminhamento voluntário de e-mail.'},
+  {value:'browser_extension', label:'Extensão do navegador', status:'Visão futura', description:'Compartilhamento manual de página suspeita.'},
+  {value:'share_sheet', label:'Compartilhar do aparelho', status:'Visão futura', description:'Compartilhar conteúdo pelo menu do aparelho.'},
+  {value:'whatsapp_business_opt_in', label:'WhatsApp Business com consentimento', status:'Visão futura', description:'Somente com opt-in explícito e controlado.'},
+  {value:'microsoft_graph_opt_in', label:'Microsoft com consentimento', status:'Visão futura', description:'Somente com permissão granular do usuário.'},
 ]
 
 const actionOptions = [
@@ -91,26 +92,30 @@ export default function IntakePage(){
   const analysis = result?.analysis
 
   return (
-    <section className="mx-auto max-w-7xl space-y-7 pb-14">
-      <div className="guardian-panel-dark overflow-hidden rounded-lg text-white">
-        <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="guardian-kicker">
-              Privacy-first intake
+    <PageShell>
+      <PageHeader
+        eyebrow="Entrada com privacidade"
+        title="Enviar mensagem suspeita"
+        description="A pessoa protegida escolhe o que enviar por um canal simples. O Guardian não monitora conversas e só analisa conteúdo compartilhado voluntariamente — antes do Pix, do clique ou do compartilhamento de credencial."
+        detail="Antes da analise, dados pessoais podem ser mascarados para reduzir exposicao de CPF, telefone, e-mail e chaves Pix."
+        aside={
+          <div className="space-y-5">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.08em] text-cyan-300">Privacidade por design</div>
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                Entrada manual, consentimento explicito, redaction opcional e metadados minimos.
+              </p>
             </div>
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl">Enviar mensagem suspeita</h1>
-            <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-slate-300">
-              Voce escolhe o que enviar. O Guardian nao monitora suas conversas.
-            </p>
+            <StatusRail
+              items={[
+                {label:'Monitoramento', value:'nao automatico', tone:'ready'},
+                {label:'Consentimento', value:userConsent ? 'marcado' : 'pendente', tone:userConsent ? 'ready' : 'warn'},
+                {label:'Redaction', value:redactionRequested ? 'ativa' : 'manual', tone:'neutral'},
+              ]}
+            />
           </div>
-          <div className="border-t border-white/10 bg-white/[0.04] p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">Privacidade por design</div>
-            <p className="mt-4 text-sm leading-6 text-slate-300">
-              O CyberAlerta Guardian nao le suas conversas automaticamente. A analise acontece apenas quando voce decide compartilhar uma mensagem suspeita. Antes da analise, voce pode mascarar dados pessoais como CPF, telefone, e-mail e chaves Pix.
-            </p>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <Card className="overflow-hidden p-0">
@@ -195,17 +200,20 @@ export default function IntakePage(){
 
         <div className="space-y-4">
           <Card>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Canais voluntarios</div>
+            <div className="app-label">Canais voluntários</div>
             <div className="mt-4 grid gap-3">
               {channelOptions.map(option=> (
-                <div key={option.value} className={`rounded-lg border p-4 ${option.value === channel ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-slate-50'}`}>
+                <div
+                  key={option.value}
+                  className={`rounded-md border p-4 ${option.value === channel ? 'border-cyan-400/40 bg-cyan-950/25' : 'border-white/10 bg-slate-950/35'}`}
+                >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="text-sm font-black">{option.label}</div>
-                    <span className={`rounded border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${option.value === channel ? 'border-white/20 bg-white/10 text-slate-200' : 'border-slate-200 bg-white text-slate-600'}`}>
+                    <div className="text-sm font-semibold text-slate-100">{option.label}</div>
+                    <span className={`app-badge shrink-0 ${option.value === channel ? 'app-badge-accent' : ''}`}>
                       {option.status}
                     </span>
                   </div>
-                  <p className={`mt-2 text-sm leading-5 ${option.value === channel ? 'text-slate-300' : 'text-slate-600'}`}>{option.description}</p>
+                  <p className="app-muted-text mt-2 text-sm">{option.description}</p>
                 </div>
               ))}
             </div>
@@ -282,6 +290,6 @@ export default function IntakePage(){
           )}
         </div>
       )}
-    </section>
+    </PageShell>
   )
 }

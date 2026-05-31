@@ -6,6 +6,7 @@ import Button from '@/components/Button'
 import Card from '@/components/Card'
 import MLScamIntelligenceCard from '@/components/MLScamIntelligenceCard'
 import type {MLAnalysis, UrlAnalysis} from '@/lib/types'
+import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
 const initialText = 'Cenario educativo simulado: troquei de numero, preciso de Pix urgente agora e nao liga.'
 const initialUrl = 'https://nubank-seguranca-verificacao.xyz/login?token=abc'
@@ -81,25 +82,25 @@ export default function MLLabPage(){
   }
 
   return (
-    <section className="mx-auto max-w-7xl space-y-7 pb-14">
-      <div className="guardian-panel-dark overflow-hidden rounded-lg text-white">
-        <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="guardian-kicker">
-              ML Scam Intelligence
-            </div>
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl">ML Scam Intelligence Lab</h1>
-            <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-slate-300">
-              Laboratorio tecnico para demonstrar classificacao de texto e URL.
-            </p>
+    <PageShell>
+      <PageHeader
+        eyebrow="ML Scam Intelligence"
+        title="ML Scam Intelligence Lab"
+        description="Laboratorio tecnico para demonstrar classificacao defensiva de texto e URL com saida explicavel."
+        detail="Resultado nao e prova absoluta. Use como apoio educativo e preventivo, sem API externa real nesta demo."
+        aside={
+          <div className="space-y-5">
+            <div className="text-2xl font-semibold tracking-tight text-white">Ferramenta demonstrativa</div>
+            <StatusRail
+              items={[
+                {label:'Texto', value:'POST /analisar', tone:'ready'},
+                {label:'URL', value:'POST /analisar-url', tone:'ready'},
+                {label:'Status', value:'GET /ml/status', tone:'neutral'},
+              ]}
+            />
           </div>
-          <div className="border-t border-white/10 bg-white/[0.04] p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">Aviso</div>
-            <p className="mt-4 text-2xl font-black tracking-tight">Ferramenta demonstrativa.</p>
-            <p className="mt-3 text-sm leading-6 text-slate-300">Resultado nao e prova absoluta. Use como apoio defensivo, educativo e preventivo.</p>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="space-y-5">
@@ -147,6 +148,6 @@ export default function MLLabPage(){
           O laboratorio usa endpoints locais: POST /analisar, POST /analisar-url e GET /ml/status. Nenhuma API externa real e chamada nesta sprint.
         </p>
       </Card>
-    </section>
+    </PageShell>
   )
 }

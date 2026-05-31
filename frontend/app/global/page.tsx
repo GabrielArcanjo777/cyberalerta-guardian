@@ -3,104 +3,205 @@ import Link from 'next/link'
 import Button from '@/components/Button'
 import Card from '@/components/Card'
 import AttackGlobe3D from '@/components/AttackGlobe3D'
-import {globalApplicabilityRegions, globalScenarios, globalThreatPatterns} from '@/lib/globalScenarios'
+import {AppBadge, AppCardTitle, AppSectionTitle} from '@/components/AppPrimitives'
+import {
+  channelLabel,
+  globalApplicabilityRegions,
+  globalScenarios,
+  globalThreatPatternGroups,
+  riskLevelLabel,
+  type GlobalScenario,
+} from '@/lib/globalScenarios'
+import {riskStatusClass} from '@/lib/appStatus'
+import {MetricPanel, PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
+
+const featuredId = 'br-fake-child-pix'
+const primaryIds = ['us-gift-card', 'us-fake-tech-support', 'eu-fake-delivery']
+const otherIds = ['in-otp-code', 'af-mobile-money', 'br-fake-bank-link', 'global-code-request']
+
+function findScenario(id:string){
+  return globalScenarios.find((scenario)=>scenario.id === id)
+}
+
+function FeaturedScenarioCard({scenario}:{scenario:GlobalScenario}){
+  return (
+    <article className="app-card-highlight">
+      <div className="flex flex-wrap items-center gap-2">
+        <AppBadge className="app-badge-accent">Cenário principal · Brasil</AppBadge>
+        <span className={riskStatusClass(scenario.expected_risk_level)}>
+          Risco {riskLevelLabel(scenario.expected_risk_level)}
+        </span>
+      </div>
+      <AppCardTitle className="mt-4 text-xl sm:text-2xl">{scenario.title}</AppCardTitle>
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+        <div>
+          <dt className="app-label">Canal</dt>
+          <dd className="mt-1 font-medium text-slate-200">{channelLabel(scenario.channel)}</dd>
+        </div>
+        <div>
+          <dt className="app-label">Região</dt>
+          <dd className="mt-1 font-medium text-slate-200">{scenario.region}</dd>
+        </div>
+      </dl>
+      <p className="app-body-text mt-4">{scenario.global_relevance}</p>
+      <div className="app-callout mt-4">
+        <div className="app-callout-label">Ação recomendada</div>
+        <p className="app-callout-body">{scenario.recommended_action}</p>
+      </div>
+    </article>
+  )
+}
+
+function ScenarioCard({scenario}:{scenario:GlobalScenario}){
+  return (
+    <article className="app-card-row">
+      <div className="min-w-0 flex-1">
+        <AppCardTitle>{scenario.title}</AppCardTitle>
+        <p className="app-muted-text mt-1">
+          {scenario.region} · {channelLabel(scenario.channel)}
+        </p>
+        <p className="app-body-text mt-2 line-clamp-2">{scenario.global_relevance}</p>
+      </div>
+      <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+        <span className={riskStatusClass(scenario.expected_risk_level)}>
+          {riskLevelLabel(scenario.expected_risk_level)}
+        </span>
+        <p className="max-w-[14rem] text-right text-xs font-medium leading-5 text-emerald-300/90">
+          {scenario.recommended_action}
+        </p>
+      </div>
+    </article>
+  )
+}
+
+function CompactScenario({scenario}:{scenario:GlobalScenario}){
+  return (
+    <div className="app-card-compact flex items-center justify-between gap-3 border-l-2 border-l-cyan-500/40">
+      <div className="min-w-0">
+        <div className="app-card-title text-sm">{scenario.title}</div>
+        <div className="app-muted-text mt-0.5 text-xs">
+          {scenario.region} · {channelLabel(scenario.channel)}
+        </div>
+      </div>
+      <span className={`${riskStatusClass(scenario.expected_risk_level)} shrink-0`}>
+        {riskLevelLabel(scenario.expected_risk_level)}
+      </span>
+    </div>
+  )
+}
 
 export default function GlobalApplicabilityPage(){
-  const featuredScenarios = globalScenarios.filter((scenario)=>[
-    'br-fake-child-pix',
-    'us-gift-card',
-    'us-fake-tech-support',
-    'eu-fake-delivery',
-    'in-otp-code',
-    'af-mobile-money',
-  ].includes(scenario.id))
+  const featured = findScenario(featuredId)!
+  const primaryScenarios = primaryIds.map((id)=>findScenario(id)).filter(Boolean) as GlobalScenario[]
+  const otherScenarios = otherIds.map((id)=>findScenario(id)).filter(Boolean) as GlobalScenario[]
 
   return (
-    <section className="mx-auto max-w-7xl space-y-7 pb-14">
-      <div className="guardian-panel-dark overflow-hidden rounded-lg text-white">
-        <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="guardian-kicker">
-              Productization
-            </div>
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl">Global Applicability</h1>
-            <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-slate-300">
-              Guardian-led fraud prevention for families and institutions.
-            </p>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-              Protected person + suspicious action + unverified identity + evidence trail = protective action before financial or identity damage.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link href="/simulator"><Button className="h-12 w-full !border-white !bg-white !text-slate-950 hover:!bg-cyan-50 sm:w-auto">Ver cenarios globais</Button></Link>
-              <Link href="/dashboard"><Button variant="ghost" className="h-12 w-full sm:w-auto">Impact Dashboard</Button></Link>
-            </div>
+    <PageShell>
+      <PageHeader
+        eyebrow="Radar de proteção assistida"
+        title="Visibilidade de ameaças para proteção pré-dano."
+        description="Visão simulada de padrões de golpe: a pessoa protegida encaminha o risco, o Guardian analisa, o responsável acompanha e o Trust Lock pausa a ação antes do Pix, do clique ou do compartilhamento de credencial."
+        detail="Foco em WhatsApp, Pix, engenharia social e pessoas vulneráveis — com canal simples para quem precisa de ajuda e console para família ou instituição."
+        actions={
+          <>
+            <Link href="/before-pix"><Button className="h-12 w-full sm:w-auto">Analisar mensagem suspeita</Button></Link>
+            <Link href="/simulator"><Button variant="ghost" className="h-12 w-full sm:w-auto">Ver cenários simulados</Button></Link>
+          </>
+        }
+        aside={
+          <div className="space-y-5">
+            <div className="app-label text-cyan-300/90">Fluxo assistido</div>
+            <StatusRail
+              items={[
+                {label:'Encaminhamento', value:'canal simples', tone:'neutral'},
+                {label:'Análise', value:'Guardian', tone:'warn'},
+                {label:'Acompanhamento', value:'responsável', tone:'ready'},
+                {label:'Proteção', value:'Trust Lock', tone:'risk'},
+              ]}
+            />
           </div>
-          <div className="border-t border-white/10 bg-white/[0.04] p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">Global mechanism</div>
-            <div className="mt-5 space-y-3">
-              {['Dangerous intent','Manipulation pattern','Unverified identity','Protective pause'].map((item,index)=> (
-                <div key={item} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] p-4">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-xs font-black text-slate-950">{index + 1}</span>
-                  <span className="text-sm font-bold text-slate-200">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricPanel label="Padrões simulados" value={globalScenarios.length} detail="catálogo" tone="cyan" />
+        <MetricPanel label="Regiões no radar" value={globalApplicabilityRegions.length} detail="mercados" />
+        <MetricPanel label="Pressões mapeadas" value="18" detail="simulação" tone="risk" />
+        <MetricPanel label="Ações pausadas (demo)" value="7" detail="Trust Lock" tone="safe" />
       </div>
 
       <AttackGlobe3D />
 
+      <p className="app-muted-text text-center">
+        Visualização simulada — não é um feed real de ataques.
+      </p>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {globalApplicabilityRegions.map((region)=> (
           <Card key={region.region}>
-            <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">{region.region}</div>
-            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950">{region.focus}</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">{region.description}</p>
+            <div className="app-label">{region.region}</div>
+            <AppSectionTitle className="mt-2 text-lg">{region.focus}</AppSectionTitle>
+            <p className="app-body-text mt-3">{region.description}</p>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
         <Card>
-          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Global scenarios</div>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Exemplos defensivos e simulados</h2>
-          <div className="mt-5 grid gap-3">
-            {featuredScenarios.map((scenario)=> (
-              <div key={scenario.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="text-sm font-black text-slate-950">{scenario.title}</div>
-                    <div className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">{scenario.region} - {scenario.channel}</div>
-                  </div>
-                  <span className={`rounded border px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${scenario.expected_risk_level === 'critical' ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-600'}`}>
-                    {scenario.expected_risk_level}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{scenario.global_relevance}</p>
-              </div>
+          <div className="app-label">Cenários globais</div>
+          <AppSectionTitle>Exemplos defensivos e simulados</AppSectionTitle>
+          <p className="app-muted-text mt-2">
+            Destaque para o padrão brasileiro mais comum em pilotos: familiar falso pedindo Pix pelo WhatsApp.
+          </p>
+
+          <div className="mt-5">
+            <FeaturedScenarioCard scenario={featured} />
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {primaryScenarios.map((scenario)=> (
+              <ScenarioCard key={scenario.id} scenario={scenario} />
             ))}
+          </div>
+
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <div className="app-label">Outros padrões</div>
+            <div className="mt-3 grid gap-2">
+              {otherScenarios.map((scenario)=> (
+                <CompactScenario key={scenario.id} scenario={scenario} />
+              ))}
+            </div>
           </div>
         </Card>
 
-        <Card>
-          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Global threat patterns</div>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Taticas que cruzam fronteiras</h2>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {globalThreatPatterns.map((pattern)=> (
-              <span key={pattern} className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700">
-                {pattern}
-              </span>
+        <Card className="flex flex-col">
+          <div className="app-label">Padrões globais de ameaça</div>
+          <AppSectionTitle>Táticas que cruzam fronteiras</AppSectionTitle>
+          <p className="app-body-text mt-3">
+            Mesmo com canais e moedas diferentes, golpistas repetem combinações de pressão emocional, identidade falsa e pedido de ação sensível.
+          </p>
+
+          <div className="mt-5 flex flex-1 flex-col gap-3">
+            {globalThreatPatternGroups.map((group)=> (
+              <div key={group.title} className="app-tag-group">
+                <div className="app-label">{group.title}</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {group.items.map((item)=> (
+                    <AppBadge key={item}>{item}</AppBadge>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-          <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-black text-slate-950">MVP vs. produto global real</div>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              O MVP demonstra a tese. Um produto global real exige localizacao, revisao juridica, privacidade por regiao, parcerias locais e validacao continua por mercado.
+
+          <div className="app-action-panel mt-5">
+            <AppCardTitle>MVP vs produto global real</AppCardTitle>
+            <p className="app-body-text mt-2">
+              O MVP demonstra proteção assistida antes do dano. Um produto global real exige localização, revisão jurídica, privacidade por região e validação contínua por mercado.
             </p>
           </div>
         </Card>
       </div>
-    </section>
+    </PageShell>
   )
 }

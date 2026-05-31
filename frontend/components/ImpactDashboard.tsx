@@ -1,5 +1,6 @@
 import React from 'react'
 import Card from '@/components/Card'
+import {MetricPanel, PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 import {
   demonstratedScenarios,
   globalApplicability,
@@ -13,7 +14,7 @@ const metricCards = [
   {
     label: 'Decisoes perigosas pausadas',
     value: impactMetrics.dangerous_decisions_paused,
-    detail: 'Intervencoes antes da acao',
+    detail: 'Intervenções antes da ação',
     tone: 'border-slate-200 bg-white',
   },
   {
@@ -29,9 +30,9 @@ const metricCards = [
     tone: 'border-amber-200 bg-amber-50',
   },
   {
-    label: 'Planos de recuperacao criados',
+    label: 'Planos de recuperação criados',
     value: impactMetrics.recovery_plans_created,
-    detail: 'Orientacao pos-dano',
+    detail: 'Orientação pós-dano',
     tone: 'border-emerald-200 bg-emerald-50',
   },
   {
@@ -43,7 +44,7 @@ const metricCards = [
   {
     label: 'Taticas detectadas',
     value: impactMetrics.manipulation_tactics_detected,
-    detail: 'Padroes de manipulacao',
+    detail: 'Padrões de manipulação',
     tone: 'border-slate-200 bg-white',
   },
   {
@@ -63,39 +64,38 @@ const metricCards = [
 const maxPatternCount = Math.max(...manipulationPatterns.map(pattern=>pattern.count))
 const maxGlobalPatternCount = Math.max(...globalThreatPatterns.map(pattern=>pattern.count))
 
+function metricTone(label:string){
+  if(label.includes('Pix') || label.includes('criticos')) return 'risk' as const
+  if(label.includes('recuperação') || label.includes('familiares')) return 'safe' as const
+  if(label.includes('Trust Lock') || label.includes('pausadas')) return 'cyan' as const
+  return 'default' as const
+}
+
 export default function ImpactDashboard(){
   return (
-    <section className="space-y-6">
-      <div className="guardian-panel-dark overflow-hidden rounded-lg text-white">
-        <div className="grid lg:grid-cols-[1.18fr_0.82fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="guardian-kicker">
-              Impact Dashboard
-            </div>
-            <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">
-              Valor de intervencao pre-dano
-            </h1>
-            <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-slate-300">
-              O CyberAlerta Guardian mostra impacto antes, durante e depois da tentativa de golpe: pausa a decisao, aciona o contato de confianca e gera um plano de recuperacao quando necessario.
-            </p>
+    <PageShell>
+      <PageHeader
+        eyebrow="Impact Dashboard"
+        title="Valor de intervenção pré-dano"
+        description="O CyberAlerta Guardian mostra impacto antes, durante e depois da tentativa de golpe: pausa a decisão, aciona o contato de confiança e gera um plano de recuperação quando necessário."
+        detail="Dados simulados para demonstração do MVP. Sem analytics real, banco de dados ou integração externa nesta sprint."
+        aside={
+          <div className="space-y-5">
+            <div className="text-2xl font-semibold tracking-tight text-white">{impactNote}</div>
+            <StatusRail
+              items={[
+                {label:'Analytics', value:'simulado', tone:'neutral'},
+                {label:'Persistencia', value:'sem banco', tone:'ready'},
+                {label:'Escopo', value:'MVP demo', tone:'warn'},
+              ]}
+            />
           </div>
-          <div className="border-t border-white/10 bg-white/[0.04] p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">MVP data status</div>
-            <p className="mt-4 text-2xl font-black tracking-tight">{impactNote}</p>
-            <p className="mt-4 text-sm leading-6 text-slate-300">
-              Sem analytics real, sem banco de dados e sem integracao externa nesta sprint.
-            </p>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metricCards.map((metric)=> (
-          <div key={metric.label} className={`rounded-lg border p-5 shadow-[0_10px_26px_rgba(15,23,42,0.05)] ${metric.tone}`}>
-            <div className="text-xs font-bold uppercase tracking-wide opacity-70">{metric.detail}</div>
-            <div className="mt-4 text-5xl font-black tracking-tight">{metric.value}</div>
-            <div className="mt-3 text-sm font-bold leading-5">{metric.label}</div>
-          </div>
+          <MetricPanel key={metric.label} label={metric.label} value={metric.value} detail={metric.detail} tone={metricTone(metric.label)} />
         ))}
       </div>
 
@@ -106,7 +106,7 @@ export default function ImpactDashboard(){
             <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">A pausa certa muda o resultado</h2>
           </div>
           <p className="text-base leading-7 text-slate-600">
-            Golpes digitais acontecem no intervalo entre a manipulacao e a decisao da vitima. O CyberAlerta Guardian cria uma pausa de seguranca antes do Pix, do clique, do envio de senha ou do compartilhamento de documentos.
+            Golpes digitais acontecem no intervalo entre a manipulação e a decisão da vítima. O CyberAlerta Guardian cria uma pausa de segurança antes do Pix, do clique, do envio de senha ou do compartilhamento de documentos.
           </p>
         </div>
       </Card>
@@ -115,7 +115,7 @@ export default function ImpactDashboard(){
         <Card>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Padroes de manipulacao</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Padrões de manipulação</div>
               <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Taticas detectadas na demo</h2>
             </div>
             <span className="rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
@@ -185,7 +185,7 @@ export default function ImpactDashboard(){
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Global threat patterns</div>
             <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Taticas que funcionam em qualquer mercado</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              O trilho de pagamento muda, mas os sinais de manipulacao se repetem: urgencia, autoridade falsa, isolamento, pedido financeiro e credenciais.
+              O trilho de pagamento muda, mas os sinais de manipulação se repetem: urgência, autoridade falsa, isolamento, pedido financeiro e credenciais.
             </p>
           </div>
           <div className="space-y-4">
@@ -218,6 +218,6 @@ export default function ImpactDashboard(){
           </div>
         </div>
       </Card>
-    </section>
+    </PageShell>
   )
 }

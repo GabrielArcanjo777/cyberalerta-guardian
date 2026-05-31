@@ -6,7 +6,7 @@ export default function TrustLockCard({activated,reason,message}:{activated:bool
       <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Trust Lock Console</div>
-          <div className="mt-1 text-xl font-black tracking-tight">{activated ? 'LOCKED' : 'MONITORING'}</div>
+          <div className="mt-1 text-xl font-semibold tracking-tight">{activated ? 'PAUSADO' : 'MONITORANDO'}</div>
         </div>
         <div className={`h-3 w-3 rounded-full ${activated ? 'bg-red-400 shadow-[0_0_18px_rgba(248,113,113,0.9)]' : 'bg-emerald-400'}`} />
       </div>

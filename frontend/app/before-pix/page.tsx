@@ -18,6 +18,8 @@ import MLScamIntelligenceCard from '@/components/MLScamIntelligenceCard'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
 import type {TrustedCircleAlert as TrustedCircleAlertModel} from '@/lib/types'
+import {TrustPipeline} from '@/components/AppPrimitives'
+import {OperationalTimeline, PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
 const initialMessage = 'Mae, troquei de numero. Meu celular quebrou. Preciso pagar uma conta urgente. Faz um Pix de R$ 780? Nao liga agora porque estou em reuniao.'
 
@@ -91,51 +93,32 @@ export default function BeforePix(){
   }
 
   return (
-    <section className="mx-auto max-w-7xl space-y-7 pb-14">
-      <div className="guardian-panel-dark overflow-hidden rounded-lg text-white">
-        <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="guardian-kicker">
-              Sprint 3 demo
-            </div>
-            <h1 className="mt-5 max-w-2xl text-4xl font-black tracking-tight text-white sm:text-5xl">
-              Antes do Pix
-            </h1>
-            <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-slate-300">
-              Caso principal: Dona Lucia, 72 anos. O Guardian avalia a mensagem antes da acao perigosa e bloqueia decisoes sob pressao.
-            </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
-                <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Canal</div>
-                <div className="mt-1 text-sm font-bold text-white">WhatsApp</div>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
-                <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Contato seguro</div>
-                <div className="mt-1 text-sm font-bold text-white">Gabriel</div>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
-                <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Acao</div>
-                <div className="mt-1 text-sm font-bold text-white">{humanize(action)}</div>
-              </div>
-            </div>
+    <PageShell>
+      <PageHeader
+        eyebrow="Before Pix command flow"
+        title="Antes do Pix"
+        description="Caso principal: Dona Lucia, 72 anos. O Guardian avalia a mensagem antes da acao perigosa, ativa pausa protetiva e cria uma trilha de decisao para o responsavel."
+        detail="A demo simula uma mensagem de numero novo, urgencia, pedido financeiro e isolamento da vitima sem executar Pix real."
+        aside={
+          <div className="space-y-5">
+            <StatusRail
+              items={[
+                {label:'Canal', value:'WhatsApp', tone:'neutral'},
+                {label:'Contato seguro', value:'Gabriel', tone:'ready'},
+                {label:'Acao', value:humanize(action), tone:'warn'},
+              ]}
+            />
+            <OperationalTimeline
+              items={[
+                {title:'Intent scan ready'},
+                {title:'Manipulation analysis ready'},
+                {title:'Trust Lock armed'},
+                {title:'Proof of Trust ready'},
+              ]}
+            />
           </div>
-          <div className="border-t border-white/10 bg-white/[0.04] p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">Guardian status</div>
-            <div className="mt-5 space-y-3">
-              {['Intent scan ready','Manipulation analysis ready','Trust Lock armed'].map((item)=> (
-                <div key={item} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
-                  <span className="text-sm font-semibold text-slate-200">{item}</span>
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-4">
-              <div className="text-xs font-bold uppercase tracking-wide text-cyan-200">Mode</div>
-              <div className="mt-1 text-2xl font-black tracking-tight">Before payment</div>
-            </div>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <Card className="overflow-hidden p-0">
@@ -202,15 +185,7 @@ export default function BeforePix(){
           </Card>
 
           <Card>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trust pipeline</div>
-            <div className="mt-4 space-y-3">
-              {['Detectar intencao','Pontuar risco','Bloquear decisao','Gerar prova'].map((item,index)=> (
-                <div key={item} className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-700">{index + 1}</span>
-                  <span className="text-sm font-semibold text-slate-700">{item}</span>
-                </div>
-              ))}
-            </div>
+            <TrustPipeline />
           </Card>
         </div>
       </div>
@@ -248,7 +223,7 @@ export default function BeforePix(){
 
             <div className="space-y-4">
               <Card>
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Threat classification</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Classificação de ameaça</div>
                 <div className="mt-4 grid gap-4 sm:grid-cols-3">
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
                     <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Tipo de golpe</div>
@@ -324,6 +299,6 @@ export default function BeforePix(){
           </div>
         </Card>
       )}
-    </section>
+    </PageShell>
   )
 }

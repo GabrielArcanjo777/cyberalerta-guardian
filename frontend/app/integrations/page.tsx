@@ -4,69 +4,76 @@ import React, {useEffect, useState} from 'react'
 import {getConnectorsStatus, postOCRPreview, postURLCheck} from '@/lib/api'
 import Button from '@/components/Button'
 import Card from '@/components/Card'
+import {AppCardTitle, AppSectionTitle, AppStatus} from '@/components/AppPrimitives'
+import {connectorStatusClass, connectorStatusLabel} from '@/lib/appStatus'
 import type {ConnectorResult, ConnectorStatus, OCRPreviewResponse} from '@/lib/types'
+import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
 const integrationCards = [
   {
-    title:'URL Intelligence',
-    status:'mock',
-    analyzes:'URLs suspeitas, dominio, parametros e palavras sensiveis.',
-    doesNotAnalyze:'Nao consulta Safe Browsing, VirusTotal ou urlscan.io no MVP.',
-    privacy:'Analise local/mock. Nenhum dado enviado a provedor externo.',
+    title:'Inteligência de URL',
+    status:'mock' as const,
+    tier:'mvp' as const,
+    analyzes:'URLs suspeitas, domínio, parâmetros e palavras sensíveis.',
+    doesNotAnalyze:'Não consulta Safe Browsing, VirusTotal ou urlscan.io no MVP.',
+    privacy:'Análise local/simulada. Nenhum dado enviado a provedor externo.',
     consent:'Exige URL enviada voluntariamente.',
-    availability:'Disponivel no MVP em modo mock.',
+    availability:'Disponível no MVP em modo simulado.',
   },
   {
     title:'OCR de prints',
-    status:'mock',
-    analyzes:'Texto simulado de prints enviados pelo usuario.',
-    doesNotAnalyze:'Nao envia imagens reais para Azure Vision ou outro OCR.',
+    status:'mock' as const,
+    tier:'mvp' as const,
+    analyzes:'Texto simulado de prints enviados pelo usuário.',
+    doesNotAnalyze:'Não envia imagens reais para Azure Vision ou outro OCR.',
     privacy:'Nenhuma imagem real sai do ambiente no MVP.',
-    consent:'Exige print/conteudo enviado voluntariamente.',
-    availability:'Disponivel no MVP como preview simulado.',
+    consent:'Exige print/conteúdo enviado voluntariamente.',
+    availability:'Disponível no MVP como preview simulado.',
   },
   {
-    title:'E-mail opt-in',
-    status:'future',
-    analyzes:'E-mails suspeitos encaminhados ou compartilhados com permissao.',
-    doesNotAnalyze:'Nao acessa caixa de e-mail real nem le mensagens automaticamente.',
+    title:'E-mail com consentimento',
+    status:'future' as const,
+    tier:'future' as const,
+    analyzes:'E-mails suspeitos encaminhados ou compartilhados com permissão.',
+    doesNotAnalyze:'Não acessa caixa de e-mail real nem lê mensagens automaticamente.',
     privacy:'Microsoft Graph futuro com escopos limitados e opt-in.',
-    consent:'Exige opt-in explicito.',
-    availability:'Visao futura.',
+    consent:'Exige opt-in explícito.',
+    availability:'Visão futura.',
   },
   {
-    title:'Browser extension',
-    status:'future',
-    analyzes:'URL atual e texto selecionado pelo usuario.',
-    doesNotAnalyze:'Nao coleta historico de navegacao.',
-    privacy:'Minimizacao: somente URL/texto selecionado.',
-    consent:'Exige acao manual do usuario.',
-    availability:'Visao futura.',
+    title:'Extensão do navegador',
+    status:'future' as const,
+    tier:'future' as const,
+    analyzes:'URL atual e texto selecionado pelo usuário.',
+    doesNotAnalyze:'Não coleta histórico de navegação.',
+    privacy:'Minimização: somente URL/texto selecionado.',
+    consent:'Exige ação manual do usuário.',
+    availability:'Visão futura.',
   },
   {
-    title:'WhatsApp Business opt-in',
-    status:'future',
+    title:'WhatsApp Business com consentimento',
+    status:'future' as const,
+    tier:'future' as const,
     analyzes:'Mensagens compartilhadas por fluxo opt-in.',
-    doesNotAnalyze:'Nao le WhatsApp pessoal nem monitora conversas.',
-    privacy:'Somente canal aprovado, com consentimento e transparencia.',
+    doesNotAnalyze:'Não lê WhatsApp pessoal nem monitora conversas.',
+    privacy:'Somente canal aprovado, com consentimento e transparência.',
     consent:'Exige opt-in por canal.',
-    availability:'Visao futura.',
+    availability:'Visão futura.',
   },
   {
-    title:'Family alerts',
-    status:'ready',
-    analyzes:'Alertas simulados para contato de confianca.',
-    doesNotAnalyze:'Nao envia SMS, WhatsApp ou e-mail real no MVP.',
+    title:'Alertas familiares',
+    status:'ready' as const,
+    tier:'mvp' as const,
+    analyzes:'Alertas simulados para contato de confiança.',
+    doesNotAnalyze:'Não envia SMS, WhatsApp ou e-mail real no MVP.',
     privacy:'Painel simulado sem coleta de telefone real.',
-    consent:'Acionado pelo fluxo da analise.',
-    availability:'Disponivel no MVP como simulacao.',
+    consent:'Acionado pelo fluxo da análise.',
+    availability:'Disponível no MVP como simulação.',
   },
 ]
 
-function statusClass(status:string){
-  if(status === 'ready') return 'border-emerald-200 bg-emerald-50 text-emerald-700'
-  if(status === 'future') return 'border-slate-200 bg-slate-50 text-slate-600'
-  return 'border-amber-200 bg-amber-50 text-amber-700'
+function tierLabel(tier:'mvp'|'future'){
+  return tier === 'mvp' ? 'Disponível no MVP' : 'Visão futura'
 }
 
 export default function IntegrationsPage(){
@@ -100,72 +107,96 @@ export default function IntegrationsPage(){
     setOcrLoading(false)
   }
 
-  return (
-    <section className="mx-auto max-w-7xl space-y-7 pb-14">
-      <div className="guardian-panel-dark overflow-hidden rounded-lg text-white">
-        <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="guardian-kicker">
-              Multi-channel connectors
-            </div>
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl">Integracoes e canais seguros</h1>
-            <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-slate-300">
-              O Guardian pode evoluir para multiplos canais, sempre com consentimento e privacidade por design.
-            </p>
-          </div>
-          <div className="border-t border-white/10 bg-white/[0.04] p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">MVP connector mode</div>
-            <p className="mt-4 text-2xl font-black tracking-tight">Todos os conectores rodam em mock/local por padrao.</p>
-            <p className="mt-4 text-sm leading-6 text-slate-300">
-              Nenhuma chave real, API paga, WhatsApp, e-mail ou provedor externo e chamado nesta sprint.
-            </p>
-          </div>
-        </div>
-      </div>
+  const mvpCards = integrationCards.filter((card)=>card.tier === 'mvp')
+  const futureCards = integrationCards.filter((card)=>card.tier === 'future')
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {integrationCards.map(card=> (
-          <Card key={card.title}>
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="text-lg font-black tracking-tight text-slate-950">{card.title}</h2>
-              <span className={`rounded border px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusClass(card.status)}`}>
-                {card.status}
-              </span>
-            </div>
-            <div className="mt-4 space-y-3 text-sm leading-6">
-              <p><span className="font-bold text-slate-950">Analisa: </span><span className="text-slate-600">{card.analyzes}</span></p>
-              <p><span className="font-bold text-slate-950">Nao analisa: </span><span className="text-slate-600">{card.doesNotAnalyze}</span></p>
-              <p><span className="font-bold text-slate-950">Privacidade: </span><span className="text-slate-600">{card.privacy}</span></p>
-              <p><span className="font-bold text-slate-950">Consentimento: </span><span className="text-slate-600">{card.consent}</span></p>
-            </div>
-            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600">
-              {card.availability}
-            </div>
-          </Card>
-        ))}
-      </div>
+  return (
+    <PageShell>
+      <PageHeader
+        eyebrow="Conectores multicanal"
+        title="Integrações e canais seguros"
+        description="O Guardian evolui para múltiplos canais com consentimento, minimização e privacidade por design — sempre com proteção assistida antes do dano."
+        detail="Nenhuma chave real, API paga, WhatsApp, e-mail ou provedor externo é chamado nesta demo."
+        aside={
+          <div className="space-y-5">
+            <p className="text-base font-medium leading-7 text-slate-300">
+              Todos os conectores rodam em modo simulado ou local por padrão.
+            </p>
+            <StatusRail
+              items={[
+                {label:'URL', value:'simulado', tone:'ready'},
+                {label:'OCR', value:'preview', tone:'neutral'},
+                {label:'Mensagens', value:'sem envio real', tone:'warn'},
+              ]}
+            />
+          </div>
+        }
+      />
+
+      <section>
+        <div className="app-label">Disponível no MVP</div>
+        <AppSectionTitle className="mt-1">Conectores ativos na demonstração</AppSectionTitle>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {mvpCards.map(card=> (
+            <Card key={card.title}>
+              <div className="flex items-start justify-between gap-3">
+                <AppCardTitle>{card.title}</AppCardTitle>
+                <AppStatus status={card.status} />
+              </div>
+              <div className="mt-4 space-y-2.5 app-body-text">
+                <p><span className="font-medium text-slate-200">Analisa: </span>{card.analyzes}</p>
+                <p><span className="font-medium text-slate-200">Não analisa: </span>{card.doesNotAnalyze}</p>
+                <p><span className="font-medium text-slate-200">Privacidade: </span>{card.privacy}</p>
+                <p><span className="font-medium text-slate-200">Consentimento: </span>{card.consent}</p>
+              </div>
+              <div className="app-integration-meta">{card.availability}</div>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="app-label">Visão futura</div>
+        <AppSectionTitle className="mt-1">Canais planejados com opt-in</AppSectionTitle>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {futureCards.map(card=> (
+            <Card key={card.title} className="opacity-95">
+              <div className="flex items-start justify-between gap-3">
+                <AppCardTitle>{card.title}</AppCardTitle>
+                <AppStatus status={card.status} />
+              </div>
+              <div className="mt-4 space-y-2.5 app-body-text">
+                <p><span className="font-medium text-slate-200">Analisa: </span>{card.analyzes}</p>
+                <p><span className="font-medium text-slate-200">Não analisa: </span>{card.doesNotAnalyze}</p>
+              </div>
+              <div className="app-integration-meta">{tierLabel(card.tier)}</div>
+            </Card>
+          ))}
+        </div>
+      </section>
 
       <Card>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Connector status</div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Backend adapters</h2>
+            <div className="app-label">Status dos adaptadores</div>
+            <AppSectionTitle>Adaptadores do backend</AppSectionTitle>
+            <p className="app-muted-text mt-2">Visão técnica dos provedores configurados na demo — sem expor segredos.</p>
           </div>
-          {statusMock && <span className="rounded border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sky-700">fallback mock</span>}
+          {statusMock && <span className={connectorStatusClass('mock')}>fallback simulado</span>}
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {statuses.map(connector=> (
-            <div key={connector.provider} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div key={connector.provider} className="app-card-compact">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-sm font-black text-slate-950">{connector.name}</div>
-                  <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{connector.provider}</div>
+                  <AppCardTitle className="text-sm">{connector.name}</AppCardTitle>
+                  <div className="app-muted-text mt-1 text-xs">{connector.provider}</div>
                 </div>
-                <span className={`rounded border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${statusClass(connector.mode)}`}>
-                  {connector.mode}
+                <span className={connectorStatusClass(connector.mode)}>
+                  {connectorStatusLabel(connector.mode)}
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">{connector.privacy}</p>
+              <p className="app-body-text mt-3 text-sm">{connector.privacy}</p>
             </div>
           ))}
         </div>
@@ -173,60 +204,73 @@ export default function IntegrationsPage(){
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">URL Check Demo</div>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Verificar URL suspeita</h2>
+          <div className="app-label">Demo de URL</div>
+          <AppSectionTitle>Verificar URL suspeita</AppSectionTitle>
           <div className="mt-5 space-y-4">
             <input
               value={url}
               onChange={event=>setUrl(event.target.value)}
-              className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm font-semibold text-slate-800 shadow-sm"
+              className="app-input"
             />
             <Button onClick={onURLCheck} disabled={urlLoading} className="h-12 w-full">
               {urlLoading ? 'Verificando...' : 'Verificar URL'}
             </Button>
             {urlResult && (
               <div className="space-y-3">
-                {urlResult.__mock && <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm font-semibold text-sky-800">Modo demonstracao: usando fallback local.</p>}
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Sinais de risco</div>
+                {urlResult.__mock && (
+                  <p className="app-action-panel text-sm font-medium text-cyan-100">
+                    Modo demonstração: usando fallback local.
+                  </p>
+                )}
+                <div className="app-action-panel">
+                  <div className="app-label">Sinais de risco</div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {urlResult.risk_signals.map(signal=> (
-                      <span key={signal} className="rounded border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{signal}</span>
+                      <span key={signal} className="app-badge">{signal}</span>
                     ))}
                   </div>
                 </div>
-                <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold leading-6 text-slate-700">{urlResult.privacy_note}</p>
+                <div className="app-callout">
+                  <p className="app-callout-body">{urlResult.privacy_note}</p>
+                </div>
               </div>
             )}
           </div>
         </Card>
 
         <Card>
-          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">OCR de print suspeito</div>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Simular OCR</h2>
+          <div className="app-label">OCR de print suspeito</div>
+          <AppSectionTitle>Simular OCR</AppSectionTitle>
+          <p className="app-muted-text mt-2">Extrai texto de forma simulada para revisão defensiva — sem envio de imagem real.</p>
           <div className="mt-5 space-y-4">
             <textarea
               value={ocrContent}
               onChange={event=>setOcrContent(event.target.value)}
               rows={5}
-              className="w-full rounded-lg border border-slate-200 p-4 text-sm leading-6 text-slate-800 shadow-sm"
+              className="app-input app-textarea"
             />
             <Button onClick={onOCRPreview} disabled={ocrLoading} className="h-12 w-full">
               {ocrLoading ? 'Simulando...' : 'Simular OCR'}
             </Button>
             {ocrResult && (
               <div className="space-y-3">
-                {ocrResult.__mock && <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm font-semibold text-sky-800">Modo demonstracao: usando fallback local.</p>}
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Texto extraido simulado</div>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{ocrResult.extracted_text}</p>
+                {ocrResult.__mock && (
+                  <p className="app-action-panel text-sm font-medium text-cyan-100">
+                    Modo demonstração: usando fallback local.
+                  </p>
+                )}
+                <div className="app-action-panel">
+                  <div className="app-label">Texto extraído (simulado)</div>
+                  <p className="app-body-text mt-2 whitespace-pre-wrap">{ocrResult.extracted_text}</p>
                 </div>
-                <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold leading-6 text-slate-700">{ocrResult.privacy_note}</p>
+                <div className="app-callout">
+                  <p className="app-callout-body">{ocrResult.privacy_note}</p>
+                </div>
               </div>
             )}
           </div>
         </Card>
       </div>
-    </section>
+    </PageShell>
   )
 }

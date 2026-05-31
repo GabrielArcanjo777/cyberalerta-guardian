@@ -25,17 +25,19 @@ export default function Shield3DScene(){
     const container = mount
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const motionScale = reducedMotion ? 0.18 : 1
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100)
     camera.position.set(0, 0.4, 6.2)
 
-    const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true})
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8))
+    const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:'high-performance'})
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
     renderer.setClearColor(0x000000, 0)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.domElement.style.display = 'block'
     renderer.domElement.style.width = '100%'
     renderer.domElement.style.height = '100%'
+    renderer.domElement.style.pointerEvents = 'none'
     container.appendChild(renderer.domElement)
 
     const group = new THREE.Group()
@@ -53,32 +55,32 @@ export default function Shield3DScene(){
       bevelEnabled: true,
       bevelThickness: 0.045,
       bevelSize: 0.045,
-      bevelSegments: 4,
+      bevelSegments: 2,
     })
     shieldGeometry.center()
 
-    const shield = new THREE.Mesh(
-      shieldGeometry,
-      new THREE.MeshStandardMaterial({
+    const shieldMaterial = new THREE.MeshStandardMaterial({
         color: 0x1d4ed8,
         emissive: 0x0f2a44,
         roughness: 0.35,
         metalness: 0.34,
       })
-    )
+    const shield = new THREE.Mesh(shieldGeometry, shieldMaterial)
     shield.rotation.x = -0.08
     group.add(shield)
 
+    const edgeMaterial = new THREE.LineBasicMaterial({color: 0x7dd3fc, transparent:true, opacity:0.62})
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(shieldGeometry),
-      new THREE.LineBasicMaterial({color: 0x7dd3fc, transparent:true, opacity:0.52})
+      edgeMaterial
     )
     edges.rotation.copy(shield.rotation)
     group.add(edges)
 
+    const coreMaterial = new THREE.MeshBasicMaterial({color:0x22c55e, transparent:true, opacity:0.9})
     const core = new THREE.Mesh(
-      new THREE.TorusGeometry(0.78, 0.018, 12, 96),
-      new THREE.MeshBasicMaterial({color:0x22c55e, transparent:true, opacity:0.82})
+      new THREE.TorusGeometry(0.78, 0.018, 10, 72),
+      coreMaterial
     )
     core.position.z = 0.2
     group.add(core)
@@ -90,24 +92,27 @@ export default function Shield3DScene(){
     innerCore.position.z = 0.23
     group.add(innerCore)
 
+    const haloMaterial = new THREE.MeshBasicMaterial({color:0x3b82f6, transparent:true, opacity:0.34})
     const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(1.68, 0.012, 12, 128),
-      new THREE.MeshBasicMaterial({color:0x3b82f6, transparent:true, opacity:0.28})
+      new THREE.TorusGeometry(1.68, 0.012, 10, 96),
+      haloMaterial
     )
     halo.rotation.x = Math.PI / 2.45
     group.add(halo)
 
+    const orbitMaterial = new THREE.MeshBasicMaterial({color:0x7dd3fc, transparent:true, opacity:0.24})
     const orbitRing = new THREE.Mesh(
-      new THREE.TorusGeometry(2.04, 0.01, 12, 160),
-      new THREE.MeshBasicMaterial({color:0x7dd3fc, transparent:true, opacity:0.18})
+      new THREE.TorusGeometry(2.04, 0.01, 10, 112),
+      orbitMaterial
     )
     orbitRing.rotation.x = Math.PI / 2.9
     orbitRing.rotation.y = 0.42
     group.add(orbitRing)
 
+    const trustMaterial = new THREE.MeshBasicMaterial({color:0x22c55e, transparent:true, opacity:0.34})
     const trustRing = new THREE.Mesh(
-      new THREE.TorusGeometry(1.18, 0.01, 12, 128),
-      new THREE.MeshBasicMaterial({color:0x22c55e, transparent:true, opacity:0.28})
+      new THREE.TorusGeometry(1.18, 0.01, 10, 88),
+      trustMaterial
     )
     trustRing.rotation.x = Math.PI / 2.2
     trustRing.rotation.y = -0.35
@@ -115,7 +120,7 @@ export default function Shield3DScene(){
 
     const pointsGeometry = new THREE.BufferGeometry()
     const pointPositions:number[] = []
-    for(let i = 0; i < 80; i += 1){
+    for(let i = 0; i < 52; i += 1){
       const radius = 2.15 + Math.random() * 0.6
       const angle = Math.random() * Math.PI * 2
       const height = (Math.random() - 0.5) * 2.8
@@ -124,7 +129,7 @@ export default function Shield3DScene(){
     pointsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pointPositions, 3))
     const points = new THREE.Points(
       pointsGeometry,
-      new THREE.PointsMaterial({color:0x94a3b8, size:0.025, transparent:true, opacity:0.48})
+      new THREE.PointsMaterial({color:0x94a3b8, size:0.026, transparent:true, opacity:0.42})
     )
     group.add(points)
 
@@ -162,18 +167,28 @@ export default function Shield3DScene(){
     function animate(){
       if(disposed) return
       const elapsed = (performance.now() - startedAt) / 1000
-      if(!reducedMotion){
-        group.rotation.y = elapsed * 0.18 + pointer.x * 0.07
-        group.rotation.x = Math.sin(elapsed * 0.45) * 0.055 - pointer.y * 0.04
-        group.position.y = Math.sin(elapsed * 0.55) * 0.055
-        core.rotation.z = elapsed * 0.45
-        halo.rotation.z = elapsed * 0.16
-        orbitRing.rotation.z = -elapsed * 0.11
-        trustRing.rotation.z = elapsed * 0.24
-        innerCore.rotation.y = elapsed * 0.5
-        points.rotation.y = -elapsed * 0.045
-        ;(points.material as THREE.PointsMaterial).opacity = 0.36 + (Math.sin(elapsed * 0.8) + 1) * 0.08
-      }
+      const activeTime = elapsed * motionScale
+      group.rotation.y = activeTime * 0.34 + pointer.x * 0.08
+      group.rotation.x = Math.sin(activeTime * 0.72) * 0.075 - pointer.y * 0.045
+      group.position.y = Math.sin(activeTime * 0.75) * 0.075
+      shield.rotation.y = Math.sin(activeTime * 0.7) * 0.06
+      shield.scale.setScalar(1 + Math.sin(activeTime * 1.1) * 0.012)
+      edges.rotation.copy(shield.rotation)
+      edges.scale.copy(shield.scale)
+      core.rotation.z = activeTime * 0.82
+      core.scale.setScalar(1 + (Math.sin(activeTime * 1.35) + 1) * 0.018)
+      halo.rotation.z = activeTime * 0.3
+      orbitRing.rotation.z = -activeTime * 0.22
+      trustRing.rotation.z = activeTime * 0.42
+      innerCore.rotation.y = activeTime * 0.88
+      innerCore.rotation.x = Math.sin(activeTime * 0.65) * 0.12
+      points.rotation.y = -activeTime * 0.09
+      edgeMaterial.opacity = 0.46 + (Math.sin(activeTime * 1.05) + 1) * 0.11
+      coreMaterial.opacity = 0.68 + (Math.sin(activeTime * 1.24) + 1) * 0.14
+      haloMaterial.opacity = 0.2 + (Math.sin(activeTime * 0.88) + 1) * 0.12
+      orbitMaterial.opacity = 0.14 + (Math.sin(activeTime * 0.74 + 1) + 1) * 0.08
+      trustMaterial.opacity = 0.22 + (Math.sin(activeTime * 1.05 + 2) + 1) * 0.09
+      ;(points.material as THREE.PointsMaterial).opacity = 0.36 + (Math.sin(activeTime * 1.05) + 1) * 0.11
       renderer.render(scene, camera)
       frameId = window.requestAnimationFrame(animate)
     }
@@ -222,13 +237,13 @@ export default function Shield3DScene(){
   }
 
   return (
-    <div className="guardian-panel-dark relative min-h-[360px] overflow-hidden rounded-lg" aria-label="Guardian defensive shield visualization">
-      <div ref={mountRef} className="absolute inset-0" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(2,6,23,0.36)_74%,rgba(2,6,23,0.72)_100%)]" />
-      <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-lg border border-white/10 bg-slate-950/72 p-4 backdrop-blur">
-        <div className="text-xs font-bold uppercase text-cyan-200">Núcleo Guardian</div>
-        <p className="mt-2 text-sm font-semibold leading-6 text-slate-200">
-          Identidade protetiva, revisão de confiança e pausa antes do dano.
+    <div className="guardian-shield-stage relative min-h-[360px] overflow-hidden rounded-lg" aria-label="Guardian defensive shield visualization">
+      <div ref={mountRef} className="pointer-events-none absolute inset-0 z-[1]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_52%_36%,rgba(56,189,248,0.13),transparent_32%),linear-gradient(180deg,transparent_0%,rgba(2,6,23,0.2)_74%,rgba(2,6,23,0.58)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-4 bottom-4 z-[3] rounded-md border border-cyan-300/15 bg-slate-950/76 p-4 shadow-[0_18px_44px_rgba(2,6,23,0.35)] backdrop-blur">
+        <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-200">Guardian core</div>
+        <p className="mt-2 text-sm font-medium leading-6 text-slate-200">
+          Camada defensiva para pausar, explicar e encaminhar risco antes do dano.
         </p>
       </div>
     </div>

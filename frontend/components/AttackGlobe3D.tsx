@@ -30,14 +30,14 @@ const colors:Record<ArcTone, number> = {
 }
 
 const regions:Region[] = [
-  {label:'Brazil protected hub', lat:-15.8, lon:-47.9},
-  {label:'North America', lat:39, lon:-98},
-  {label:'Western Europe', lat:50, lon:8},
-  {label:'West Africa', lat:8, lon:2},
-  {label:'India', lat:21, lon:78},
-  {label:'Southeast Asia', lat:13, lon:101},
-  {label:'Australia', lat:-25, lon:133},
-  {label:'Middle East', lat:25, lon:45},
+  {label:'Hub Brasil (protegido)', lat:-15.8, lon:-47.9},
+  {label:'América do Norte', lat:39, lon:-98},
+  {label:'Europa Ocidental', lat:50, lon:8},
+  {label:'África Ocidental', lat:8, lon:2},
+  {label:'Índia', lat:21, lon:78},
+  {label:'Sudeste Asiático', lat:13, lon:101},
+  {label:'Austrália', lat:-25, lon:133},
+  {label:'Oriente Médio', lat:25, lon:45},
 ]
 
 const hub = regions[0]
@@ -52,9 +52,6 @@ const arcs:Arc[] = [
   {from:regions[7], to:hub, tone:'threat'},
   {from:regions[2], to:regions[4], tone:'monitoring'},
   {from:regions[1], to:regions[5], tone:'threat'},
-  {from:regions[3], to:regions[2], tone:'protected'},
-  {from:regions[4], to:regions[7], tone:'monitoring'},
-  {from:regions[6], to:regions[1], tone:'protected'},
 ]
 
 function supportsWebGL(){
@@ -78,8 +75,8 @@ function latLonToVector3(lat:number, lon:number, radius:number){
 
 function makeCircleLine(radius:number, color:number, opacity:number){
   const points:THREE.Vector3[] = []
-  for(let i = 0; i <= 128; i += 1){
-    const angle = (i / 128) * Math.PI * 2
+  for(let i = 0; i <= 96; i += 1){
+    const angle = (i / 96) * Math.PI * 2
     points.push(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius))
   }
   return new THREE.Line(
@@ -94,12 +91,12 @@ function makeArcVisual(arc:Arc, radius:number):ArcVisual{
   const midpoint = start.clone().add(end).normalize().multiplyScalar(radius * 1.52)
   const curve = new THREE.QuadraticBezierCurve3(start, midpoint, end)
   const line = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(curve.getPoints(52)),
-    new THREE.LineBasicMaterial({color:colors[arc.tone], transparent:true, opacity:0.78})
+    new THREE.BufferGeometry().setFromPoints(curve.getPoints(38)),
+    new THREE.LineBasicMaterial({color:colors[arc.tone], transparent:true, opacity:0.88})
   )
   line.userData.tone = arc.tone
   const pulse = new THREE.Mesh(
-    new THREE.SphereGeometry(0.032, 14, 14),
+    new THREE.SphereGeometry(0.032, 10, 10),
     new THREE.MeshBasicMaterial({color:colors[arc.tone], transparent:true, opacity:0.88})
   )
   pulse.userData.tone = arc.tone
@@ -119,17 +116,19 @@ export default function AttackGlobe3D(){
     const container = mount
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const motionScale = reducedMotion ? 0.2 : 1
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100)
-    camera.position.set(0, 0.25, 6.6)
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100)
+    camera.position.set(0, 0.12, 7.35)
 
-    const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true})
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8))
+    const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:'high-performance'})
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
     renderer.setClearColor(0x000000, 0)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.domElement.style.display = 'block'
     renderer.domElement.style.width = '100%'
     renderer.domElement.style.height = '100%'
+    renderer.domElement.style.pointerEvents = 'none'
     container.appendChild(renderer.domElement)
 
     const root = new THREE.Group()
@@ -137,9 +136,9 @@ export default function AttackGlobe3D(){
     const globeGroup = new THREE.Group()
     root.add(globeGroup)
 
-    const globeRadius = 1.92
+    const globeRadius = 1.68
     const globe = new THREE.Mesh(
-      new THREE.SphereGeometry(globeRadius, 64, 64),
+      new THREE.SphereGeometry(globeRadius, 48, 48),
       new THREE.MeshStandardMaterial({
         color:0x1e3a5f,
         emissive:0x10233b,
@@ -152,7 +151,7 @@ export default function AttackGlobe3D(){
     globeGroup.add(globe)
 
     const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(globeRadius * 1.045, 64, 64),
+      new THREE.SphereGeometry(globeRadius * 1.045, 48, 48),
       new THREE.MeshBasicMaterial({
         color:0x38bdf8,
         transparent:true,
@@ -191,7 +190,7 @@ export default function AttackGlobe3D(){
       const point = latLonToVector3(region.lat, region.lon, globeRadius + 0.07)
       const isHub = index === 0
       const node = new THREE.Mesh(
-        new THREE.SphereGeometry(isHub ? 0.065 : 0.042, 18, 18),
+        new THREE.SphereGeometry(isHub ? 0.065 : 0.042, 12, 12),
         new THREE.MeshBasicMaterial({
           color:isHub ? 0x22c55e : 0x93c5fd,
           transparent:true,
@@ -206,7 +205,7 @@ export default function AttackGlobe3D(){
 
     const starsGeometry = new THREE.BufferGeometry()
     const starPositions:number[] = []
-    for(let i = 0; i < 140; i += 1){
+    for(let i = 0; i < 84; i += 1){
       const radius = 3.2 + Math.random() * 1.8
       const theta = Math.random() * Math.PI * 2
       const phi = Math.acos((Math.random() * 2) - 1)
@@ -219,7 +218,7 @@ export default function AttackGlobe3D(){
     starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3))
     const stars = new THREE.Points(
       starsGeometry,
-      new THREE.PointsMaterial({color:0x94a3b8, size:0.018, transparent:true, opacity:0.32})
+      new THREE.PointsMaterial({color:0x94a3b8, size:0.02, transparent:true, opacity:0.42})
     )
     root.add(stars)
 
@@ -257,26 +256,35 @@ export default function AttackGlobe3D(){
     function animate(){
       if(disposed) return
       const elapsed = (performance.now() - startedAt) / 1000
-      if(!reducedMotion){
-        root.rotation.x += (((-pointer.y * 0.045) - root.rotation.x) * 0.035)
-        root.rotation.y += (((pointer.x * 0.06) - root.rotation.y) * 0.035)
-        globeGroup.rotation.y = elapsed * 0.115
-        globeGroup.rotation.x = Math.sin(elapsed * 0.22) * 0.025
-        stars.rotation.y = elapsed * 0.025
-        atmosphere.scale.setScalar(1 + (Math.sin(elapsed * 0.8) + 1) * 0.01)
-        arcVisuals.forEach((visual, index)=>{
-          const material = visual.line.material as THREE.LineBasicMaterial
-          material.opacity = 0.32 + (Math.sin(elapsed * 1.25 + index * 0.7) + 1) * 0.25
-          const point = visual.curve.getPoint((elapsed * 0.135 + index * 0.086) % 1)
-          visual.pulse.position.copy(point)
-          const pulseMaterial = visual.pulse.material as THREE.MeshBasicMaterial
-          pulseMaterial.opacity = 0.56 + (Math.sin(elapsed * 1.6 + index) + 1) * 0.16
-        })
-        nodeMeshes.forEach((node, index)=>{
-          const pulse = 1 + (Math.sin(elapsed * 1.5 + index) + 1) * (node.userData.isHub ? 0.12 : 0.08)
-          node.scale.setScalar(pulse)
-        })
-      }
+      const activeTime = elapsed * motionScale
+      root.rotation.x += (((-pointer.y * 0.055) - root.rotation.x) * 0.045)
+      root.rotation.y += (((pointer.x * 0.075) - root.rotation.y) * 0.045)
+      globeGroup.rotation.y = activeTime * 0.24
+      globeGroup.rotation.x = Math.sin(activeTime * 0.34) * 0.04
+      stars.rotation.y = activeTime * 0.055
+      stars.rotation.x = Math.sin(activeTime * 0.18) * 0.02
+      atmosphere.scale.setScalar(1 + (Math.sin(activeTime * 1.05) + 1) * 0.016)
+      ;(atmosphere.material as THREE.MeshBasicMaterial).opacity = 0.075 + (Math.sin(activeTime * 0.9) + 1) * 0.025
+      gridLines.forEach((line,index)=>{
+        ;(line.material as THREE.LineBasicMaterial).opacity = 0.18 + (Math.sin(activeTime * 0.55 + index * 0.3) + 1) * 0.065
+      })
+      arcVisuals.forEach((visual, index)=>{
+        const material = visual.line.material as THREE.LineBasicMaterial
+        material.opacity = 0.36 + (Math.sin(activeTime * 1.6 + index * 0.7) + 1) * 0.29
+        const progress = (activeTime * (0.23 + (index % 4) * 0.022) + index * 0.086) % 1
+        const point = visual.curve.getPoint(progress)
+        visual.pulse.position.copy(point)
+        const pulseMaterial = visual.pulse.material as THREE.MeshBasicMaterial
+        pulseMaterial.opacity = 0.58 + (Math.sin(activeTime * 2.1 + index) + 1) * 0.17
+        visual.pulse.scale.setScalar(1 + (Math.sin(activeTime * 2.4 + index) + 1) * 0.22)
+      })
+      nodeMeshes.forEach((node, index)=>{
+        const pulse = 1 + (Math.sin(activeTime * 1.9 + index) + 1) * (node.userData.isHub ? 0.16 : 0.1)
+        node.scale.setScalar(pulse)
+        ;(node.material as THREE.MeshBasicMaterial).opacity = node.userData.isHub
+          ? 0.84 + (Math.sin(activeTime * 1.7) + 1) * 0.08
+          : 0.68 + (Math.sin(activeTime * 1.4 + index) + 1) * 0.12
+      })
       renderer.render(scene, camera)
       frameId = window.requestAnimationFrame(animate)
     }
@@ -317,11 +325,11 @@ export default function AttackGlobe3D(){
   },[])
 
   return (
-    <section className="guardian-panel-dark overflow-hidden rounded-lg text-white">
-      <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative min-h-[380px] sm:min-h-[500px]">
+    <section className="guardian-globe-stage overflow-hidden rounded-lg text-white">
+      <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
+        <div className="guardian-globe-canvas-wrap relative">
           {fallback ? (
-            <div className="flex h-full min-h-[380px] items-center justify-center bg-slate-900 p-8 text-center">
+            <div className="flex h-full min-h-[280px] items-center justify-center bg-slate-900 p-8 text-center">
               <div>
                 <div className="text-xs font-bold uppercase text-blue-200">Radar global</div>
                 <p className="mt-3 text-2xl font-black text-white">WebGL indisponivel</p>
@@ -332,20 +340,33 @@ export default function AttackGlobe3D(){
             </div>
           ) : (
             <>
-              <div ref={mountRef} className="absolute inset-0" aria-hidden="true" />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.06),rgba(2,6,23,0.3)_76%,rgba(2,6,23,0.64))]" />
+              <div ref={mountRef} className="pointer-events-none absolute inset-0 z-[1]" aria-hidden="true" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_43%,rgba(14,165,233,0.12),transparent_38%),linear-gradient(180deg,rgba(2,6,23,0.01),rgba(2,6,23,0.18)_70%,rgba(2,6,23,0.5))]" />
             </>
           )}
         </div>
-        <div className="border-t border-white/10 p-6 sm:p-8 lg:border-l lg:border-t-0">
-          <div className="text-xs font-bold uppercase text-blue-200">Radar global simulado</div>
-          <h2 className="mt-4 text-3xl font-black text-white">
-            Visibilidade global de pressões de fraude, vista pela camada Guardian.
+        <div className="border-t border-white/10 bg-slate-950/42 p-5 sm:p-6 lg:border-l lg:border-t-0 lg:p-7">
+          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-200">Módulo de visibilidade de ameaças</div>
+          <h2 className="mt-3 text-xl font-semibold leading-tight text-white sm:text-2xl">
+            Pressões de fraude simuladas na camada Guardian — antes do dano.
           </h2>
-          <p className="mt-4 text-sm font-semibold leading-6 text-slate-300">
+          <p className="mt-3 text-sm font-medium leading-6 text-slate-300">
             Visualização simulada — não é um feed real de ataques.
           </p>
-          <div className="mt-6 grid gap-3">
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            {[
+              {label:'Padrões no radar', value:'24'},
+              {label:'Pressões (sim)', value:'18'},
+              {label:'Regiões', value:'6'},
+              {label:'Pausas (demo)', value:'7'},
+            ].map((metric)=> (
+              <div key={metric.label} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2.5">
+                <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{metric.label}</div>
+                <div className="mt-1 text-xl font-semibold text-white">{metric.value}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-3">
             <LegendItem color="bg-red-500" label="Tentativas de risco" detail="Pressão por pagamento, credencial, identidade ou acesso remoto." />
             <LegendItem color="bg-emerald-500" label="Ações pausadas" detail="Trust Lock ou orientação do contato de confiança interrompeu o risco." />
             <LegendItem color="bg-blue-500" label="Monitoramento simulado" detail="Revisão defensiva sem alegar inteligência real ao vivo." />
@@ -358,10 +379,10 @@ export default function AttackGlobe3D(){
 
 function LegendItem({color, label, detail}:{color:string, label:string, detail:string}){
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+    <div className="rounded-md border border-white/10 bg-white/[0.035] p-4">
       <div className="flex items-center gap-3">
         <span className={`h-3 w-3 rounded-full ${color}`} />
-        <span className="text-sm font-black text-white">{label}</span>
+        <span className="text-sm font-semibold text-white">{label}</span>
       </div>
       <p className="mt-2 text-sm leading-6 text-slate-300">{detail}</p>
     </div>

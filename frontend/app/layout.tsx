@@ -17,7 +17,7 @@ export default function RootLayout({children}:{children:React.ReactNode}){
           <GlobalAmbientBackground />
           <a
             href="#conteudo-principal"
-            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-slate-950 focus:shadow-lg focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-slate-950"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[120] focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-slate-950 focus:shadow-lg focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-slate-950"
           >
             Pular para o conteudo principal
           </a>
@@ -26,7 +26,7 @@ export default function RootLayout({children}:{children:React.ReactNode}){
           </div>
           <div className="guardian-content-shell mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
             <Header />
-            <main id="conteudo-principal" className="mb-14 mt-8" tabIndex={-1}>{children}</main>
+            <main id="conteudo-principal" className="relative z-10 mb-14 mt-8" tabIndex={-1}>{children}</main>
           </div>
         </div>
       </body>

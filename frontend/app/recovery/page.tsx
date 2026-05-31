@@ -38,10 +38,10 @@ export default function Recovery(){
   }
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6 pb-12">
-      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-8">
+    <section className="guardian-product-page mx-auto max-w-6xl space-y-6 pb-12">
+      <div className="guardian-page-header p-6 sm:p-8">
         <div className="max-w-3xl">
-          <div className="inline-flex rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-600">
+          <div className="guardian-kicker">
             Sprint 6
           </div>
           <h1 className="mt-5 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Ja cai em um golpe</h1>

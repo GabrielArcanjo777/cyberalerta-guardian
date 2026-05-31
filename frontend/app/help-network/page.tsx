@@ -6,11 +6,11 @@ import {alertTemplates, helpAudiences, helpPlaybooks} from '@/lib/helpPlaybooks'
 
 export default function HelpNetworkPage(){
   return (
-    <section className="mx-auto max-w-6xl space-y-6 pb-12">
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.07)]">
+    <section className="guardian-product-page mx-auto max-w-6xl space-y-6 pb-12">
+      <div className="guardian-page-header overflow-hidden">
         <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
           <div className="p-6 sm:p-8 lg:p-10">
-            <div className="inline-flex rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-600">
+            <div className="guardian-kicker">
               Help Network Mode
             </div>
             <h1 className="mt-5 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Rede de Ajuda Guardian</h1>
@@ -22,7 +22,7 @@ export default function HelpNetworkPage(){
               <Link href="/family-console"><Button variant="ghost" className="h-12 w-full sm:w-auto">Family Console</Button></Link>
             </div>
           </div>
-          <div className="border-t border-slate-200 bg-slate-950 p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
+          <div className="border-t border-white/10 bg-white/[0.04] p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
             <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">MVP seguro</div>
             <p className="mt-4 text-2xl font-black tracking-tight">
               Esta versão não envia alertas reais. Ela gera orientações e mensagens sugeridas.
