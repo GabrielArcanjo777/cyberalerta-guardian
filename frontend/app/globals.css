@@ -1146,6 +1146,12 @@ html.guardian-high-contrast :focus-visible {
   color: #bae6fd;
 }
 
+.app-badge-warn {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(120, 53, 15, 0.35);
+  color: #fde68a;
+}
+
 .app-status {
   display: inline-flex;
   align-items: center;

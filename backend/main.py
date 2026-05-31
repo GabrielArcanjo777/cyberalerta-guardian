@@ -19,6 +19,13 @@ from app.guardian_console.admin_case_models import (
 )
 from app.guardian_console.admin_case_service import AdminCaseService
 from app.protected_response.response_service import ProtectedPersonResponseService
+from app.trusted_circle.trusted_circle_models import (
+    TrustedCircleEscalateRequest,
+    TrustedCircleEscalateResponse,
+    TrustedCircleEscalationRecord,
+    TrustedCircleStatusResponse,
+)
+from app.trusted_circle.trusted_circle_service import TrustedCircleService
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.schemas.recovery import RecoveryRequest, RecoveryResponse
 from app.schemas.report import ReportRequest, ReportResponse
@@ -30,6 +37,7 @@ orchestrator = GuardianOrchestrator()
 simple_channel_service = SimpleChannelService()
 protected_person_response_service = ProtectedPersonResponseService()
 admin_case_service = AdminCaseService()
+trusted_circle_service = TrustedCircleService()
 
 @app.get("/health")
 def health():
@@ -97,3 +105,18 @@ def guardian_console_case_status(case_id: str, payload: AdminCaseStatusUpdateReq
 @app.post("/guardian-console/cases/from-channel", response_model=AdminCase)
 def guardian_console_case_from_channel(payload: AdminCaseFromChannelRequest):
     return admin_case_service.create_from_channel(payload)
+
+
+@app.get("/trusted-circle/status", response_model=TrustedCircleStatusResponse)
+def trusted_circle_status():
+    return trusted_circle_service.get_status()
+
+
+@app.post("/trusted-circle/escalate", response_model=TrustedCircleEscalateResponse)
+def trusted_circle_escalate(payload: TrustedCircleEscalateRequest):
+    return trusted_circle_service.escalate(payload)
+
+
+@app.get("/trusted-circle/escalations/{escalation_id}", response_model=TrustedCircleEscalationRecord)
+def trusted_circle_escalation_detail(escalation_id: str):
+    return trusted_circle_service.get_escalation(escalation_id)

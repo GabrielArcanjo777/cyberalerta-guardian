@@ -215,15 +215,25 @@ export default function AssistedProtectionDemo(){
         </Card>
       </DemoStep>
 
-      <DemoStep order={6} id="step-trusted-circle" title="Trusted Circle">
+      <DemoStep order={6} id="step-trusted-circle" title="Círculo de confiança">
         <Card className="border-amber-400/25">
-          <div className="app-label text-amber-200/90">Acionamento simulado</div>
+          <div className="app-label text-amber-200/90">Escalonamento simulado</div>
           <p className="mt-3 text-lg font-semibold text-white">{meta.trustedCircleNote}</p>
+          <div className="mt-4 app-action-panel border-amber-400/15">
+            <div className="app-label">Mensagem sugerida</div>
+            <p className="mt-2 text-sm font-medium text-amber-50">
+              {meta.protectedPerson} recebeu uma mensagem com pedido de Pix urgente. Verifique antes de qualquer
+              transferência.
+            </p>
+          </div>
           <p className="app-muted-text mt-3">{meta.trustedCircleDisclaimer}</p>
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-amber-200/80">
+            Nenhuma notificação real foi enviada no MVP
+          </p>
           <div className="mt-4 app-action-panel">
             <p className="text-sm text-slate-300">
-              O responsável <strong className="text-white">{meta.guardian}</strong> veria contexto suficiente para ligar ou
-              confirmar por canal salvo — sem expor a pessoa protegida a um dashboard complexo.
+              O responsável <strong className="text-white">{meta.guardian}</strong> opera o Guardian Console — a pessoa
+              protegida não usa painel complexo.
             </p>
           </div>
         </Card>

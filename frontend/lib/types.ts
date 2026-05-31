@@ -84,6 +84,51 @@ export type AdminCaseListResponse = {
   __mock?: boolean
 }
 
+export type TrustedCircleEscalatePayload = {
+  case_id: string
+  risk_level: string
+  protected_person_alias: string
+  trusted_contacts: string[]
+  reason: string
+}
+
+export type TrustedCircleEscalateResponse = {
+  escalation_id: string
+  status: 'simulated_notified' | 'review_suggested' | 'not_escalated'
+  message_to_guardian: string
+  trusted_contacts: string[]
+  proof_of_trust_recommended: boolean
+  sent_real_notification: boolean
+  demo_note: string
+  case_id?: string
+  risk_level?: string
+  escalation_recommended?: boolean
+  __mock?: boolean
+}
+
+export type TrustedCircleStatusResponse = {
+  service: string
+  mode: string
+  real_notifications_enabled: boolean
+  escalation_count: number
+  demo_note: string
+  __mock?: boolean
+}
+
+export type TrustedCircleEscalationRecord = {
+  escalation_id: string
+  case_id: string
+  risk_level: string
+  protected_person_alias: string
+  trusted_contacts: string[]
+  reason: string
+  status: TrustedCircleEscalateResponse['status']
+  message_to_guardian: string
+  proof_of_trust_recommended: boolean
+  sent_real_notification: boolean
+  created_at: string
+}
+
 export type SimpleChannelStatusResponse = {
   service: string
   mode: string

@@ -11,6 +11,7 @@ import {
   getGuardianConsoleStatus,
   patchGuardianCaseStatus,
 } from '@/lib/api'
+import TrustedCircleEscalationPanel from '@/components/TrustedCircleEscalationPanel'
 import type {AdminCase, AdminCaseStatus, GuardianConsoleStatusResponse} from '@/lib/types'
 
 const statusLabels: Record<AdminCaseStatus, string> = {
@@ -218,6 +219,14 @@ export default function GuardianAdminConsole(){
                 </div>
               </Card>
 
+              <TrustedCircleEscalationPanel
+                caseItem={selected}
+                onCaseUpdated={updated=>{
+                  setCases(prev=>prev.map(item=>item.case_id === updated.case_id ? updated : item))
+                  setSelected(updated)
+                }}
+              />
+
               <Card>
                 <div className="app-label">Trilha da decisão</div>
                 <ol className="guardian-operational-timeline mt-4">
@@ -272,8 +281,12 @@ export default function GuardianAdminConsole(){
                   <p className="mt-2 text-sm text-slate-200">{selected.trust_lock_status}</p>
                 </Card>
                 <Card className="!p-4">
-                  <div className="app-label">Trusted Circle</div>
-                  <p className="mt-2 text-sm text-slate-200">{selected.trusted_circle_status}</p>
+                  <div className="app-label">Círculo de confiança</div>
+                  <p className="mt-2 text-sm text-slate-200">
+                    {selected.trusted_circle_status === 'simulated_notified'
+                      ? 'Escalonamento simulado'
+                      : selected.trusted_circle_status}
+                  </p>
                 </Card>
                 <Card className="!p-4">
                   <div className="app-label">Recovery</div>

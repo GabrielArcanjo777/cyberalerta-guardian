@@ -12,6 +12,10 @@ import {
   SimpleChannelStatusResponse,
   SimpleChannelSubmitPayload,
   SimpleChannelSubmitResponse,
+  TrustedCircleEscalatePayload,
+  TrustedCircleEscalateResponse,
+  TrustedCircleEscalationRecord,
+  TrustedCircleStatusResponse,
 } from './types'
 import { createMockOCRPreview, createMockURLCheck, mockConnectorStatuses } from './connectorMockData'
 import {
@@ -337,6 +341,115 @@ export async function patchGuardianCaseStatus(caseId:string, status:AdminCaseSta
     const found = mockGuardianCases.find(item=>item.case_id === caseId)
     if(!found) throw new Error('not-found')
     return {...found, status, __mock: true}
+  }
+}
+
+function normalizeRiskLevel(riskLevel:string){
+  return (riskLevel || '').trim().toLowerCase()
+}
+
+export function escalationRecommendedForRisk(riskLevel:string){
+  const key = normalizeRiskLevel(riskLevel)
+  return key === 'alto' || key === 'critico' || key === 'crítico' || key.includes('crit')
+}
+
+function mockTrustedCircleEscalate(
+  payload: TrustedCircleEscalatePayload,
+): TrustedCircleEscalateResponse {
+  const key = normalizeRiskLevel(payload.risk_level)
+  const escalationId = `esc-mock-${Date.now().toString(36)}`
+  const contacts = payload.trusted_contacts.length ? payload.trusted_contacts : ['Gabriel']
+  const message = `${payload.protected_person_alias} recebeu uma mensagem com sinais de risco (${payload.reason}). Verifique antes de qualquer transferência.`
+
+  if(key === 'baixo'){
+    return {
+      escalation_id: escalationId,
+      status: 'not_escalated',
+      message_to_guardian:
+        'Risco baixo: escalonamento do círculo de confiança não é recomendado. Monitore o caso.',
+      trusted_contacts: contacts,
+      proof_of_trust_recommended: false,
+      sent_real_notification: false,
+      demo_note: 'Mock local — nenhum envio real.',
+      case_id: payload.case_id,
+      risk_level: payload.risk_level,
+      escalation_recommended: false,
+      __mock: true,
+    }
+  }
+
+  if(key === 'medio' || key === 'médio'){
+    return {
+      escalation_id: escalationId,
+      status: 'review_suggested',
+      message_to_guardian: `Revisão sugerida para o responsável: ${message}`,
+      trusted_contacts: contacts,
+      proof_of_trust_recommended: true,
+      sent_real_notification: false,
+      demo_note: 'Risco médio — revisão do responsável sugerida (mock).',
+      case_id: payload.case_id,
+      risk_level: payload.risk_level,
+      escalation_recommended: false,
+      __mock: true,
+    }
+  }
+
+  return {
+    escalation_id: escalationId,
+    status: 'simulated_notified',
+    message_to_guardian: message,
+    trusted_contacts: contacts,
+    proof_of_trust_recommended: true,
+    sent_real_notification: false,
+    demo_note: 'Escalonamento simulado no MVP (mock local).',
+    case_id: payload.case_id,
+    risk_level: payload.risk_level,
+    escalation_recommended: true,
+    __mock: true,
+  }
+}
+
+export async function getTrustedCircleStatus(){
+  try{
+    const res = await fetch(`${API}/trusted-circle/status`)
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as TrustedCircleStatusResponse
+  }catch{
+    return {
+      service: 'trusted-circle-escalation',
+      mode: 'in_memory_demo',
+      real_notifications_enabled: false,
+      escalation_count: 0,
+      demo_note: 'Modo demonstração local — nenhum envio real.',
+      __mock: true,
+    }
+  }
+}
+
+export async function postTrustedCircleEscalate(payload: TrustedCircleEscalatePayload){
+  try{
+    const res = await fetch(`${API}/trusted-circle/escalate`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    })
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as TrustedCircleEscalateResponse
+  }catch{
+    return mockTrustedCircleEscalate(payload)
+  }
+}
+
+export async function getTrustedCircleEscalation(escalationId:string){
+  try{
+    const res = await fetch(`${API}/trusted-circle/escalations/${escalationId}`)
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as TrustedCircleEscalationRecord
+  }catch{
+    throw new Error('not-found')
   }
 }
 
