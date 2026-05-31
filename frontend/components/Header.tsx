@@ -7,32 +7,35 @@ import AccessibilityControls from '@/components/AccessibilityControls'
 import {defaultLocale, getMessages, Locale, supportedLocales} from '@/lib/i18n'
 
 const primaryNav = [
-  {href:'/assisted-demo', label:'Demo guiada'},
-  {href:'/before-pix', label:'Analisar'},
-  {href:'/global', label:'Radar'},
-  {href:'/simulator', label:'Casos'},
-  {href:'/integrations', label:'Integrações'},
+  {href:'/assisted-demo', label:'Demonstração'},
+  {href:'/family-console', label:'Console'},
+  {href:'/global', label:'Global'},
   {href:'/trust-center', label:'Trust Center'},
 ]
 
 const platformNav = [
+  {href:'/before-pix', label:'Análise Before Pix'},
   {href:'/dashboard', label:'Painel de impacto'},
   {href:'/chatbot-demo', label:'Canal simples'},
   {href:'/intake', label:'Intake seguro'},
+  {href:'/integrations', label:'Integrações'},
+  {href:'/simulator', label:'Laboratório de cenários'},
   {href:'/ml-lab', label:'ML Lab'},
   {href:'/help-network', label:'Rede de ajuda'},
-  {href:'/family-console', label:'Guardian Console'},
-  {href:'/pilot', label:'Prontidão do piloto'},
   {href:'/recovery', label:'Modo recuperação'},
+  {href:'/report', label:'Relatório'},
+  {href:'/pilot', label:'Prontidão do piloto'},
 ]
 
 export default function Header(){
   const [locale,setLocale]=useState<Locale>(defaultLocale)
   const [platformOpen,setPlatformOpen]=useState(false)
   const [settingsOpen,setSettingsOpen]=useState(false)
+  const [scrolled,setScrolled]=useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const pathname = usePathname()
   const t = getMessages(locale)
+  const isHome = pathname === '/'
 
   useEffect(()=>{
     const stored = window.localStorage.getItem('cyberalerta:locale') as Locale | null
@@ -45,6 +48,21 @@ export default function Header(){
     setPlatformOpen(false)
     setSettingsOpen(false)
   },[pathname])
+
+  useEffect(()=>{
+    if(!isHome){
+      setScrolled(true)
+      return
+    }
+
+    function updateScrolled(){
+      setScrolled(window.scrollY > 18)
+    }
+
+    updateScrolled()
+    window.addEventListener('scroll', updateScrolled, {passive:true})
+    return ()=>window.removeEventListener('scroll', updateScrolled)
+  },[isHome])
 
   useEffect(()=>{
     if(!platformOpen && !settingsOpen) return
@@ -77,6 +95,12 @@ export default function Header(){
     window.localStorage.setItem('cyberalerta:locale', nextLocale)
   }
 
+  const headerClass = [
+    'guardian-header sticky top-0 z-[80] mt-0 rounded-none border-b px-3 py-2.5 text-white backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-300 sm:px-4',
+    isHome && !scrolled
+      ? 'border-white/[0.06] bg-[#030406]/46 shadow-none sm:top-4 sm:mt-4 sm:rounded-md sm:border'
+      : 'border-white/10 bg-[#030406]/92 shadow-[0_14px_34px_rgba(2,6,23,0.36)] sm:top-3 sm:mt-3 sm:rounded-md sm:border',
+  ].join(' ')
   const navLinkClass = 'inline-flex min-h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-md border border-transparent bg-transparent px-3 py-1.5 text-sm font-semibold leading-tight text-slate-300 transition hover:border-cyan-300/20 hover:bg-white/[0.055] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300'
   const renderControlPanel = () => (
     <>
@@ -97,7 +121,7 @@ export default function Header(){
   )
 
   return (
-    <header ref={headerRef} className="guardian-header sticky top-0 z-[80] mt-0 rounded-none border-b border-white/10 bg-slate-950 px-3 py-2.5 text-white shadow-[0_14px_34px_rgba(2,6,23,0.34)] sm:top-3 sm:mt-3 sm:rounded-md sm:border sm:px-4">
+    <header ref={headerRef} className={headerClass}>
       {(platformOpen || settingsOpen) && (
         <button
           type="button"

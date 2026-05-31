@@ -2,187 +2,222 @@
 
 import React from 'react'
 import Link from 'next/link'
-import Button from '@/components/Button'
-import Card from '@/components/Card'
-import Shield3DScene from '@/components/Shield3DScene'
-import AttackGlobe3D from '@/components/AttackGlobe3D'
 import GuardianInterventionConsole from '@/components/GuardianInterventionConsole'
-import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
+import HomeGuardianCoreVisual from '@/components/HomeGuardianCoreVisual'
+import HomeScrollReveal from '@/components/HomeScrollReveal'
 
-const trustIndicators = [
-  {label: 'Pausa ativa', value: 'interrompe a decisão no momento de maior pressão'},
-  {label: 'Demonstração segura', value: 'fluxos simulados sem envio real de mensagens'},
-  {label: 'Privacidade por consentimento', value: 'a pessoa escolhe o que compartilhar'},
+const proofPoints = [
+  'Canal simples para a pessoa protegida',
+  'Console inteligente para o responsável',
+  'Pausa protetiva antes do dano',
 ]
 
-const productPillars = [
+const flowSteps = [
   {
-    title: 'Risco traduzido em ação',
-    body: 'O Guardian transforma uma mensagem suspeita em decisão explicável, orientação clara e próxima ação defensiva.',
-    meta: 'Camada de decisão',
+    number:'01',
+    title:'Pessoa protegida encaminha o conteúdo suspeito',
+    body:'Ela não precisa usar dashboard. Basta compartilhar a mensagem, link ou print por um canal simples ou demo assistida.',
   },
   {
-    title: 'Confiança acionável',
-    body: 'O contato de confiança recebe contexto suficiente para agir rápido, sem expor dados além do necessário.',
-    meta: 'Ponte familiar',
+    number:'02',
+    title:'Guardian analisa sinais de golpe',
+    body:'Pix urgente, falso familiar, falso banco, link suspeito, pedido de senha, código ou documento entram na trilha defensiva.',
   },
   {
-    title: 'Auditoria para avaliação',
-    body: 'Cada agente deixa evidências, confiança e justificativa para mostrar por que o Trust Lock foi ativado.',
-    meta: 'IA rastreável',
+    number:'03',
+    title:'Responsável acompanha pelo Guardian Console',
+    body:'Familiar, cuidador ou instituição recebe contexto claro para decidir sem expor dados além do necessário.',
+  },
+  {
+    number:'04',
+    title:'Trust Lock e Proof of Trust orientam a ação',
+    body:'A decisão perigosa é pausada, a verificação segura é sugerida e o círculo de confiança pode ser acionado.',
   },
 ]
 
-const operatingModel = [
-  ['01', 'Entrada voluntária', 'A pessoa cola apenas o trecho que quer revisar.'],
-  ['02', 'Classificação defensiva', 'Intent, manipulação e identidade não verificada são analisados.'],
-  ['03', 'Pausa protetiva', 'O fluxo interrompe pagamento, clique, senha ou acesso remoto.'],
-  ['04', 'Ação humana', 'Família, escola ou instituição recebe um caminho claro de resposta.'],
+const productModules = [
+  {
+    title:'Trust Lock',
+    body:'Pausa ações perigosas antes do Pix, clique, envio de senha ou instalação de app remoto.',
+    tone:'risk',
+  },
+  {
+    title:'Proof of Trust',
+    body:'Transforma dúvida em verificação segura: confirmar por contato salvo, canal oficial e evidência defensiva.',
+    tone:'safe',
+  },
+  {
+    title:'Trusted Circle',
+    body:'Aciona Gabriel, cuidador ou responsável quando a pessoa protegida precisa de apoio imediato.',
+    tone:'human',
+  },
+  {
+    title:'Recovery Mode',
+    body:'Quando o dano já aconteceu, organiza passos de contenção, preservação de evidências e próximos contatos.',
+    tone:'neutral',
+  },
+  {
+    title:'Relatório',
+    body:'Resume sinais, decisão, trace dos agentes e orientação preventiva para família ou instituição.',
+    tone:'neutral',
+  },
+  {
+    title:'SafetyPolicy',
+    body:'Mantém as respostas defensivas, educativas e seguras, sem ensinar golpes ou expor instruções ofensivas.',
+    tone:'safe',
+  },
 ]
+
+const caseSteps = [
+  'Dona Lúcia recebe uma mensagem de um falso filho pedindo Pix urgente.',
+  'Ela encaminha a mensagem pelo canal simples do Guardian.',
+  'O sistema responde com orientação curta: não pagar e confirmar por contato salvo.',
+  'O caso chega ao Gabriel no Guardian Console com sinais e risco.',
+  'Trust Lock pausa a ação e a verificação segura evita prejuízo.',
+]
+
+function HomeSectionHeader({
+  eyebrow,
+  title,
+  description,
+}:{
+  eyebrow:string
+  title:string
+  description:string
+}){
+  return (
+    <div className="home-section-heading">
+      <div className="home-eyebrow">{eyebrow}</div>
+      <h2>{title}</h2>
+      <p>{description}</p>
+    </div>
+  )
+}
 
 export default function Home(){
   return (
-    <PageShell className="space-y-9 pb-16">
-      <PageHeader
-        eyebrow="Guardian Command Center"
-        title="Antes do golpe, uma pausa segura."
-        description="O CyberAlerta Guardian transforma mensagens suspeitas em uma decisão rastreável: sinais, risco, pausa protetiva e próxima ação segura para o responsável."
-        detail="Uma plataforma defensiva para famílias, instituições e pilotos de hackathon demonstrarem intervenção antes do dano, sem monitoramento automático e sem envio real."
-        actions={
-          <>
-              <Link href="/before-pix">
-                <Button className="h-12 w-full !border-cyan-100 !bg-cyan-50 px-6 !text-slate-950 hover:!bg-white sm:w-auto">
-                  Testar console de intervenção
-                </Button>
-              </Link>
-            <Link href="/assisted-demo">
-                <Button variant="ghost" className="h-12 w-full px-6 sm:w-auto">
-                  Demo de proteção assistida
-                </Button>
-              </Link>
-            <Link href="/global">
-                <Button variant="ghost" className="h-12 w-full px-6 sm:w-auto">
-                  Ver visão global
-                </Button>
-              </Link>
-          </>
-        }
-        aside={
-          <div className="space-y-5">
-            <Shield3DScene />
-            <StatusRail
-              items={[
-                {label:'Resposta', value:'Pausa ativa', tone:'warn'},
-                {label:'Modo', value:'Demo segura', tone:'ready'},
-                {label:'Dados', value:'Consentimento', tone:'neutral'},
-              ]}
-            />
-          </div>
-        }
-      />
-
-      <section className="guardian-motion-in grid items-start gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <div className="guardian-panel rounded-md p-6 sm:p-8">
-          <div className="guardian-kicker">Product signal</div>
-          <h2 className="guardian-text-balance mt-5 text-3xl font-semibold leading-tight text-white">
-            Não é apenas análise: é uma camada operacional de intervenção.
-          </h2>
-          <p className="mt-4 text-base leading-7 text-slate-300">
-            O Guardian mostra o que foi detectado, por que a decisão deve pausar e qual contato seguro deve ser usado antes de qualquer transferência.
+    <div className="home-black-page">
+      <section className="home-hero" aria-label="CyberAlerta Guardian">
+        <div className="home-hero-copy">
+          <div className="home-product-name">CyberAlerta Guardian</div>
+          <div className="home-eyebrow">Proteção antifraude assistida</div>
+          <h1>Proteção antes do golpe virar prejuízo.</h1>
+          <p className="home-hero-subtitle">
+            Uma plataforma de proteção assistida para familiares, cuidadores e instituições protegerem pessoas vulneráveis contra golpes por Pix, WhatsApp, links e engenharia social.
           </p>
-          <div className="mt-6 grid gap-px overflow-hidden rounded-md border border-white/10 bg-white/10">
-            {trustIndicators.map((item)=> (
-              <div key={item.label} className="bg-slate-950/64 p-4">
-                <div className="text-sm font-semibold text-white">{item.label}</div>
-                <div className="mt-2 text-sm leading-6 text-slate-400">{item.value}</div>
-              </div>
+          <div className="home-hero-actions">
+            <Link href="/assisted-demo" className="home-primary-cta">Ver demonstração</Link>
+            <Link href="/family-console" className="home-secondary-cta">Explorar Guardian Console</Link>
+          </div>
+          <div className="home-proof-strip" aria-label="Pontos de prova">
+            {proofPoints.map((point)=> (
+              <span key={point}>{point}</span>
             ))}
           </div>
         </div>
-        <GuardianInterventionConsole />
-      </section>
 
-      <section className="guardian-home-hero guardian-motion-in overflow-hidden rounded-md">
-        <div className="relative min-h-[480px] p-4 sm:p-6 lg:p-8">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_52%_42%,rgba(14,165,233,0.14),transparent_34%)]" />
-          <div className="relative w-full">
-              <Shield3DScene />
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {[
-                  {label:'Resposta', value:'Pausa ativa'},
-                  {label:'Modo', value:'Demo segura'},
-                  {label:'Dados', value:'Consentimento'},
-                ].map((item)=> (
-                  <div key={item.label} className="rounded-md border border-white/10 bg-slate-950/58 p-4 text-white">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{item.label}</div>
-                    <div className="mt-2 text-base font-semibold">{item.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div className="home-hero-visual">
+          <HomeGuardianCoreVisual />
         </div>
       </section>
 
-      <section className="guardian-motion-in grid gap-4 lg:grid-cols-[1.12fr_0.88fr]">
-        <Card className="guardian-feature-card p-6 sm:p-7">
-          <div className="text-sm font-semibold text-cyan-200">Operating layer</div>
-          <h2 className="guardian-text-balance mt-4 text-3xl font-semibold leading-tight text-white">
-            Proteção antes da ação, não apenas depois do alerta.
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-            O produto atua no intervalo em que a pressão vira decisão. Ele reduz velocidade, mostra evidências e cria uma ponte de ajuda antes de pagamento, clique ou envio de credencial.
-          </p>
-        </Card>
-
-        <div className="grid gap-4">
-          {productPillars.map((pillar)=> (
-            <Card key={pillar.title} className="p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{pillar.meta}</div>
-                  <h3 className="mt-2 text-lg font-semibold text-white">{pillar.title}</h3>
-                </div>
-                <span className="h-8 w-px bg-cyan-300/30" />
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-300">{pillar.body}</p>
-            </Card>
+      <HomeScrollReveal className="home-section">
+        <HomeSectionHeader
+          eyebrow="Como funciona"
+          title="Uma trilha simples para quem está em risco. Um console para quem protege."
+          description="O Guardian separa a experiência da pessoa protegida da operação do responsável. Simples na ponta, rastreável no console."
+        />
+        <div className="home-flow">
+          {flowSteps.map((step)=> (
+            <article key={step.number} className="home-flow-step">
+              <span>{step.number}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </article>
           ))}
         </div>
-      </section>
+      </HomeScrollReveal>
 
-      <div className="guardian-motion-in">
-        <AttackGlobe3D />
-      </div>
+      <HomeScrollReveal className="home-section home-console-section" delay={80}>
+        <div className="home-console-intro">
+          <HomeSectionHeader
+            eyebrow="Guardian Intervention Console"
+            title="A assinatura operacional do produto."
+            description="Mensagem suspeita, sinais detectados, score de risco, Trust Lock, próxima ação e trilha da decisão em uma visão única para o responsável."
+          />
+          <Link href="/before-pix" className="home-inline-link">Abrir análise Before Pix</Link>
+        </div>
+        <GuardianInterventionConsole />
+      </HomeScrollReveal>
 
-      <section className="guardian-motion-in grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">
-        <div className="guardian-panel rounded-md p-6 sm:p-8">
-          <div className="text-sm font-semibold text-cyan-200">Modelo operacional</div>
-          <h2 className="guardian-text-balance mt-3 text-3xl font-semibold leading-tight text-white">
-            Uma camada de segurança humana com rastro técnico.
-          </h2>
-          <p className="mt-4 text-base leading-7 text-slate-300">
-            O Guardian explica por que uma decisão foi pausada e qual resposta humana deve acontecer agora.
+      <HomeScrollReveal className="home-section" delay={120}>
+        <HomeSectionHeader
+          eyebrow="Módulos críticos"
+          title="Menos painel para a vítima. Mais proteção coordenada para a família."
+          description="Os módulos trabalham juntos para pausar risco, orientar verificação, acionar confiança e documentar a decisão."
+        />
+        <div className="home-module-grid">
+          {productModules.map((module,index)=> (
+            <article key={module.title} className={`home-module-card home-module-${module.tone} ${index === 0 ? 'home-module-lead' : ''}`}>
+              <div className="home-module-index">{String(index + 1).padStart(2,'0')}</div>
+              <h3>{module.title}</h3>
+              <p>{module.body}</p>
+            </article>
+          ))}
+        </div>
+      </HomeScrollReveal>
+
+      <HomeScrollReveal className="home-section home-case-study" delay={140}>
+        <div>
+          <div className="home-eyebrow">Caso de uso</div>
+          <h2>Dona Lúcia não precisa entender o golpe sozinha.</h2>
+          <p>
+            A proteção assistida entra no intervalo entre a pressão da mensagem e a transferência. O sistema reduz velocidade, mostra sinais e coloca o responsável certo no fluxo.
           </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href="/dashboard"><Button className="w-full sm:w-auto">Ver impacto</Button></Link>
-            <Link href="/help-network"><Button variant="ghost" className="w-full sm:w-auto">Rede de ajuda</Button></Link>
+          <div className="home-case-actions">
+            <Link href="/chatbot-demo" className="home-secondary-cta">Ver canal simples</Link>
+            <Link href="/family-console" className="home-secondary-cta">Abrir console</Link>
           </div>
         </div>
+        <ol className="home-case-timeline">
+          {caseSteps.map((step,index)=> (
+            <li key={step}>
+              <span>{String(index + 1).padStart(2,'0')}</span>
+              <p>{step}</p>
+            </li>
+          ))}
+        </ol>
+      </HomeScrollReveal>
 
-        <div className="guardian-panel rounded-md p-5 sm:p-6">
-          <div className="grid gap-px overflow-hidden rounded-md border border-white/10 bg-white/10">
-            {operatingModel.map(([number,title,body])=> (
-              <div key={number} className="grid gap-4 bg-slate-950/58 p-4 sm:grid-cols-[3.5rem_1fr]">
-                <span className="text-sm font-semibold text-cyan-200">{number}</span>
-                <div>
-                  <div className="text-base font-semibold text-white">{title}</div>
-                  <div className="mt-1 text-sm leading-6 text-slate-400">{body}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <HomeScrollReveal className="home-section home-global-preview" delay={160}>
+        <div className="home-global-map" aria-hidden="true">
+          <span className="home-map-node home-map-node-a" />
+          <span className="home-map-node home-map-node-b" />
+          <span className="home-map-node home-map-node-c" />
+          <span className="home-map-line home-map-line-a" />
+          <span className="home-map-line home-map-line-b" />
         </div>
-      </section>
-    </PageShell>
+        <div>
+          <div className="home-eyebrow">Visão global</div>
+          <h2>Padrões de fraude mudam por região. A pausa protetiva continua a mesma.</h2>
+          <p>
+            Visualização simulada de padrões de golpe — não é feed real de ataques. A página global mostra como Pix, links, senhas e documentos entram na mesma lógica de prevenção pré-dano.
+          </p>
+          <Link href="/global" className="home-inline-link">Explorar visão global</Link>
+        </div>
+      </HomeScrollReveal>
+
+      <HomeScrollReveal className="home-section home-closing" delay={180}>
+        <div className="home-eyebrow">Proteção assistida</div>
+        <h2>Uma camada entre a mensagem suspeita e o prejuízo.</h2>
+        <p>
+          O CyberAlerta Guardian foi desenhado para apoiar pessoas vulneráveis, famílias e instituições antes que a engenharia social vire perda financeira, roubo de credencial ou envio de documento.
+        </p>
+        <div className="home-hero-actions">
+          <Link href="/assisted-demo" className="home-primary-cta">Ver demonstração completa</Link>
+          <Link href="/family-console" className="home-secondary-cta">Abrir Guardian Console</Link>
+        </div>
+      </HomeScrollReveal>
+    </div>
   )
 }
