@@ -1,4 +1,12 @@
-import { AnalyzePayload, IntakePayload, RecoveryPayload, RedactPreviewPayload } from './types'
+import {
+  AnalyzePayload,
+  IntakePayload,
+  RecoveryPayload,
+  RedactPreviewPayload,
+  SimpleChannelStatusResponse,
+  SimpleChannelSubmitPayload,
+  SimpleChannelSubmitResponse,
+} from './types'
 import { createMockOCRPreview, createMockURLCheck, mockConnectorStatuses } from './connectorMockData'
 import {
   createMockIntakeAnalyze,
@@ -96,6 +104,57 @@ export async function postURLCheck(url:string){
     return {...data, __mock: false}
   }catch(e){
     return {...createMockURLCheck(url), __mock: true}
+  }
+}
+
+function createMockSimpleChannelSubmit(payload: SimpleChannelSubmitPayload): SimpleChannelSubmitResponse {
+  const highRisk = /pix|urgente|troquei de numero/i.test(payload.content)
+  return {
+    channel_case_id: `ch-mock-${Date.now().toString(36)}`,
+    risk_level: highRisk ? 'alto' : 'medio',
+    simple_reply: highRisk
+      ? 'Nao faca Pix agora. Essa mensagem tem sinais de golpe. Estou avisando seu contato de confianca.'
+      : `${payload.protected_person_alias}, espere e confirme por outro canal antes de agir.`,
+    admin_case_created: payload.consent && highRisk,
+    trust_lock_recommended: highRisk,
+    __mock: true,
+  }
+}
+
+const mockSimpleChannelStatus: SimpleChannelStatusResponse = {
+  service: 'simple-channel-intake',
+  mode: 'whatsapp_mock',
+  channels: ['whatsapp_mock'],
+  whatsapp_real_enabled: false,
+  monitoring_enabled: false,
+  privacy_note: 'Entrada voluntaria com consentimento. Nenhuma conversa privada e monitorada.',
+  demo_note: 'WhatsApp real e integracao futura. MVP com conversa simulada.',
+  __mock: true,
+}
+
+export async function getSimpleChannelStatus(){
+  try{
+    const res = await fetch(`${API}/simple-channel/status`)
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as SimpleChannelStatusResponse
+  }catch{
+    return {...mockSimpleChannelStatus}
+  }
+}
+
+export async function postSimpleChannelSubmit(payload: SimpleChannelSubmitPayload){
+  try{
+    const res = await fetch(`${API}/simple-channel/submit`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    })
+    if(!res.ok) throw new Error('api-error')
+    const data = await res.json()
+    return {...data, __mock: false} as SimpleChannelSubmitResponse
+  }catch{
+    return createMockSimpleChannelSubmit(payload)
   }
 }
 

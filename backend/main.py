@@ -1,5 +1,11 @@
 from fastapi import FastAPI
 from app.agents.orchestrator import GuardianOrchestrator
+from app.channels.simple_channel_models import (
+    SimpleChannelStatusResponse,
+    SimpleChannelSubmitRequest,
+    SimpleChannelSubmitResponse,
+)
+from app.channels.simple_channel_service import SimpleChannelService
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.schemas.recovery import RecoveryRequest, RecoveryResponse
 from app.schemas.report import ReportRequest, ReportResponse
@@ -8,6 +14,7 @@ from app.services.safety_policy import SafetyPolicyService
 
 app = FastAPI(title="CyberAlerta Guardian Backend")
 orchestrator = GuardianOrchestrator()
+simple_channel_service = SimpleChannelService()
 
 @app.get("/health")
 def health():
@@ -35,3 +42,13 @@ def report(payload: ReportRequest):
     if payload.analysis is not None:
         SafetyPolicyService().check_text(payload.analysis.user_message)
     return orchestrator.generate_report(payload)
+
+
+@app.get("/simple-channel/status", response_model=SimpleChannelStatusResponse)
+def simple_channel_status():
+    return simple_channel_service.get_status()
+
+
+@app.post("/simple-channel/submit", response_model=SimpleChannelSubmitResponse)
+def simple_channel_submit(payload: SimpleChannelSubmitRequest):
+    return simple_channel_service.submit(payload)

@@ -16,6 +16,7 @@ const primaryNav = [
 
 const platformNav = [
   {href:'/dashboard', label:'Painel de impacto'},
+  {href:'/chatbot-demo', label:'Canal simples'},
   {href:'/intake', label:'Intake seguro'},
   {href:'/ml-lab', label:'ML Lab'},
   {href:'/help-network', label:'Rede de ajuda'},

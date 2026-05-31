@@ -1,3 +1,31 @@
+export type SimpleChannelSubmitPayload = {
+  protected_person_alias: string
+  channel: 'whatsapp_mock'
+  content_type: 'text'
+  content: string
+  consent: boolean
+}
+
+export type SimpleChannelSubmitResponse = {
+  channel_case_id: string
+  risk_level: string
+  simple_reply: string
+  admin_case_created: boolean
+  trust_lock_recommended: boolean
+  __mock?: boolean
+}
+
+export type SimpleChannelStatusResponse = {
+  service: string
+  mode: string
+  channels: string[]
+  whatsapp_real_enabled: boolean
+  monitoring_enabled: boolean
+  privacy_note: string
+  demo_note: string
+  __mock?: boolean
+}
+
 export type AnalyzePayload = {
   user_name:string
   age_group:string
