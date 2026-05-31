@@ -10,6 +10,8 @@ import Card from '@/components/Card'
 import RiskScore from '@/components/RiskScore'
 import TrustLockCard from '@/components/TrustLockCard'
 import type {IntakeAnalysisResponse, IntakeChannel, RedactPreviewResponse} from '@/lib/types'
+import PrivacyConsentChecklist from '@/components/PrivacyConsentChecklist'
+import {intakePrivacyNotice} from '@/lib/privacyConsent'
 import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
 const initialMessage = 'Mae, troquei de numero. Faz um Pix urgente para essa chave: exemplo@email.com. Meu CPF e 123.456.789-00 e meu telefone e (21) 99999-9999.'
@@ -63,7 +65,7 @@ export default function IntakePage(){
   async function onAnalyze(){
     setError('')
     if(!userConsent){
-      setError('Para analisar, marque o consentimento explicito. O Guardian nao monitora conversas sem sua decisao.')
+      setError('Para analisar, marque o consentimento explícito. O Guardian não monitora conversas sem sua decisão voluntária.')
       return
     }
     setLoadingAnalyze(true)
@@ -97,14 +99,14 @@ export default function IntakePage(){
       <PageHeader
         eyebrow="Entrada com privacidade"
         title="Enviar mensagem suspeita"
-        description="A pessoa protegida escolhe o que enviar por um canal simples. O Guardian não monitora conversas e só analisa conteúdo compartilhado voluntariamente — antes do Pix, do clique ou do compartilhamento de credencial."
-        detail="Antes da analise, dados pessoais podem ser mascarados para reduzir exposicao de CPF, telefone, e-mail e chaves Pix."
+        description="Encaminhamento voluntário de um trecho suspeito. O Guardian não monitora WhatsApp nem lê conversas em segundo plano — só analisa o que você escolhe enviar."
+        detail={intakePrivacyNotice}
         aside={
           <div className="space-y-5">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.08em] text-cyan-300">Privacidade por design</div>
               <p className="mt-3 text-sm leading-6 text-slate-300">
-                Entrada manual, consentimento explicito, redaction opcional e metadados minimos.
+                Entrada manual, consentimento explícito, redaction opcional e metadados mínimos. Sem monitoramento automático.
               </p>
             </div>
             <StatusRail
@@ -118,12 +120,15 @@ export default function IntakePage(){
         }
       />
 
+      <PrivacyConsentChecklist compact />
+
       <Card className="border-cyan-400/25">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="app-label">Sprint 18B · canal simples</div>
+            <div className="app-label">Canal simples recomendado</div>
             <p className="app-body-text mt-2">
-              Para demonstrar WhatsApp mock e resposta curta do Guardian, use o fluxo de chatbot em vez deste intake tecnico.
+              O MVP não conecta WhatsApp real. Para a pessoa protegida, use o chatbot mock — encaminhamento voluntário,
+              sem monitoramento automático.
             </p>
           </div>
           <Link href="/chatbot-demo">
@@ -132,19 +137,27 @@ export default function IntakePage(){
         </div>
       </Card>
 
+      <Card className="border-amber-400/20 bg-amber-950/15">
+        <div className="app-label text-amber-200/90">Antes de colar a mensagem</div>
+        <p className="app-body-text mt-2 text-sm">
+          Não envie senhas, códigos SMS, CPF, documentos ou chaves Pix reais. Se a mensagem contiver esses dados, o Guardian
+          orientará a não compartilhar. Prefira um trecho curto e, se possível, use mascaramento abaixo.
+        </p>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <Card className="overflow-hidden p-0">
-          <div className="border-b border-slate-200 px-5 py-4 sm:px-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Entrada voluntaria</div>
-            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Conteudo enviado pelo usuario</h2>
+          <div className="border-b border-white/10 px-5 py-4 sm:px-6">
+            <div className="app-label">Entrada voluntária</div>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-white">Conteúdo que você escolheu enviar</h2>
           </div>
           <div className="space-y-5 p-5 sm:p-6">
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Canal de entrada</label>
+              <label className="mb-2 block text-sm font-semibold text-slate-300">Canal de entrada</label>
               <select
                 value={channel}
                 onChange={e=>setChannel(e.target.value as IntakeChannel)}
-                className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="h-12 w-full rounded-md border border-white/10 bg-slate-950/50 px-4 text-sm font-semibold text-slate-100 focus:border-cyan-400/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
               >
                 {channelOptions.map(option=> (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -153,54 +166,55 @@ export default function IntakePage(){
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-bold text-slate-700">Mensagem suspeita</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-300">Mensagem suspeita (trecho apenas)</span>
               <textarea
                 value={content}
                 onChange={e=>setContent(e.target.value)}
                 rows={8}
-                className="w-full rounded-lg border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-900 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-white/10 bg-slate-950/50 p-4 text-sm leading-6 text-slate-100 focus:border-cyan-400/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
               />
             </label>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block">
-                <span className="mb-2 block text-sm font-bold text-slate-700">Pessoa</span>
-                <input value={userName} onChange={e=>setUserName(e.target.value)} className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm font-semibold" />
+                <span className="mb-2 block text-sm font-semibold text-slate-300">Pessoa (alias)</span>
+                <input value={userName} onChange={e=>setUserName(e.target.value)} className="h-11 w-full rounded-md border border-white/10 bg-slate-950/50 px-3 text-sm text-slate-100" />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-bold text-slate-700">Contato</span>
-                <input value={trustedContactName} onChange={e=>setTrustedContactName(e.target.value)} className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm font-semibold" />
+                <span className="mb-2 block text-sm font-semibold text-slate-300">Contato (alias)</span>
+                <input value={trustedContactName} onChange={e=>setTrustedContactName(e.target.value)} className="h-11 w-full rounded-md border border-white/10 bg-slate-950/50 px-3 text-sm text-slate-100" />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-bold text-slate-700">Acao</span>
-                <select value={actionType} onChange={e=>setActionType(e.target.value)} className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm font-semibold">
+                <span className="mb-2 block text-sm font-semibold text-slate-300">Ação suspeita</span>
+                <select value={actionType} onChange={e=>setActionType(e.target.value)} className="h-11 w-full rounded-md border border-white/10 bg-slate-950/50 px-3 text-sm text-slate-100">
                   {actionOptions.map(option=> <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
             </div>
 
-            <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="space-y-3 rounded-md border border-white/10 bg-slate-950/40 p-4">
               <label className="flex items-start gap-3">
                 <input type="checkbox" checked={userConsent} onChange={e=>setUserConsent(e.target.checked)} className="mt-1 h-5 w-5" />
-                <span className="text-sm font-semibold leading-6 text-slate-700">
-                  Eu escolhi compartilhar esta mensagem voluntariamente e autorizo a analise deste conteudo.
+                <span className="text-sm font-semibold leading-6 text-slate-300">
+                  Eu escolhi compartilhar este trecho voluntariamente. Entendo que o Guardian não monitora conversas
+                  automaticamente e que o MVP não conecta WhatsApp real.
                 </span>
               </label>
               <label className="flex items-start gap-3">
                 <input type="checkbox" checked={redactionRequested} onChange={e=>setRedactionRequested(e.target.checked)} className="mt-1 h-5 w-5" />
-                <span className="text-sm font-semibold leading-6 text-slate-700">
-                  Mascarar dados pessoais antes da analise.
+                <span className="text-sm font-semibold leading-6 text-slate-300">
+                  Mascarar CPF, telefone, e-mail e chaves antes da análise (recomendado).
                 </span>
               </label>
               <label className="flex items-start gap-3">
                 <input type="checkbox" checked={containsSensitiveData} onChange={e=>setContainsSensitiveData(e.target.checked)} className="mt-1 h-5 w-5" />
-                <span className="text-sm font-semibold leading-6 text-slate-700">
-                  A mensagem pode conter dados pessoais ou sensiveis.
+                <span className="text-sm font-semibold leading-6 text-slate-300">
+                  A mensagem pode conter dados pessoais — evite senhas e documentos reais.
                 </span>
               </label>
             </div>
 
-            {error && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
+            {error && <p className="rounded-md border border-red-400/30 bg-red-950/30 p-3 text-sm font-semibold text-red-200">{error}</p>}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Button type="button" variant="ghost" onClick={onPreview} disabled={loadingPreview} className="h-12">

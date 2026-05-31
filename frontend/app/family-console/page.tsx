@@ -4,6 +4,8 @@ import React from 'react'
 import Link from 'next/link'
 import Button from '@/components/Button'
 import GuardianAdminConsole from '@/components/GuardianAdminConsole'
+import PrivacyConsentChecklist from '@/components/PrivacyConsentChecklist'
+import {familyConsolePrivacyNotice} from '@/lib/privacyConsent'
 import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
 export default function FamilyConsolePage(){
@@ -12,8 +14,8 @@ export default function FamilyConsolePage(){
       <PageHeader
         eyebrow="Painel do responsável"
         title="Guardian Console"
-        description="Central operacional para familiar, cuidador ou instituição acompanhar casos recebidos da pessoa protegida — com risco, trilha da decisão e ações seguras."
-        detail="Fluxo: pessoa protegida encaminha pelo canal simples → Guardian analisa → caso entra na fila → responsável age com pausa protetiva."
+        description="Central para familiar, cuidador ou instituição acompanhar casos compartilhados voluntariamente — com risco, trilha e ações seguras. Não é ferramenta de vigilância."
+        detail={familyConsolePrivacyNotice}
         actions={
           <Link href="/chatbot-demo">
             <Button variant="ghost" className="h-12 w-full sm:w-auto">Ver canal da pessoa protegida</Button>
@@ -29,6 +31,8 @@ export default function FamilyConsolePage(){
           />
         }
       />
+
+      <PrivacyConsentChecklist compact title="Proteção assistida" />
 
       <GuardianAdminConsole />
     </PageShell>

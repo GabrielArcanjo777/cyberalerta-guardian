@@ -7,6 +7,8 @@ import Card from '@/components/Card'
 import {AppBadge, AppCardTitle, AppSectionTitle} from '@/components/AppPrimitives'
 import {riskStatusClass} from '@/lib/appStatus'
 import ProofOfTrustChecklist from '@/components/ProofOfTrustChecklist'
+import PrivacyConsentChecklist from '@/components/PrivacyConsentChecklist'
+import {assistedDemoPrivacyNotice} from '@/lib/privacyConsent'
 import {
   assistedDemoMeta,
   assistedDemoSteps,
@@ -69,10 +71,10 @@ export default function AssistedProtectionDemo(){
         <div className="guardian-kicker">Sprint 18G · narrativa completa</div>
         <h1 className="app-page-title mt-5 max-w-3xl">{meta.title}</h1>
         <p className="mt-4 max-w-3xl text-base font-medium leading-7 text-slate-300">{meta.subtitle}</p>
-        <p className="app-muted-text mt-4 max-w-2xl text-sm">
-          Pessoa protegida usa canal simples. Responsável opera o Guardian Console. Sem WhatsApp real, sem envio automático,
-          sem dados sensíveis reais.
-        </p>
+        <p className="app-muted-text mt-4 max-w-2xl text-sm">{assistedDemoPrivacyNotice}</p>
+        <div className="mt-6 max-w-4xl">
+          <PrivacyConsentChecklist compact />
+        </div>
         {backendSynced && (
           <p className="mt-3 text-xs font-medium text-cyan-300/90">Dados do caso demo sincronizados com o backend.</p>
         )}

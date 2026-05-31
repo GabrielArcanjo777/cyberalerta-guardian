@@ -19,6 +19,8 @@ import Card from '@/components/Card'
 import Button from '@/components/Button'
 import type {TrustedCircleAlert as TrustedCircleAlertModel} from '@/lib/types'
 import {TrustPipeline} from '@/components/AppPrimitives'
+import PrivacyConsentChecklist from '@/components/PrivacyConsentChecklist'
+import {beforePixPrivacyNotice} from '@/lib/privacyConsent'
 import {OperationalTimeline, PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
 const initialMessage = 'Mae, troquei de numero. Meu celular quebrou. Preciso pagar uma conta urgente. Faz um Pix de R$ 780? Nao liga agora porque estou em reuniao.'
@@ -97,8 +99,8 @@ export default function BeforePix(){
       <PageHeader
         eyebrow="Before Pix command flow"
         title="Antes do Pix"
-        description="Caso principal: Dona Lucia, 72 anos. O Guardian avalia a mensagem antes da acao perigosa, ativa pausa protetiva e cria uma trilha de decisao para o responsavel."
-        detail="A demo simula uma mensagem de numero novo, urgencia, pedido financeiro e isolamento da vitima sem executar Pix real."
+        description="Análise defensiva do texto que você cola aqui — sem leitura invisível de conversas. Pausa protetiva e trilha para o responsável."
+        detail={beforePixPrivacyNotice}
         aside={
           <div className="space-y-5">
             <StatusRail
@@ -119,6 +121,8 @@ export default function BeforePix(){
           </div>
         }
       />
+
+      <PrivacyConsentChecklist compact />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <Card className="overflow-hidden p-0">

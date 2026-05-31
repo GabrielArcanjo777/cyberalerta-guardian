@@ -116,6 +116,10 @@ export default function GuardianAdminConsole(){
         </Card>
       </div>
 
+      <p className="app-muted-text text-sm">
+        Casos exibidos foram encaminhados com consentimento. Ações simuladas no MVP — sem envio real. Decisões críticas
+        exigem confirmação humana; este painel não monitora conversas automaticamente.
+      </p>
       {consoleStatus?.__mock && (
         <p className="app-muted-text text-sm">Modo demonstração local — dados mock do console.</p>
       )}
