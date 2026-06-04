@@ -32,9 +32,10 @@ export default function FamilyConsolePage(){
         }
       />
 
+      <GuardianAdminConsole />
+
       <PrivacyConsentChecklist compact title="Proteção assistida" />
 
-      <GuardianAdminConsole />
     </PageShell>
   )
 }

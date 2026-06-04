@@ -100,15 +100,15 @@ export default function GuardianAdminConsole(){
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
+        <Card className="card-muted">
           <div className="app-label">Modo</div>
           <p className="mt-2 text-lg font-semibold text-white">{consoleStatus?.mode || '—'}</p>
         </Card>
-        <Card>
+        <Card className="card-primary">
           <div className="app-label">Casos na fila</div>
           <p className="mt-2 text-lg font-semibold text-white">{consoleStatus?.case_count ?? cases.length}</p>
         </Card>
-        <Card>
+        <Card className="card-muted">
           <div className="app-label">Notificações</div>
           <p className="mt-2 text-sm text-slate-300">
             {consoleStatus?.notifications_enabled ? 'Ativas' : 'Simuladas (sem envio real)'}
@@ -126,7 +126,7 @@ export default function GuardianAdminConsole(){
       {error && <p className="text-sm font-medium text-amber-200">{error}</p>}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(280px,0.95fr)_minmax(0,1.35fr)]">
-        <Card className="p-0 overflow-hidden">
+        <Card className="card-secondary p-0 overflow-hidden">
           <div className="border-b border-white/10 px-4 py-3 sm:px-5">
             <AppSectionTitle className="text-lg">Fila de casos</AppSectionTitle>
             <p className="app-muted-text mt-1 text-sm">Caso recebido pelo canal simples</p>
@@ -174,7 +174,30 @@ export default function GuardianAdminConsole(){
         <div className="space-y-4">
           {selected ? (
             <>
-              <Card>
+              <div className="guardian-case-priority-grid">
+                <section className="guardian-case-risk-card">
+                  <div className="app-label text-red-200/90">Risco atual</div>
+                  <div className="mt-3 flex flex-wrap items-end gap-3">
+                    <span className="guardian-case-risk-score">{selected.risk_score}</span>
+                    <span className={riskStatusClass(selected.risk_level)}>Risco {selected.risk_level}</span>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-red-100/90">
+                    Status: {statusLabels[selected.status]}
+                  </p>
+                </section>
+
+                <section className="guardian-case-action-card">
+                  <div className="app-label text-emerald-200/90">Acao recomendada</div>
+                  <p className="mt-3 text-lg font-semibold leading-7 text-emerald-50">
+                    {selected.recommended_action}
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-slate-400">
+                    Priorize pausa, verificacao por canal independente e registro da decisao antes de qualquer liberacao.
+                  </p>
+                </section>
+              </div>
+
+              <Card className="guardian-secondary-card">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="app-label">Detalhe do caso · {selected.case_id}</div>
@@ -204,12 +227,12 @@ export default function GuardianAdminConsole(){
                   </div>
                 </div>
 
-                <div className="mt-4 app-action-panel">
+                <div className="mt-4 app-action-panel guardian-secondary-panel">
                   <div className="app-label">Ação recomendada</div>
                   <p className="mt-2 text-base font-medium text-emerald-100">{selected.recommended_action}</p>
                 </div>
 
-                <div className="mt-4 app-action-panel">
+                <div className="mt-4 app-action-panel guardian-secondary-panel">
                   <div className="app-label">Decisão do agente</div>
                   <p className="app-body-text mt-2">{selected.agent_decision}</p>
                 </div>
@@ -244,7 +267,7 @@ export default function GuardianAdminConsole(){
                 }}
               />
 
-              <Card>
+              <Card className="card-evidence">
                 <div className="app-label">Trilha da decisão</div>
                 <ol className="guardian-operational-timeline mt-4">
                   {selected.agent_decision_trace.map((step,index)=> (
@@ -259,7 +282,7 @@ export default function GuardianAdminConsole(){
                 </ol>
               </Card>
 
-              <Card>
+              <Card className="card-action">
                 <div className="app-label">Ações do responsável</div>
                 <p className="app-muted-text mt-2 text-sm">
                   Operação simulada — sem envio real de mensagens ou notificações.
@@ -293,11 +316,11 @@ export default function GuardianAdminConsole(){
               </Card>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Card className="!p-4">
+                <Card className="card-muted !p-4">
                   <div className="app-label">Trust Lock</div>
                   <p className="mt-2 text-sm text-slate-200">{selected.trust_lock_status}</p>
                 </Card>
-                <Card className="!p-4">
+                <Card className="card-muted !p-4">
                   <div className="app-label">Círculo de confiança</div>
                   <p className="mt-2 text-sm text-slate-200">
                     {selected.trusted_circle_status === 'simulated_notified'
@@ -305,11 +328,11 @@ export default function GuardianAdminConsole(){
                       : selected.trusted_circle_status}
                   </p>
                 </Card>
-                <Card className="!p-4">
+                <Card className="card-muted !p-4">
                   <div className="app-label">Verificação segura</div>
                   <p className="mt-2 text-sm text-slate-200">{selected.proof_of_trust_status}</p>
                 </Card>
-                <Card className="!p-4">
+                <Card className="card-muted !p-4">
                   <div className="app-label">Recovery</div>
                   <p className="mt-2 text-sm text-slate-200">{selected.recovery_status}</p>
                 </Card>
@@ -323,7 +346,7 @@ export default function GuardianAdminConsole(){
         </div>
       </div>
 
-      <Card className="border-dashed border-white/15">
+      <Card className="card-muted border-dashed border-white/15">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="app-body-text text-sm">{consoleStatus?.demo_note}</p>
           <div className="flex gap-2">

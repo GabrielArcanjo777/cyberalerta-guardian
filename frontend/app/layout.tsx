@@ -1,7 +1,6 @@
 import './globals.css'
 import React from 'react'
 import Header from '@/components/Header'
-import DemoModeBanner from '@/components/DemoModeBanner'
 import GlobalAmbientBackground from '@/components/GlobalAmbientBackground'
 
 export const metadata = {
@@ -21,9 +20,6 @@ export default function RootLayout({children}:{children:React.ReactNode}){
           >
             Pular para o conteúdo principal
           </a>
-          <div className="guardian-content-shell">
-            <DemoModeBanner />
-          </div>
           <div className="guardian-content-shell mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
             <Header />
             <main id="conteudo-principal" className="relative z-10 mb-14 mt-8" tabIndex={-1}>{children}</main>

@@ -20,6 +20,7 @@ import {
   AssistedProofSessionResponse,
   AssistedProofStepUpdatePayload,
   ProofTrustStepItem,
+  AnalyzeResponse,
 } from './types'
 import { createMockOCRPreview, createMockURLCheck, mockConnectorStatuses } from './connectorMockData'
 import {
@@ -33,13 +34,13 @@ import {
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
 
-export async function analyzeMessage(payload: AnalyzePayload){
+export async function analyzeMessage(payload: AnalyzePayload): Promise<AnalyzeResponse>{
   try{
     const res = await fetch(`${API}/analyze`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {...mockAnalyzeResult, __mock: true}
   }
 }
@@ -50,7 +51,7 @@ export async function postRecovery(payload: RecoveryPayload){
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {...mockRecoveryResult, __mock: true}
   }
 }
@@ -61,7 +62,7 @@ export async function analyzeTextML(texto:string){
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {...mockMLTextResult, __mock: true}
   }
 }
@@ -72,7 +73,7 @@ export async function analyzeURLML(url:string){
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {...mockMLUrlResult, url, __mock: true}
   }
 }
@@ -83,7 +84,7 @@ export async function postRedactPreview(payload: RedactPreviewPayload){
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {...createMockRedactPreview(payload.content), __mock: true}
   }
 }
@@ -94,7 +95,7 @@ export async function postIntakeAnalyze(payload: IntakePayload){
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {...createMockIntakeAnalyze(payload.content, payload.channel), __mock: true}
   }
 }
@@ -105,7 +106,7 @@ export async function getConnectorsStatus(){
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {connectors: mockConnectorStatuses, __mock: true}
   }
 }
@@ -116,7 +117,7 @@ export async function postURLCheck(url:string){
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {...createMockURLCheck(url), __mock: true}
   }
 }
@@ -626,7 +627,7 @@ export async function postOCRPreview(source:string, content:string){
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
-  }catch(e){
+  }catch{
     return {...createMockOCRPreview(content), __mock: true}
   }
 }

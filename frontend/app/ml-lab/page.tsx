@@ -26,7 +26,7 @@ function SignalList({items}:{items:string[]}){
 
 function UrlResultCard({result}:{result:UrlAnalysis}){
   return (
-    <Card>
+    <Card className={result.risco === 'alto' ? 'card-danger' : 'card-evidence'}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">URL Security Engine</div>
@@ -103,7 +103,7 @@ export default function MLLabPage(){
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="space-y-5">
+        <Card className="card-primary space-y-5">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Texto</div>
             <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950">Analisar mensagem</h2>
@@ -119,7 +119,7 @@ export default function MLLabPage(){
           </Button>
         </Card>
 
-        <Card className="space-y-5">
+        <Card className="card-secondary space-y-5">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">URL</div>
             <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950">Analisar link</h2>
@@ -142,7 +142,7 @@ export default function MLLabPage(){
         </div>
       )}
 
-      <Card className="border-dashed border-slate-300 bg-slate-50/70">
+      <Card className="card-muted border-dashed border-slate-300 bg-slate-50/70">
         <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Transparencia</div>
         <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
           O laboratorio usa endpoints locais: POST /analisar, POST /analisar-url e GET /ml/status. Nenhuma API externa real e chamada nesta sprint.

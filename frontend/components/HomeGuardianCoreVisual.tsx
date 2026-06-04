@@ -34,11 +34,11 @@ export default function HomeGuardianCoreVisual(){
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const motionScale = reducedMotion ? 0.12 : 1
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100)
-    camera.position.set(0, 0.12, 6.3)
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100)
+    camera.position.set(0, 0.12, 6.7)
 
     const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:'high-performance'})
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     renderer.setClearColor(0x000000, 0)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.domElement.style.display = 'block'
@@ -51,6 +51,8 @@ export default function HomeGuardianCoreVisual(){
     const coreGroup = new THREE.Group()
     scene.add(root)
     root.add(coreGroup)
+    root.position.x = 0.16
+    root.scale.setScalar(0.92)
 
     const coreGeometry = new THREE.IcosahedronGeometry(0.86, 2)
     const coreMaterial = new THREE.MeshStandardMaterial({
@@ -64,7 +66,7 @@ export default function HomeGuardianCoreVisual(){
 
     const wire = new THREE.LineSegments(
       new THREE.EdgesGeometry(coreGeometry),
-      new THREE.LineBasicMaterial({color:0xb6c2cf, transparent:true, opacity:0.22})
+      new THREE.LineBasicMaterial({color:0xb6c2cf, transparent:true, opacity:0.14})
     )
     coreGroup.add(wire)
 
@@ -79,9 +81,9 @@ export default function HomeGuardianCoreVisual(){
     coreGroup.add(inner)
 
     const rings = [
-      makeRing(1.28, 0x93a4b8, 0.18),
-      makeRing(1.62, 0x22d3ee, 0.14),
-      makeRing(2.02, 0x94a3b8, 0.1),
+      makeRing(1.28, 0x93a4b8, 0.12),
+      makeRing(1.62, 0x22d3ee, 0.1),
+      makeRing(2.02, 0x94a3b8, 0.07),
     ]
     rings[0].rotation.x = Math.PI / 2.6
     rings[1].rotation.x = Math.PI / 2.1
@@ -123,7 +125,7 @@ export default function HomeGuardianCoreVisual(){
     meshGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3))
     const meshLines = new THREE.LineSegments(
       meshGeometry,
-      new THREE.LineBasicMaterial({color:0x7890a8, transparent:true, opacity:0.16})
+      new THREE.LineBasicMaterial({color:0x7890a8, transparent:true, opacity:0.1})
     )
     coreGroup.add(meshLines)
 
@@ -187,7 +189,7 @@ export default function HomeGuardianCoreVisual(){
       const pulse = 0.5 + (Math.sin(elapsed * 1.7) + 1) * 0.5
       pulseRing.scale.setScalar(1 + pulse * 0.08)
       ;(pulseRing.material as THREE.MeshBasicMaterial).opacity = 0.06 + pulse * 0.16
-      ;(meshLines.material as THREE.LineBasicMaterial).opacity = 0.1 + pulse * 0.08
+      ;(meshLines.material as THREE.LineBasicMaterial).opacity = 0.07 + pulse * 0.06
       nodes.forEach((node,index)=>{
         const localPulse = 0.94 + Math.sin(elapsed * 1.2 + index) * 0.08
         node.scale.setScalar(localPulse)

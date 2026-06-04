@@ -30,7 +30,7 @@ type PageHeaderProps = {
 
 export function PageHeader({eyebrow,title,description,detail,actions,aside,className=''}:PageHeaderProps){
   return (
-    <header className={cx('guardian-page-header overflow-hidden', className)}>
+    <header className={cx('guardian-page-header card-primary overflow-hidden', className)}>
       <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
         <div className="p-6 sm:p-8 lg:p-10">
           <div className="guardian-kicker">{eyebrow}</div>
@@ -63,7 +63,7 @@ type PanelProps = {
 
 export function CommandPanel({children,className='',eyebrow,title,description}:PanelProps){
   return (
-    <section className={cx('guardian-command-panel', className)}>
+    <section className={cx('guardian-command-panel card-secondary', className)}>
       {(eyebrow || title || description) && (
         <div className="guardian-panel-heading">
           {eyebrow && <div className="guardian-panel-eyebrow">{eyebrow}</div>}
@@ -77,23 +77,23 @@ export function CommandPanel({children,className='',eyebrow,title,description}:P
 }
 
 export function DecisionPanel(props:PanelProps){
-  return <CommandPanel {...props} className={cx('guardian-decision-panel', props.className)} />
+  return <CommandPanel {...props} className={cx('guardian-decision-panel card-risk', props.className)} />
 }
 
 export function EvidencePanel(props:PanelProps){
-  return <CommandPanel {...props} className={cx('guardian-evidence-panel', props.className)} />
+  return <CommandPanel {...props} className={cx('guardian-evidence-panel card-evidence', props.className)} />
 }
 
 export function ActionPanel(props:PanelProps){
-  return <CommandPanel {...props} className={cx('guardian-action-panel', props.className)} />
+  return <CommandPanel {...props} className={cx('guardian-action-panel card-action', props.className)} />
 }
 
 export function TimelinePanel(props:PanelProps){
-  return <CommandPanel {...props} className={cx('guardian-timeline-panel', props.className)} />
+  return <CommandPanel {...props} className={cx('guardian-timeline-panel card-muted', props.className)} />
 }
 
 export function IntelligencePanel(props:PanelProps){
-  return <CommandPanel {...props} className={cx('guardian-intelligence-panel', props.className)} />
+  return <CommandPanel {...props} className={cx('guardian-intelligence-panel card-evidence', props.className)} />
 }
 
 type MetricPanelProps = {
@@ -105,7 +105,7 @@ type MetricPanelProps = {
 
 export function MetricPanel({label,value,detail,tone='default'}:MetricPanelProps){
   return (
-    <div className={cx('guardian-metric-panel', tone !== 'default' && `guardian-metric-${tone}`)}>
+    <div className={cx('guardian-metric-panel card-primary', tone !== 'default' && `guardian-metric-${tone}`)}>
       <div className="text-xs font-semibold uppercase text-slate-500">{detail || label}</div>
       <div className="mt-3 text-4xl font-semibold text-white">{value}</div>
       {detail && <div className="mt-2 text-sm font-semibold leading-5 text-slate-300">{label}</div>}
@@ -123,7 +123,7 @@ export function StatusRail({items,className=''}:StatusRailProps){
     <div className={cx('guardian-status-rail', className)}>
       {items.map((item)=> (
         <div key={`${item.label}-${item.value || ''}`} className="guardian-status-cell">
-          <span className={cx('guardian-status-dot', item.tone && `guardian-status-${item.tone}`)} />
+          <span className={cx('guardian-status-dot', item.tone && `guardian-status-${item.tone}`, (item.tone === 'ready' || item.tone === 'neutral') && 'guardian-live-dot')} />
           <div>
             <div className="text-xs font-semibold uppercase text-slate-500">{item.label}</div>
             {item.value && <div className="mt-1 text-sm font-semibold text-slate-100">{item.value}</div>}

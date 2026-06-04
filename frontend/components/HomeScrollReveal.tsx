@@ -1,48 +1,27 @@
 "use client"
 
-import React, {useEffect, useRef, useState} from 'react'
+import React from 'react'
+import {RevealGroup, RevealItem, type RevealVariant} from '@/components/Reveal'
 
-type Props = {
-  children: React.ReactNode
-  className?: string
-  delay?: number
+type Props = React.HTMLAttributes<HTMLElement> & {
   as?: React.ElementType
+  delay?: number
+  variant?: RevealVariant
 }
 
-export default function HomeScrollReveal({children,className='',delay=0,as='section'}:Props){
-  const ref = useRef<HTMLElement | null>(null)
-  const [visible,setVisible]=useState(false)
-
-  useEffect(()=>{
-    const node = ref.current
-    if(!node) return
-
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if(reducedMotion){
-      setVisible(true)
-      return
-    }
-
-    const observer = new IntersectionObserver(([entry])=>{
-      if(entry.isIntersecting){
-        setVisible(true)
-        observer.disconnect()
-      }
-    }, {threshold:0.16, rootMargin:'0px 0px -8% 0px'})
-
-    observer.observe(node)
-    return ()=>observer.disconnect()
-  },[])
-
-  const Component = as as any
-
+export default function HomeScrollReveal({
+  children,
+  className='',
+  as='section',
+  delay=0,
+  variant='revealDefault',
+  ...rest
+}: Props){
   return (
-    <Component
-      ref={ref}
-      className={`home-reveal ${visible ? 'is-visible' : ''} ${className}`.trim()}
-      style={{transitionDelay: visible ? `${delay}ms` : '0ms'}}
-    >
-      {children}
-    </Component>
+    <RevealGroup as={as} className={className} delay={delay} variant={variant} {...rest}>
+      {React.Children.map(children, (child,index)=> (
+        <RevealItem index={index}>{child}</RevealItem>
+      ))}
+    </RevealGroup>
   )
 }

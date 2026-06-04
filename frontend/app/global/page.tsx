@@ -138,7 +138,7 @@ export default function GlobalApplicabilityPage(){
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {globalApplicabilityRegions.map((region)=> (
-          <Card key={region.region}>
+          <Card key={region.region} className="card-muted">
             <div className="app-label">{region.region}</div>
             <AppSectionTitle className="mt-2 text-lg">{region.focus}</AppSectionTitle>
             <p className="app-body-text mt-3">{region.description}</p>
@@ -147,7 +147,7 @@ export default function GlobalApplicabilityPage(){
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <Card>
+        <Card className="card-primary">
           <div className="app-label">Cenários globais</div>
           <AppSectionTitle>Exemplos defensivos e simulados</AppSectionTitle>
           <p className="app-muted-text mt-2">
@@ -174,7 +174,7 @@ export default function GlobalApplicabilityPage(){
           </div>
         </Card>
 
-        <Card className="flex flex-col">
+        <Card className="card-evidence flex flex-col">
           <div className="app-label">Padrões globais de ameaça</div>
           <AppSectionTitle>Táticas que cruzam fronteiras</AppSectionTitle>
           <p className="app-body-text mt-3">

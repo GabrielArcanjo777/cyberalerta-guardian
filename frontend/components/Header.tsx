@@ -3,38 +3,66 @@
 import React, {useEffect, useRef, useState} from 'react'
 import Link from 'next/link'
 import {usePathname} from 'next/navigation'
-import AccessibilityControls from '@/components/AccessibilityControls'
-import {defaultLocale, getMessages, Locale, supportedLocales} from '@/lib/i18n'
+import {defaultLocale, Locale, supportedLocales} from '@/lib/i18n'
 
-const primaryNav = [
-  {href:'/assisted-demo', label:'Demonstração'},
-  {href:'/family-console', label:'Console'},
-  {href:'/global', label:'Global'},
-  {href:'/trust-center', label:'Trust Center'},
+const navGroups = [
+  {
+    label:'Plataforma',
+    items:[
+      {href:'/family-console', label:'Guardian Console'},
+      {href:'/dashboard', label:'Painel de impacto'},
+      {href:'/global', label:'Visão global'},
+    ],
+  },
+  {
+    label:'Soluções',
+    items:[
+      {href:'/before-pix', label:'Before Pix'},
+      {href:'/assisted-demo', label:'Demo assistida'},
+      {href:'/chatbot-demo', label:'Canal simples'},
+    ],
+  },
+  {
+    label:'Recursos',
+    items:[
+      {href:'/trust-center', label:'Trust Center'},
+      {href:'/ml-lab', label:'ML Lab'},
+      {href:'/report', label:'Relatório'},
+    ],
+  },
+  {
+    label:'Empresa',
+    items:[
+      {href:'/pilot', label:'Prontidão do piloto'},
+      {href:'/help-network', label:'Rede de ajuda'},
+      {href:'/integrations', label:'Integrações'},
+    ],
+  },
 ]
 
-const platformNav = [
-  {href:'/before-pix', label:'Análise Before Pix'},
-  {href:'/dashboard', label:'Painel de impacto'},
-  {href:'/chatbot-demo', label:'Canal simples'},
-  {href:'/intake', label:'Intake seguro'},
-  {href:'/integrations', label:'Integrações'},
-  {href:'/simulator', label:'Laboratório de cenários'},
-  {href:'/ml-lab', label:'ML Lab'},
-  {href:'/help-network', label:'Rede de ajuda'},
-  {href:'/recovery', label:'Modo recuperação'},
-  {href:'/report', label:'Relatório'},
-  {href:'/pilot', label:'Prontidão do piloto'},
-]
+function ShieldLogo(){
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3.2 5.2 5.8v5.4c0 4.5 2.8 8.1 6.8 9.7 4-1.6 6.8-5.2 6.8-9.7V5.8L12 3.2Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M12 7.2v9.5M8.8 11.5l3.2 3.2 5.1-5.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function Chevron(){
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="m4.5 6 3.5 3.5L11.5 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
 export default function Header(){
   const [locale,setLocale]=useState<Locale>(defaultLocale)
-  const [platformOpen,setPlatformOpen]=useState(false)
-  const [settingsOpen,setSettingsOpen]=useState(false)
+  const [openMenu,setOpenMenu]=useState<string | null>(null)
   const [scrolled,setScrolled]=useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const pathname = usePathname()
-  const t = getMessages(locale)
   const isHome = pathname === '/'
 
   useEffect(()=>{
@@ -45,8 +73,7 @@ export default function Header(){
   },[])
 
   useEffect(()=>{
-    setPlatformOpen(false)
-    setSettingsOpen(false)
+    setOpenMenu(null)
   },[pathname])
 
   useEffect(()=>{
@@ -65,21 +92,17 @@ export default function Header(){
   },[isHome])
 
   useEffect(()=>{
-    if(!platformOpen && !settingsOpen) return
+    if(!openMenu) return
 
     function onPointerDown(event:PointerEvent){
       const target = event.target as Node | null
       if(target && !headerRef.current?.contains(target)){
-        setPlatformOpen(false)
-        setSettingsOpen(false)
+        setOpenMenu(null)
       }
     }
 
     function onKeyDown(event:KeyboardEvent){
-      if(event.key === 'Escape'){
-        setPlatformOpen(false)
-        setSettingsOpen(false)
-      }
+      if(event.key === 'Escape') setOpenMenu(null)
     }
 
     document.addEventListener('pointerdown', onPointerDown)
@@ -88,157 +111,71 @@ export default function Header(){
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  },[platformOpen, settingsOpen])
+  },[openMenu])
 
-  function onLocaleChange(nextLocale:Locale){
+  function toggleLocale(){
+    const nextLocale: Locale = locale === 'pt-BR' ? 'en-US' : 'pt-BR'
     setLocale(nextLocale)
     window.localStorage.setItem('cyberalerta:locale', nextLocale)
   }
 
-  const headerClass = [
-    'guardian-header sticky top-0 z-[80] mt-0 rounded-none border-b px-3 py-2.5 text-white backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-300 sm:px-4',
-    isHome && !scrolled
-      ? 'border-white/[0.06] bg-[#030406]/46 shadow-none sm:top-4 sm:mt-4 sm:rounded-md sm:border'
-      : 'border-white/10 bg-[#030406]/92 shadow-[0_14px_34px_rgba(2,6,23,0.36)] sm:top-3 sm:mt-3 sm:rounded-md sm:border',
-  ].join(' ')
-  const navLinkClass = 'inline-flex min-h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-md border border-transparent bg-transparent px-3 py-1.5 text-sm font-semibold leading-tight text-slate-300 transition hover:border-cyan-300/20 hover:bg-white/[0.055] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300'
-  const renderControlPanel = () => (
-    <>
-      <label className="flex min-h-10 shrink-0 items-center gap-2 rounded-md border border-white/10 bg-white/[0.045] px-2.5 text-xs font-bold uppercase text-slate-400">
-        <span className="hidden sm:inline">Idioma</span>
-        <select
-          value={locale}
-          onChange={event=>onLocaleChange(event.target.value as Locale)}
-          className="h-8 rounded-md border border-white/10 bg-slate-900 px-2 text-xs font-bold normal-case text-slate-100 shadow-sm"
-          aria-label="Selecionar idioma"
-        >
-          <option value="pt-BR">Português</option>
-          <option value="en-US">English</option>
-        </select>
-      </label>
-      <AccessibilityControls />
-    </>
-  )
-
   return (
-    <header ref={headerRef} className={headerClass}>
-      {(platformOpen || settingsOpen) && (
-        <button
-          type="button"
-          aria-label="Fechar menus"
-          className="guardian-menu-shield fixed inset-0 z-[70] cursor-default bg-slate-950/62"
-          onClick={()=>{
-            setPlatformOpen(false)
-            setSettingsOpen(false)
-          }}
-        />
-      )}
+    <header ref={headerRef} className={`guardian-header ${isHome ? 'guardian-header-home' : ''} ${scrolled ? 'is-scrolled' : ''}`}>
+      <div className="guardian-header-inner">
+        <Link href="/" className="guardian-brand" onClick={()=>setOpenMenu(null)}>
+          <span className="guardian-brand-mark">
+            <ShieldLogo />
+          </span>
+          <span className="guardian-brand-text">
+            <span>CyberAlerta</span>
+            <span>Guardian</span>
+          </span>
+        </Link>
 
-      <div className="relative z-[81] flex flex-col gap-2 xl:grid xl:grid-cols-[minmax(200px,auto)_minmax(0,1fr)_auto] xl:items-center xl:gap-3">
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <Link
-            href="/"
-            className="group inline-flex min-w-0 items-center gap-3"
-            onClick={()=>{
-              setPlatformOpen(false)
-              setSettingsOpen(false)
-            }}
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-cyan-300/25 bg-cyan-300/[0.08] text-xs font-semibold text-cyan-100 shadow-inner">
-              CG
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-lg font-semibold leading-tight text-white group-hover:text-cyan-100">CyberAlerta Guardian</span>
-              <span className="hidden truncate text-xs font-semibold leading-5 text-slate-400 md:block">{t.tagline}</span>
-            </span>
-          </Link>
-
-          <button
-            type="button"
-            className={`${navLinkClass} xl:hidden ${settingsOpen ? 'border-cyan-300/45 bg-cyan-300/[0.12] text-white' : 'border-white/10 bg-white/[0.04]'}`}
-            aria-expanded={settingsOpen}
-            aria-haspopup="menu"
-            aria-label="Abrir configurações"
-            onClick={()=>{
-              setSettingsOpen(open=>!open)
-              setPlatformOpen(false)
-            }}
-          >
-            Ajustes
-          </button>
-        </div>
-
-        <nav className="guardian-nav-scroll -mx-1 flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto px-1 pb-1 xl:mx-0 xl:justify-center xl:overflow-visible xl:pb-0" aria-label="Navegação principal">
-          {primaryNav.map((item)=> (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={navLinkClass}
-              onClick={()=>{
-                setPlatformOpen(false)
-                setSettingsOpen(false)
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
-
-          <div className="guardian-platform-menu-root relative shrink-0">
-            <button
-              type="button"
-              className={`${navLinkClass} gap-1 ${platformOpen ? 'border-cyan-300/45 bg-cyan-300/[0.12] text-white' : ''}`}
-              aria-expanded={platformOpen}
-              aria-haspopup="menu"
-              onClick={()=>{
-                setPlatformOpen(open=>!open)
-                setSettingsOpen(false)
-              }}
-            >
-              <span>Plataforma</span>
-              <span className="text-[10px] opacity-80" aria-hidden="true">▾</span>
-            </button>
-
-            {platformOpen && (
-              <div
-                className="guardian-dropdown absolute left-1/2 top-[calc(100%+0.45rem)] z-[100] w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 rounded-md border border-slate-600/80 bg-slate-950 p-2 shadow-[0_24px_64px_rgba(2,6,23,0.78)] ring-1 ring-cyan-300/10 xl:left-auto xl:right-0 xl:translate-x-0"
-                role="menu"
+        <nav className="guardian-main-nav" aria-label="Navegação principal">
+          {navGroups.map((group)=> (
+            <div key={group.label} className="guardian-nav-group">
+              <button
+                type="button"
+                className="guardian-nav-link"
+                aria-haspopup="menu"
+                aria-expanded={openMenu === group.label}
+                onClick={()=>setOpenMenu(current=> current === group.label ? null : group.label)}
               >
-                <div className="mb-1 border-b border-white/10 px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
-                  Plataforma Guardian
+                {group.label}
+                <Chevron />
+              </button>
+              {openMenu === group.label && (
+                <div className="guardian-nav-dropdown" role="menu">
+                  {group.items.map((item)=> (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      role="menuitem"
+                      onClick={()=>setOpenMenu(null)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
                 </div>
-                {platformNav.map((item)=> (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    role="menuitem"
-                    onClick={()=>{
-                      setPlatformOpen(false)
-                      setSettingsOpen(false)
-                    }}
-                    className="block min-h-11 rounded-md border border-transparent px-3 py-2.5 text-sm font-semibold leading-5 text-slate-200 transition hover:border-cyan-300/25 hover:bg-white/[0.08] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ))}
+          <Link href="/pilot" className="guardian-nav-link" onClick={()=>setOpenMenu(null)}>
+            Contato
+          </Link>
         </nav>
 
-        <div className="hidden shrink-0 flex-wrap items-center gap-2 xl:flex xl:justify-end">
-          {renderControlPanel()}
+        <div className="guardian-header-actions">
+          <button type="button" className="guardian-language-button" onClick={toggleLocale} aria-label="Alternar idioma">
+            {locale === 'pt-BR' ? 'PT' : 'EN'}
+            <Chevron />
+          </button>
+          <Link href="/family-console" className="guardian-console-button" onClick={()=>setOpenMenu(null)}>
+            <ShieldLogo />
+            Acessar Console
+          </Link>
         </div>
-
-        {settingsOpen && (
-          <div className="guardian-dropdown absolute right-0 top-[calc(100%+0.55rem)] z-[100] w-[min(22rem,calc(100vw-2rem))] rounded-md border border-slate-600/80 bg-slate-950 p-3 shadow-[0_24px_64px_rgba(2,6,23,0.78)] ring-1 ring-cyan-300/10 xl:hidden" role="menu">
-            <div className="mb-3 border-b border-white/10 pb-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
-              Configurações
-            </div>
-            <div className="flex flex-col gap-3">
-              {renderControlPanel()}
-            </div>
-          </div>
-        )}
       </div>
     </header>
   )

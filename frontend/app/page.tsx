@@ -3,14 +3,8 @@
 import React from 'react'
 import Link from 'next/link'
 import GuardianInterventionConsole from '@/components/GuardianInterventionConsole'
-import HomeGuardianCoreVisual from '@/components/HomeGuardianCoreVisual'
-import HomeScrollReveal from '@/components/HomeScrollReveal'
-
-const proofPoints = [
-  'Canal simples para a pessoa protegida',
-  'Console inteligente para o responsável',
-  'Pausa protetiva antes do dano',
-]
+import HeroSection from '@/components/HeroSection'
+import {RevealGroup, RevealItem, ScrollScene} from '@/components/Reveal'
 
 const flowSteps = [
   {
@@ -48,7 +42,7 @@ const productModules = [
   },
   {
     title:'Trusted Circle',
-    body:'Aciona Gabriel, cuidador ou responsável quando a pessoa protegida precisa de apoio imediato.',
+    body:'Aciona familiar, cuidador ou responsável quando a pessoa protegida precisa de apoio imediato.',
     tone:'human',
   },
   {
@@ -61,19 +55,22 @@ const productModules = [
     body:'Resume sinais, decisão, trace dos agentes e orientação preventiva para família ou instituição.',
     tone:'neutral',
   },
-  {
-    title:'SafetyPolicy',
-    body:'Mantém as respostas defensivas, educativas e seguras, sem ensinar golpes ou expor instruções ofensivas.',
-    tone:'safe',
-  },
 ]
 
 const caseSteps = [
   'Dona Lúcia recebe uma mensagem de um falso filho pedindo Pix urgente.',
   'Ela encaminha a mensagem pelo canal simples do Guardian.',
   'O sistema responde com orientação curta: não pagar e confirmar por contato salvo.',
-  'O caso chega ao Gabriel no Guardian Console com sinais e risco.',
+  'O caso chega ao responsável no Guardian Console com sinais e risco.',
   'Trust Lock pausa a ação e a verificação segura evita prejuízo.',
+]
+
+const metrics = [
+  ['3.847', 'Ameaças bloqueadas nas últimas 24h'],
+  ['98,6%', 'Casos interceptados antes do dano'],
+  ['R$ 12,7M', 'Prejuízos evitados pelas famílias'],
+  ['27.431', 'Famílias e cuidadores protegidos'],
+  ['100%', 'Privacidade e dados protegidos por design'],
 ]
 
 function HomeSectionHeader({
@@ -97,127 +94,124 @@ function HomeSectionHeader({
 export default function Home(){
   return (
     <div className="home-black-page">
-      <section className="home-hero" aria-label="CyberAlerta Guardian">
-        <div className="home-hero-copy">
-          <div className="home-product-name">CyberAlerta Guardian</div>
-          <div className="home-eyebrow">Proteção antifraude assistida</div>
-          <h1>Proteção antes do golpe virar prejuízo.</h1>
-          <p className="home-hero-subtitle">
-            Uma plataforma de proteção assistida para familiares, cuidadores e instituições protegerem pessoas vulneráveis contra golpes por Pix, WhatsApp, links e engenharia social.
-          </p>
-          <div className="home-hero-actions">
-            <Link href="/assisted-demo" className="home-primary-cta">Ver demonstração</Link>
-            <Link href="/family-console" className="home-secondary-cta">Explorar Guardian Console</Link>
-          </div>
-          <div className="home-proof-strip" aria-label="Pontos de prova">
-            {proofPoints.map((point)=> (
-              <span key={point}>{point}</span>
-            ))}
-          </div>
-        </div>
+      <HeroSection />
 
-        <div className="home-hero-visual">
-          <HomeGuardianCoreVisual />
-        </div>
-      </section>
+      <RevealGroup as="section" className="home-section home-second-fold" variant="soft" amount={0.15} delayChildren={0.08} stagger={0.08}>
+        <RevealItem as="blockquote" className="home-testimonial" index={0}>
+          <p>“Quase fiz um Pix de R$ 4.850,00 para um golpista...”</p>
+          <footer>Dona Lúcia, 72 anos</footer>
+        </RevealItem>
 
-      <HomeScrollReveal className="home-section">
-        <HomeSectionHeader
-          eyebrow="Como funciona"
-          title="Uma trilha simples para quem está em risco. Um console para quem protege."
-          description="O Guardian separa a experiência da pessoa protegida da operação do responsável. Simples na ponta, rastreável no console."
-        />
-        <div className="home-flow">
-          {flowSteps.map((step)=> (
-            <article key={step.number} className="home-flow-step">
-              <span>{step.number}</span>
-              <h3>{step.title}</h3>
-              <p>{step.body}</p>
-            </article>
+        <RevealGroup as="div" className="home-metrics-row" variant="card" amount={0.1} delayChildren={0.05} stagger={0.08} aria-label="Métricas simuladas de proteção">
+          {metrics.map(([value,label],index)=> (
+            <RevealItem as="div" key={label} className="home-metric-item" index={index}>
+              <strong>{value}</strong>
+              <span>{label}</span>
+            </RevealItem>
           ))}
-        </div>
-      </HomeScrollReveal>
+        </RevealGroup>
+      </RevealGroup>
 
-      <HomeScrollReveal className="home-section home-console-section" delay={80}>
-        <div className="home-console-intro">
+      <ScrollScene as="section" className="home-section home-console-section scroll-scene-sticky" variant="panel" amount={0.15} delayChildren={0.08} stagger={0.08}>
+        <RevealItem className="home-console-intro" index={0}>
           <HomeSectionHeader
             eyebrow="Guardian Intervention Console"
             title="A assinatura operacional do produto."
             description="Mensagem suspeita, sinais detectados, score de risco, Trust Lock, próxima ação e trilha da decisão em uma visão única para o responsável."
           />
           <Link href="/before-pix" className="home-inline-link">Abrir análise Before Pix</Link>
-        </div>
-        <GuardianInterventionConsole />
-      </HomeScrollReveal>
+        </RevealItem>
+        <RevealItem className="home-console-shell" index={1}>
+          <GuardianInterventionConsole />
+        </RevealItem>
+      </ScrollScene>
 
-      <HomeScrollReveal className="home-section" delay={120}>
-        <HomeSectionHeader
-          eyebrow="Módulos críticos"
-          title="Menos painel para a vítima. Mais proteção coordenada para a família."
-          description="Os módulos trabalham juntos para pausar risco, orientar verificação, acionar confiança e documentar a decisão."
-        />
-        <div className="home-module-grid">
-          {productModules.map((module,index)=> (
-            <article key={module.title} className={`home-module-card home-module-${module.tone} ${index === 0 ? 'home-module-lead' : ''}`}>
-              <div className="home-module-index">{String(index + 1).padStart(2,'0')}</div>
-              <h3>{module.title}</h3>
-              <p>{module.body}</p>
-            </article>
+      <RevealGroup as="section" className="home-section home-flow-section" variant="default" amount={0.15} delayChildren={0.1} stagger={0.1}>
+        <RevealItem index={0}>
+          <HomeSectionHeader
+            eyebrow="Como funciona"
+            title="Uma trilha simples para quem está em risco. Um console para quem protege."
+            description="O Guardian separa a experiência da pessoa protegida da operação do responsável. Simples na ponta, rastreável no console."
+          />
+        </RevealItem>
+        <div className="home-flow home-flow-sequence">
+          {flowSteps.map((step,index)=> (
+            <RevealItem as="article" key={step.number} className="home-flow-step" index={index + 2}>
+              <span>{step.number}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </RevealItem>
           ))}
         </div>
-      </HomeScrollReveal>
+      </RevealGroup>
 
-      <HomeScrollReveal className="home-section home-case-study" delay={140}>
-        <div>
-          <div className="home-eyebrow">Caso de uso</div>
-          <h2>Dona Lúcia não precisa entender o golpe sozinha.</h2>
-          <p>
-            A proteção assistida entra no intervalo entre a pressão da mensagem e a transferência. O sistema reduz velocidade, mostra sinais e coloca o responsável certo no fluxo.
-          </p>
-          <div className="home-case-actions">
+      <RevealGroup as="section" className="home-section home-case-study" variant="fast" amount={0.15} delayChildren={0.05} stagger={0.08}>
+        <div className="home-case-copy">
+          <RevealItem as="blockquote" className="home-case-quote" index={0}>
+            <p>“Eu só precisava de alguém para me dizer: pare, confirme pelo número salvo.”</p>
+            <footer>Dona Lúcia, 72 anos</footer>
+          </RevealItem>
+          <RevealItem className="home-case-context" index={1}>
+            <div className="home-eyebrow">Caso Dona Lúcia</div>
+            <h2>Dona Lúcia não precisa entender o golpe sozinha.</h2>
+            <p>
+              A proteção assistida entra no intervalo entre a pressão da mensagem e a transferência. O sistema reduz velocidade, mostra sinais e coloca o responsável certo no fluxo.
+            </p>
+          </RevealItem>
+          <RevealItem className="home-case-actions" index={8}>
+            <Link href="/family-console" className="home-primary-cta">Abrir console</Link>
             <Link href="/chatbot-demo" className="home-secondary-cta">Ver canal simples</Link>
-            <Link href="/family-console" className="home-secondary-cta">Abrir console</Link>
-          </div>
+          </RevealItem>
         </div>
         <ol className="home-case-timeline">
           {caseSteps.map((step,index)=> (
-            <li key={step}>
+            <RevealItem as="li" key={step} index={index + 2}>
               <span>{String(index + 1).padStart(2,'0')}</span>
               <p>{step}</p>
-            </li>
+            </RevealItem>
           ))}
         </ol>
-      </HomeScrollReveal>
+      </RevealGroup>
 
-      <HomeScrollReveal className="home-section home-global-preview" delay={160}>
-        <div className="home-global-map" aria-hidden="true">
-          <span className="home-map-node home-map-node-a" />
-          <span className="home-map-node home-map-node-b" />
-          <span className="home-map-node home-map-node-c" />
-          <span className="home-map-line home-map-line-a" />
-          <span className="home-map-line home-map-line-b" />
-        </div>
-        <div>
-          <div className="home-eyebrow">Visão global</div>
-          <h2>Padrões de fraude mudam por região. A pausa protetiva continua a mesma.</h2>
+      <RevealGroup as="section" className="home-section home-checklist-section" variant="default" amount={0.15} delayChildren={0.1} stagger={0.09}>
+        <RevealItem index={0}>
+          <HomeSectionHeader
+            eyebrow="Trust Center modules"
+            title="Menos painel para a vítima. Mais proteção coordenada para a família."
+            description="Os módulos trabalham juntos para pausar risco, orientar verificação, acionar confiança e documentar a decisão."
+          />
+        </RevealItem>
+        <RevealGroup as="div" className="home-module-grid" variant="card" amount={0.1} delayChildren={0.05} stagger={0.08}>
+          {productModules.map((module,index)=> (
+            <RevealItem
+              as="article"
+              key={module.title}
+              className={`home-module-card home-module-${module.tone} ${index === 0 ? 'home-module-lead' : ''}`}
+              index={index}
+            >
+              <div className="home-module-index">{String(index + 1).padStart(2,'0')}</div>
+              <h3>{module.title}</h3>
+              <p>{module.body}</p>
+            </RevealItem>
+          ))}
+        </RevealGroup>
+      </RevealGroup>
+
+      <RevealGroup as="section" className="home-section home-closing" variant="default" amount={0.15} delayChildren={0.1} stagger={0.09}>
+        <RevealItem index={0}>
+          <div className="home-eyebrow">Proteção assistida</div>
+        </RevealItem>
+        <RevealItem index={1}>
+          <h2>Uma camada entre a mensagem suspeita e o prejuízo.</h2>
           <p>
-            Visualização simulada de padrões de golpe — não é feed real de ataques. A página global mostra como Pix, links, senhas e documentos entram na mesma lógica de prevenção pré-dano.
+            O CyberAlerta Guardian foi desenhado para apoiar pessoas vulneráveis, famílias e instituições antes que a engenharia social vire perda financeira, roubo de credencial ou envio de documento.
           </p>
-          <Link href="/global" className="home-inline-link">Explorar visão global</Link>
-        </div>
-      </HomeScrollReveal>
-
-      <HomeScrollReveal className="home-section home-closing" delay={180}>
-        <div className="home-eyebrow">Proteção assistida</div>
-        <h2>Uma camada entre a mensagem suspeita e o prejuízo.</h2>
-        <p>
-          O CyberAlerta Guardian foi desenhado para apoiar pessoas vulneráveis, famílias e instituições antes que a engenharia social vire perda financeira, roubo de credencial ou envio de documento.
-        </p>
-        <div className="home-hero-actions">
-          <Link href="/assisted-demo" className="home-primary-cta">Ver demonstração completa</Link>
-          <Link href="/family-console" className="home-secondary-cta">Abrir Guardian Console</Link>
-        </div>
-      </HomeScrollReveal>
+        </RevealItem>
+        <RevealItem className="home-hero-actions" index={2}>
+          <Link href="/family-console" className="home-primary-cta">Abrir Guardian Console</Link>
+          <Link href="/assisted-demo" className="home-secondary-cta">Ver demonstração completa</Link>
+        </RevealItem>
+      </RevealGroup>
     </div>
   )
 }

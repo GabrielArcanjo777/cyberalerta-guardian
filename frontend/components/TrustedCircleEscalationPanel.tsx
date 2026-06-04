@@ -85,7 +85,7 @@ export default function TrustedCircleEscalationPanel({
   const statusLabel = statusLabels[displayStatus] || displayStatus
 
   return (
-    <Card className="border-amber-400/20">
+    <Card className="card-risk border-amber-400/20">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="app-label text-amber-200/90">Círculo de confiança</div>

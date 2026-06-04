@@ -99,7 +99,7 @@ export default function ImpactDashboard(){
         ))}
       </div>
 
-      <Card>
+      <Card className="card-primary">
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Por que isso importa</div>
@@ -112,7 +112,7 @@ export default function ImpactDashboard(){
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <Card>
+        <Card className="card-evidence">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Padrões de manipulação</div>
@@ -143,7 +143,7 @@ export default function ImpactDashboard(){
           </div>
         </Card>
 
-        <Card>
+        <Card className="card-muted">
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Cenarios demonstrados</div>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Cobertura do MVP</h2>
           <div className="mt-6 grid gap-3">
@@ -159,7 +159,7 @@ export default function ImpactDashboard(){
         </Card>
       </div>
 
-      <Card>
+      <Card className="card-evidence">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Global applicability</div>
@@ -179,7 +179,7 @@ export default function ImpactDashboard(){
         </div>
       </Card>
 
-      <Card>
+      <Card className="card-secondary">
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Global threat patterns</div>
@@ -207,7 +207,7 @@ export default function ImpactDashboard(){
         </div>
       </Card>
 
-      <Card className="border-dashed border-slate-300 bg-slate-50/70">
+      <Card className="card-muted border-dashed border-slate-300 bg-slate-50/70">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Transparencia</div>

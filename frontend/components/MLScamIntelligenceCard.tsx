@@ -6,7 +6,7 @@ export default function MLScamIntelligenceCard({ml, url}:{ml?:MLAnalysis, url?:U
   if(!ml) return null
 
   return (
-    <Card>
+    <Card className={ml.risco === 'alto' ? 'card-danger' : 'card-evidence'}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">ML Scam Intelligence</div>

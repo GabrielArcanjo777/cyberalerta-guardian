@@ -84,7 +84,7 @@ export default function HelpNetworkPage(){
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Mensagem sugerida</div>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">"{playbook.suggested_message}"</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">&ldquo;{playbook.suggested_message}&rdquo;</p>
                 </div>
               </div>
 
@@ -119,7 +119,7 @@ export default function HelpNetworkPage(){
             <div key={template.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{template.audience}</div>
               <h3 className="mt-2 text-sm font-black text-slate-950">{template.title}</h3>
-              <p className="mt-3 text-sm font-semibold leading-6 text-slate-700">"{template.message}"</p>
+              <p className="mt-3 text-sm font-semibold leading-6 text-slate-700">&ldquo;{template.message}&rdquo;</p>
             </div>
           ))}
         </div>
