@@ -279,6 +279,54 @@ export type TrustedCircleAlert = {
   message:string
 }
 
+export type TrustLock = {
+  activated:boolean
+  title:string
+  reason:string
+  message:string
+}
+
+export type InterventionPlaybook = {
+  immediate_action:string
+  verification:string
+  family_escalation:string
+  recovery_fallback:string
+}
+
+export type GuardianReport = {
+  title:string
+  summary:string
+  agent_decision:string
+  recommended_next_step:string
+}
+
+export type TrustEvidence = {
+  confidence:number
+  evidence:string[]
+}
+
+export type AnalyzeResponse = {
+  risk_score:number
+  risk_level:string
+  dangerous_action:string
+  scam_type:string
+  scam_stage:string
+  manipulations:string[]
+  trust_evidence:TrustEvidence
+  agent_decision_trace:AgentDecisionTraceItem[]
+  decision_ledger:DecisionLedger
+  ai_mode:AIMode
+  ml_analysis:MLAnalysis
+  url_analysis:UrlAnalysis | null
+  trust_lock:TrustLock
+  proof_of_trust:string[]
+  intervention_playbook:InterventionPlaybook
+  trusted_circle_alert:TrustedCircleAlert
+  user_message:string
+  report:GuardianReport
+  __mock?:boolean
+}
+
 export type RecoveryPayload = {
   paid:boolean
   clicked_link:boolean
@@ -349,7 +397,7 @@ export type PrivacyReport = {
 }
 
 export type IntakeAnalysisResponse = {
-  analysis:any
+  analysis:AnalyzeResponse
   privacy_report:PrivacyReport
   redacted_content:string
   __mock?:boolean
@@ -363,7 +411,7 @@ export type ConnectorResult = {
   safe_to_display:boolean
   privacy_note:string
   confidence:number
-  metadata:Record<string,any>
+  metadata:Record<string,unknown>
   __mock?:boolean
 }
 
@@ -384,6 +432,6 @@ export type OCRPreviewResponse = {
   safe_to_display:boolean
   privacy_note:string
   confidence:number
-  metadata:Record<string,any>
+  metadata:Record<string,unknown>
   __mock?:boolean
 }

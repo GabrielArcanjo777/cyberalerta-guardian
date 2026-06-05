@@ -122,7 +122,7 @@ export default function AttackGlobe3D(){
     camera.position.set(0, 0.12, 7.35)
 
     const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:'high-performance'})
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     renderer.setClearColor(0x000000, 0)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.domElement.style.display = 'block'
@@ -135,6 +135,7 @@ export default function AttackGlobe3D(){
     scene.add(root)
     const globeGroup = new THREE.Group()
     root.add(globeGroup)
+    globeGroup.scale.setScalar(0.94)
 
     const globeRadius = 1.68
     const globe = new THREE.Mesh(
@@ -145,7 +146,7 @@ export default function AttackGlobe3D(){
         roughness:0.58,
         metalness:0.08,
         transparent:true,
-        opacity:0.84,
+        opacity:0.78,
       })
     )
     globeGroup.add(globe)
@@ -155,7 +156,7 @@ export default function AttackGlobe3D(){
       new THREE.MeshBasicMaterial({
         color:0x38bdf8,
         transparent:true,
-        opacity:0.08,
+        opacity:0.065,
         side:THREE.BackSide,
       })
     )
@@ -165,13 +166,13 @@ export default function AttackGlobe3D(){
     for(let lat = -60; lat <= 60; lat += 30){
       const y = globeRadius * Math.sin(lat * Math.PI / 180)
       const r = globeRadius * Math.cos(lat * Math.PI / 180)
-      const line = makeCircleLine(r, 0x94a3b8, 0.28)
+      const line = makeCircleLine(r, 0x94a3b8, 0.18)
       line.position.y = y
       gridLines.push(line)
       globeGroup.add(line)
     }
     for(let lon = 0; lon < 180; lon += 30){
-      const line = makeCircleLine(globeRadius, 0x94a3b8, 0.22)
+      const line = makeCircleLine(globeRadius, 0x94a3b8, 0.14)
       line.rotation.x = Math.PI / 2
       line.rotation.z = lon * Math.PI / 180
       gridLines.push(line)

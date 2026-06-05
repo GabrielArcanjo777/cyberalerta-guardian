@@ -7,7 +7,7 @@ import {AppStatus} from '@/components/AppPrimitives'
 import {getSimpleChannelStatus, postSimpleChannelSubmit} from '@/lib/api'
 import type {SimpleChannelStatusResponse, SimpleChannelSubmitResponse} from '@/lib/types'
 
-const defaultMessage = 'Mae, troquei de numero. Preciso fazer um Pix urgente.'
+const defaultMessage = 'Mãe, troquei de número. Preciso fazer um Pix urgente.'
 
 type ChatMessage = {
   id: string
@@ -16,7 +16,7 @@ type ChatMessage = {
 }
 
 export default function SimpleChannelChat(){
-  const [alias,setAlias]=useState('Dona Lucia')
+  const [alias,setAlias]=useState('Dona Lúcia')
   const [trustedContact,setTrustedContact]=useState('Gabriel')
   const [draft,setDraft]=useState(defaultMessage)
   const [consent,setConsent]=useState(false)

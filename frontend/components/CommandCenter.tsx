@@ -1,7 +1,33 @@
+"use client"
+
 import React from 'react'
+import {motion, type Variants} from 'framer-motion'
+import {usePrefersReducedMotion} from '@/components/usePrefersReducedMotion'
 
 function cx(...classes: Array<string | false | undefined | null>){
   return classes.filter(Boolean).join(' ')
+}
+
+const revealEase: [number, number, number, number] = [0.22, 1, 0.36, 1]
+const revealViewport = {once:true, amount:0.28}
+
+function revealVariants(shouldReduceMotion:boolean, y = 26, scale = 1):Variants{
+  return {
+    hidden: {
+      opacity: 1,
+      y: shouldReduceMotion ? 0 : y,
+      scale: shouldReduceMotion ? 1 : scale,
+    },
+    show: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: shouldReduceMotion ? 0.18 : 0.66,
+        ease: revealEase,
+      },
+    },
+  }
 }
 
 type ShellProps = {
@@ -12,7 +38,7 @@ type ShellProps = {
 
 export function PageShell({children,className='',maxWidth='7xl'}:ShellProps){
   return (
-    <section className={cx('guardian-product-page mx-auto space-y-7 pb-14', maxWidth === '6xl' ? 'max-w-6xl' : 'max-w-7xl', className)}>
+    <section className={cx('guardian-product-page app-shell mx-auto space-y-7 pb-14', maxWidth === '6xl' ? 'max-w-6xl' : 'max-w-7xl', className)}>
       {children}
     </section>
   )
@@ -29,8 +55,16 @@ type PageHeaderProps = {
 }
 
 export function PageHeader({eyebrow,title,description,detail,actions,aside,className=''}:PageHeaderProps){
+  const shouldReduceMotion = usePrefersReducedMotion()
+
   return (
-    <header className={cx('guardian-page-header overflow-hidden', className)}>
+    <motion.header
+      className={cx('guardian-page-header overflow-hidden', className)}
+      initial="hidden"
+      whileInView="show"
+      viewport={revealViewport}
+      variants={revealVariants(shouldReduceMotion, 22, 0.992)}
+    >
       <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
         <div className="p-6 sm:p-8 lg:p-10">
           <div className="guardian-kicker">{eyebrow}</div>
@@ -49,7 +83,7 @@ export function PageHeader({eyebrow,title,description,detail,actions,aside,class
           </div>
         )}
       </div>
-    </header>
+    </motion.header>
   )
 }
 
@@ -62,8 +96,16 @@ type PanelProps = {
 }
 
 export function CommandPanel({children,className='',eyebrow,title,description}:PanelProps){
+  const shouldReduceMotion = usePrefersReducedMotion()
+
   return (
-    <section className={cx('guardian-command-panel', className)}>
+    <motion.section
+      className={cx('guardian-command-panel', className)}
+      initial="hidden"
+      whileInView="show"
+      viewport={revealViewport}
+      variants={revealVariants(shouldReduceMotion, 24, 0.992)}
+    >
       {(eyebrow || title || description) && (
         <div className="guardian-panel-heading">
           {eyebrow && <div className="guardian-panel-eyebrow">{eyebrow}</div>}
@@ -72,7 +114,7 @@ export function CommandPanel({children,className='',eyebrow,title,description}:P
         </div>
       )}
       {children}
-    </section>
+    </motion.section>
   )
 }
 
@@ -104,12 +146,20 @@ type MetricPanelProps = {
 }
 
 export function MetricPanel({label,value,detail,tone='default'}:MetricPanelProps){
+  const shouldReduceMotion = usePrefersReducedMotion()
+
   return (
-    <div className={cx('guardian-metric-panel', tone !== 'default' && `guardian-metric-${tone}`)}>
+    <motion.div
+      className={cx('guardian-metric-panel', tone !== 'default' && `guardian-metric-${tone}`)}
+      initial="hidden"
+      whileInView="show"
+      viewport={revealViewport}
+      variants={revealVariants(shouldReduceMotion, 20, 0.985)}
+    >
       <div className="text-xs font-semibold uppercase text-slate-500">{detail || label}</div>
       <div className="mt-3 text-4xl font-semibold text-white">{value}</div>
       {detail && <div className="mt-2 text-sm font-semibold leading-5 text-slate-300">{label}</div>}
-    </div>
+    </motion.div>
   )
 }
 

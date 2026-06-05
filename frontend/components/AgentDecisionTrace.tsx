@@ -39,7 +39,7 @@ export default function AgentDecisionTrace({items, decisionLedger}:{items:TraceI
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Agent Decision Trace</div>
           <h3 className="mt-2 text-xl font-bold tracking-tight text-white">Linha do tempo auditavel</h3>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-            Cada agente registra o que recebeu, a decisao tomada, as evidencias defensivas e o proximo passo.
+            Cada agente registra o que recebeu, a decisão tomada, as evidências defensivas e o próximo passo.
           </p>
         </div>
         <span className="rounded border border-white/10 bg-white/[0.08] px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-200">
@@ -67,7 +67,7 @@ export default function AgentDecisionTrace({items, decisionLedger}:{items:TraceI
                     <p className="mt-2 text-sm leading-6 text-slate-600">{item.input_summary}</p>
                   </div>
                   <div className="min-w-[132px] rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-2">
-                    <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Confianca</div>
+                    <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Confiança</div>
                     <div className="mt-1 flex items-baseline gap-1">
                       <span className="text-2xl font-black text-slate-950">{confidence}</span>
                       <span className="text-xs font-bold text-slate-500">%</span>
@@ -84,7 +84,7 @@ export default function AgentDecisionTrace({items, decisionLedger}:{items:TraceI
                 </div>
 
                 <div className="mt-4">
-                  <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Evidencias encontradas</div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Evidências encontradas</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {item.evidence.map((evidence,evidenceIndex)=> (
                       <span key={`${evidence}-${evidenceIndex}`} className="rounded border border-slate-200 bg-white/[0.85] px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
@@ -97,7 +97,7 @@ export default function AgentDecisionTrace({items, decisionLedger}:{items:TraceI
                 <div className="mt-4 flex items-center gap-3 rounded-lg border border-cyan-200 bg-cyan-50/90 px-4 py-3">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-500" />
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-wide text-cyan-700">Proxima acao</div>
+                    <div className="text-xs font-bold uppercase tracking-wide text-cyan-700">Próxima ação</div>
                     <p className="mt-1 text-sm font-semibold leading-5 text-slate-700">{item.next_action}</p>
                   </div>
                 </div>
@@ -127,7 +127,7 @@ export default function AgentDecisionTrace({items, decisionLedger}:{items:TraceI
             <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Escalonamento</div>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-200">
-                {decisionLedger.escalation_required ? 'Contato de confianca deve ser acionado.' : 'Apenas monitoramento preventivo.'}
+                {decisionLedger.escalation_required ? 'Contato de confiança deve ser acionado.' : 'Apenas monitoramento preventivo.'}
               </p>
             </div>
           </div>

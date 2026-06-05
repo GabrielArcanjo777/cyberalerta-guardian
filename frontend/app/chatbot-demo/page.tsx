@@ -10,15 +10,15 @@ export default function ChatbotDemoPage(){
       <PageHeader
         eyebrow="Canal simples · Sprint 18B"
         title="Encaminhar mensagem pelo WhatsApp mock"
-        description="A pessoa protegida compartilha apenas o trecho suspeito. O Guardian responde de forma curta, recomenda pausa e abre caso simulado para o responsavel no console."
+        description="A pessoa protegida compartilha apenas o trecho suspeito. O Guardian responde de forma curta, recomenda pausa e abre caso simulado para o responsável no console."
         detail="Sem WhatsApp real, sem tokens, sem monitoramento de conversas privadas e sem login."
         actions={
           <>
             <Link href="/family-console">
-              <Button className="h-12 w-full sm:w-auto">Ver console do responsavel</Button>
+              <Button className="h-12 w-full sm:w-auto">Ver console do responsável</Button>
             </Link>
             <Link href="/intake">
-              <Button variant="ghost" className="h-12 w-full sm:w-auto">Intake tecnico completo</Button>
+              <Button variant="ghost" className="h-12 w-full sm:w-auto">Intake técnico completo</Button>
             </Link>
           </>
         }

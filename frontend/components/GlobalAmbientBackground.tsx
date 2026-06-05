@@ -1,6 +1,7 @@
 "use client"
 
 import React, {useEffect, useRef} from 'react'
+import {usePathname} from 'next/navigation'
 
 type Particle = {
   x:number
@@ -30,8 +31,13 @@ const frameInterval = 1000 / 30
 
 export default function GlobalAmbientBackground(){
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const pathname = usePathname()
+  const disabledOnHome = pathname === '/'
+  const animatedOnGlobal = pathname === '/global'
 
   useEffect(()=>{
+    if(disabledOnHome || !animatedOnGlobal) return
+
     const canvas = canvasRef.current
     if(!canvas) return
 
@@ -337,10 +343,24 @@ export default function GlobalAmbientBackground(){
       window.cancelAnimationFrame(frameId)
       window.removeEventListener('resize', resize)
     }
-  },[])
+  },[disabledOnHome, animatedOnGlobal])
+
+  if(disabledOnHome){
+    return null
+  }
+
+  if(!animatedOnGlobal){
+    return (
+      <div className="guardian-ambient-background guardian-ambient-background-static" aria-hidden="true">
+        <div className="guardian-ambient-glow guardian-ambient-glow-a" />
+        <div className="guardian-ambient-glow guardian-ambient-glow-b" />
+        <div className="guardian-ambient-depth" />
+      </div>
+    )
+  }
 
   return (
-    <div className="guardian-ambient-background" aria-hidden="true">
+    <div className="guardian-ambient-background guardian-ambient-background-global" aria-hidden="true">
       <canvas ref={canvasRef} className="guardian-ambient-canvas" />
       <div className="guardian-ambient-glow guardian-ambient-glow-a" />
       <div className="guardian-ambient-glow guardian-ambient-glow-b" />

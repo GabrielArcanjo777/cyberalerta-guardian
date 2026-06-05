@@ -9,6 +9,18 @@ export function AppBadge({children, className=''}:{children:React.ReactNode, cla
   return <span className={cx('app-badge', className)}>{children}</span>
 }
 
+export function StatusBadge({children, tone='neutral', className=''}:{children:React.ReactNode, tone?:'neutral'|'safe'|'warning'|'danger'|'locked', className?:string}){
+  const toneClass = {
+    neutral: 'status-pill',
+    safe: 'status-pill status-safe',
+    warning: 'status-pill status-warning',
+    danger: 'status-pill status-danger',
+    locked: 'status-pill status-locked',
+  }[tone]
+
+  return <span className={cx(toneClass, className)}>{children}</span>
+}
+
 export function AppStatus({status, className=''}:{status:ConnectorStatusKey, className?:string}){
   return (
     <span className={cx(connectorStatusClass(status), className)}>
@@ -23,6 +35,18 @@ export function AppSectionTitle({children, className=''}:{children:React.ReactNo
 
 export function AppCardTitle({children, className=''}:{children:React.ReactNode, className?:string}){
   return <h3 className={cx('app-card-title', className)}>{children}</h3>
+}
+
+export function AppShell({children, className=''}:{children:React.ReactNode, className?:string}){
+  return <div className={cx('app-shell', className)}>{children}</div>
+}
+
+export function SectionShell({children, className=''}:{children:React.ReactNode, className?:string}){
+  return <section className={cx('app-section-shell', className)}>{children}</section>
+}
+
+export function EnterpriseCard({children, className=''}:{children:React.ReactNode, className?:string}){
+  return <div className={cx('enterprise-card', className)}>{children}</div>
 }
 
 const trustPipelineSteps = [

@@ -2,43 +2,45 @@ import React from 'react'
 import Link from 'next/link'
 import Button from '@/components/Button'
 import Card from '@/components/Card'
+import {AppBadge, AppCardTitle, AppSectionTitle} from '@/components/AppPrimitives'
+import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 import {alertTemplates, helpAudiences, helpPlaybooks} from '@/lib/helpPlaybooks'
 
 export default function HelpNetworkPage(){
   return (
-    <section className="guardian-product-page mx-auto max-w-6xl space-y-6 pb-12">
-      <div className="guardian-page-header overflow-hidden">
-        <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="guardian-kicker">
-              Help Network Mode
-            </div>
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Rede de Ajuda Guardian</h1>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-              Proteção comunitária contra golpes digitais com consentimento e privacidade.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link href="/before-pix"><Button className="h-12 w-full sm:w-auto">Analisar caso</Button></Link>
-              <Link href="/family-console"><Button variant="ghost" className="h-12 w-full sm:w-auto">Family Console</Button></Link>
-            </div>
-          </div>
-          <div className="border-t border-white/10 bg-white/[0.04] p-6 text-white sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">MVP seguro</div>
-            <p className="mt-4 text-2xl font-black tracking-tight">
-              Esta versão não envia alertas reais. Ela gera orientações e mensagens sugeridas.
-            </p>
-            <p className="mt-4 text-sm leading-6 text-slate-300">
+    <PageShell maxWidth="6xl">
+      <PageHeader
+        eyebrow="Help Network Mode"
+        title="Rede de Ajuda Guardian"
+        description="Proteção comunitária contra golpes digitais com consentimento, orientação mínima e privacidade por design."
+        detail="Esta versão não envia alertas reais. Ela gera playbooks, mensagens sugeridas e próximos passos para quem protege."
+        actions={
+          <>
+            <Link href="/before-pix"><Button className="h-12 w-full sm:w-auto">Analisar caso</Button></Link>
+            <Link href="/family-console"><Button variant="ghost" className="h-12 w-full sm:w-auto">Guardian Console</Button></Link>
+          </>
+        }
+        aside={
+          <div className="space-y-5">
+            <StatusRail
+              items={[
+                {label:'Alertas reais', value:'desligados', tone:'warn'},
+                {label:'Telefones', value:'não coletados', tone:'ready'},
+                {label:'Modo', value:'orientação', tone:'neutral'},
+              ]}
+            />
+            <p className="text-sm leading-6 text-slate-300">
               Sem coleta de telefones reais, sem login, sem banco de dados e sem monitoramento automático.
             </p>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {helpAudiences.map((audience)=> (
           <Card key={audience.title}>
-            <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">{audience.title}</div>
-            <p className="mt-3 text-sm font-semibold leading-6 text-slate-700">{audience.description}</p>
+            <div className="app-label">{audience.title}</div>
+            <p className="app-body-text mt-3 text-sm font-semibold">{audience.description}</p>
           </Card>
         ))}
       </div>
@@ -46,98 +48,94 @@ export default function HelpNetworkPage(){
       <Card>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Playbooks</div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Ação rápida sem invadir privacidade</h2>
+            <div className="app-label">Playbooks</div>
+            <AppSectionTitle>Ação rápida sem invadir privacidade</AppSectionTitle>
           </div>
-          <span className="rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
-            Demo consentida
-          </span>
+          <AppBadge className="app-badge-accent">Demo consentida</AppBadge>
         </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           {helpPlaybooks.map((playbook)=> (
-            <div key={playbook.id} className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+            <article key={playbook.id} className="app-card-compact p-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{playbook.audience}</div>
-                  <h3 className="mt-2 text-lg font-black leading-6 text-slate-950">{playbook.title}</h3>
+                  <div className="app-label">{playbook.audience}</div>
+                  <AppCardTitle className="mt-2">{playbook.title}</AppCardTitle>
                 </div>
-                <span className="rounded border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                  playbook
-                </span>
+                <AppBadge>playbook</AppBadge>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {playbook.signals.map((signal)=> (
-                  <span key={signal} className="rounded border border-slate-200 bg-white px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">{signal}</span>
+                  <AppBadge key={signal}>{signal}</AppBadge>
                 ))}
               </div>
 
               <div className="mt-4 grid gap-3">
-                <div className="rounded-lg border border-slate-200 bg-white p-4">
-                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Ação imediata</div>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{playbook.immediate_action}</p>
+                <div className="app-action-panel">
+                  <div className="app-label">Ação imediata</div>
+                  <p className="app-body-text mt-2 text-sm font-semibold">{playbook.immediate_action}</p>
                 </div>
-                <div className="rounded-lg border border-slate-200 bg-white p-4">
-                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Quem acionar</div>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{playbook.who_to_notify.join(', ')}</p>
+                <div className="app-action-panel">
+                  <div className="app-label">Quem acionar</div>
+                  <p className="app-body-text mt-2 text-sm font-semibold">{playbook.who_to_notify.join(', ')}</p>
                 </div>
-                <div className="rounded-lg border border-slate-200 bg-white p-4">
-                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Mensagem sugerida</div>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">"{playbook.suggested_message}"</p>
+                <div className="app-action-panel">
+                  <div className="app-label">Mensagem sugerida</div>
+                  <p className="app-body-text mt-2 text-sm font-semibold">"{playbook.suggested_message}"</p>
                 </div>
               </div>
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-red-500">O que não fazer</div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-red-300">O que não fazer</div>
                   <ul className="mt-2 space-y-2">
                     {playbook.what_not_to_do.map((item)=> (
-                      <li key={item} className="text-sm font-semibold leading-5 text-slate-700">{item}</li>
+                      <li key={item} className="app-body-text text-sm font-semibold">{item}</li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-emerald-700">Próximos passos</div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-teal-200">Próximos passos</div>
                   <ul className="mt-2 space-y-2">
                     {playbook.next_steps.map((item)=> (
-                      <li key={item} className="text-sm font-semibold leading-5 text-slate-700">{item}</li>
+                      <li key={item} className="app-body-text text-sm font-semibold">{item}</li>
                     ))}
                   </ul>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </Card>
 
       <Card>
-        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Templates de alerta</div>
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Mensagens prontas para copiar e adaptar</h2>
+        <div className="app-label">Templates de alerta</div>
+        <AppSectionTitle>Mensagens prontas para copiar e adaptar</AppSectionTitle>
         <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {alertTemplates.map((template)=> (
-            <div key={template.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{template.audience}</div>
-              <h3 className="mt-2 text-sm font-black text-slate-950">{template.title}</h3>
-              <p className="mt-3 text-sm font-semibold leading-6 text-slate-700">"{template.message}"</p>
+            <div key={template.id} className="app-action-panel">
+              <div className="app-label">{template.audience}</div>
+              <AppCardTitle className="mt-2 text-sm">{template.title}</AppCardTitle>
+              <p className="app-body-text mt-3 text-sm font-semibold">"{template.message}"</p>
             </div>
           ))}
         </div>
       </Card>
 
-      <Card className="border-dashed border-slate-300 bg-slate-50/70">
+      <Card className="border-dashed border-white/20">
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-center">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Privacidade</div>
-            <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+            <div className="app-label">Privacidade</div>
+            <p className="app-body-text mt-2 text-sm font-semibold">
               A rede de ajuda funciona por consentimento: a pessoa decide o que compartilhar, a instituição recebe orientação mínima e nenhum dado sensível é persistido no MVP.
             </p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600">
+          <div className="app-action-panel text-sm font-bold text-slate-200">
             Sem envio real · Sem telefone real · Sem banco de dados
           </div>
         </div>
       </Card>
-    </section>
+    </PageShell>
   )
 }

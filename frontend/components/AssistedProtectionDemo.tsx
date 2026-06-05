@@ -67,7 +67,7 @@ export default function AssistedProtectionDemo(){
 
   return (
     <div className="assisted-demo space-y-10 pb-8">
-      <header className="assisted-demo-hero guardian-page-header overflow-hidden p-6 sm:p-10">
+      <header className="assisted-demo-hero guardian-page-header card-primary overflow-hidden p-6 sm:p-10">
         <div className="guardian-kicker">Sprint 18G · narrativa completa</div>
         <h1 className="app-page-title mt-5 max-w-3xl">{meta.title}</h1>
         <p className="mt-4 max-w-3xl text-base font-medium leading-7 text-slate-300">{meta.subtitle}</p>
@@ -79,6 +79,35 @@ export default function AssistedProtectionDemo(){
           <p className="mt-3 text-xs font-medium text-cyan-300/90">Dados do caso demo sincronizados com o backend.</p>
         )}
       </header>
+
+      <section className="assisted-demo-priority">
+        <div className="assisted-demo-priority-risk">
+          <div className="app-label text-red-200/90">Risco atual</div>
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            <span className="guardian-case-risk-score">{meta.riskScore}</span>
+            <span className={riskStatusClass(meta.riskLevel)}>{meta.riskLevel}</span>
+          </div>
+          <p className="mt-3 text-sm font-semibold leading-6 text-red-100/90">
+            Pedido de Pix urgente com identidade nao verificada.
+          </p>
+        </div>
+
+        <div className="assisted-demo-priority-action">
+          <div className="app-label text-emerald-200/90">Acao recomendada</div>
+          <p className="mt-3 text-lg font-semibold leading-7 text-emerald-50">
+            Manter pausa protetiva e confirmar por contato salvo antes de qualquer transferencia.
+          </p>
+        </div>
+
+        <div className="assisted-demo-priority-evidence">
+          <div className="app-label">Evidencias secundarias</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {meta.signals.slice(0, 4).map(signal=> (
+              <AppBadge key={signal}>{signal}</AppBadge>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <nav className="assisted-demo-nav sticky top-[4.5rem] z-20 rounded-md border border-white/10 bg-slate-950/90 p-2 backdrop-blur-md">
         <div className="flex gap-1 overflow-x-auto pb-1">
@@ -204,7 +233,7 @@ export default function AssistedProtectionDemo(){
       </DemoStep>
 
       <DemoStep order={5} id="step-trust-lock" title="Trust Lock — pausa protetiva">
-        <Card className="border-red-400/30 bg-gradient-to-br from-red-950/40 to-slate-950/80">
+        <Card className="card-danger border-red-400/30 bg-gradient-to-br from-red-950/40 to-slate-950/80">
           <div className="flex items-start gap-4">
             <div className="assisted-demo-lock-icon" aria-hidden="true">⏸</div>
             <div>
@@ -219,7 +248,7 @@ export default function AssistedProtectionDemo(){
       </DemoStep>
 
       <DemoStep order={6} id="step-trusted-circle" title="Círculo de confiança">
-        <Card className="border-amber-400/25">
+        <Card className="card-risk border-amber-400/25">
           <div className="app-label text-amber-200/90">Escalonamento simulado</div>
           <p className="mt-3 text-lg font-semibold text-white">{meta.trustedCircleNote}</p>
           <div className="mt-4 app-action-panel border-amber-400/15">
@@ -243,7 +272,7 @@ export default function AssistedProtectionDemo(){
       </DemoStep>
 
       <DemoStep order={7} id="step-proof-of-trust" title="Verificação segura">
-        <Card className="border-emerald-400/20">
+        <Card className="card-action border-emerald-400/20">
           <ProofOfTrustChecklist
             steps={proofOfTrustChecklist}
             currentStepId="confirm_independent_channel"
@@ -259,7 +288,7 @@ export default function AssistedProtectionDemo(){
       </DemoStep>
 
       <DemoStep order={8} id="step-decision-trace" title="Agent Decision Trace">
-        <Card>
+        <Card className="card-evidence">
           <div className="app-label">Trilha da decisão · auditável</div>
           <ol className="guardian-operational-timeline mt-5">
             {decisionTraceTimeline.map((item,index)=> (
@@ -297,7 +326,7 @@ export default function AssistedProtectionDemo(){
         </div>
       </DemoStep>
 
-      <section className="assisted-demo-cta guardian-page-header p-6 sm:p-10">
+      <section className="assisted-demo-cta guardian-page-header card-primary p-6 sm:p-10">
         <AppSectionTitle>Próximos passos na demo</AppSectionTitle>
         <p className="app-muted-text mt-3 max-w-2xl">
           Explore cada módulo do produto com os mesmos dados simulados — ideal para hackathon, clientes e portfolio.

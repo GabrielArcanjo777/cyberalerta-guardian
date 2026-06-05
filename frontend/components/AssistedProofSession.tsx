@@ -131,7 +131,7 @@ export default function AssistedProofSession({
   const currentStep = session?.steps.find(s=>s.id === session.current_step)
 
   return (
-    <Card className="border-emerald-400/20">
+    <Card className="card-action border-emerald-400/20">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="app-label text-emerald-200/90">Verificação segura</div>

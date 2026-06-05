@@ -40,7 +40,7 @@ export default function TrustCenterPage(){
         actions={
           <>
             <Link href="/chatbot-demo">
-              <Button className="h-12 w-full !border-cyan-300/40 !bg-cyan-300/10 !text-cyan-100 hover:!bg-cyan-300/15 sm:w-auto">
+              <Button className="h-12 w-full sm:w-auto">
                 Canal simples (mock)
               </Button>
             </Link>
@@ -187,7 +187,7 @@ export default function TrustCenterPage(){
               <Button variant="ghost" className="h-10">Intake técnico</Button>
             </Link>
             <Link href="/family-console">
-              <Button variant="ghost" className="h-10">Guardian Console</Button>
+              <Button className="h-10">Guardian Console</Button>
             </Link>
           </div>
           <p className="app-muted-text mt-4 text-xs">

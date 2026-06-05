@@ -14,7 +14,7 @@ import PrivacyConsentChecklist from '@/components/PrivacyConsentChecklist'
 import {intakePrivacyNotice} from '@/lib/privacyConsent'
 import {PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
-const initialMessage = 'Mae, troquei de numero. Faz um Pix urgente para essa chave: exemplo@email.com. Meu CPF e 123.456.789-00 e meu telefone e (21) 99999-9999.'
+const initialMessage = 'Mãe, troquei de número. Faz um Pix urgente para essa chave: exemplo@email.com. Meu CPF é 123.456.789-00 e meu telefone é (21) 99999-9999.'
 
 const channelOptions: {value:IntakeChannel,label:string,status:string,description:string}[] = [
   {value:'manual_text', label:'Colar mensagem manualmente', status:'Disponível no MVP', description:'Cole apenas o trecho suspeito que você quer analisar.'},
@@ -32,7 +32,7 @@ const actionOptions = [
   {value:'password', label:'Senha'},
   {value:'document', label:'Documento'},
   {value:'app', label:'App remoto'},
-  {value:'sms_code', label:'Codigo SMS'},
+  {value:'sms_code', label:'Código SMS'},
 ]
 
 function reportLabel(value:string){
@@ -45,7 +45,7 @@ export default function IntakePage(){
   const [userConsent,setUserConsent]=useState(false)
   const [containsSensitiveData,setContainsSensitiveData]=useState(true)
   const [redactionRequested,setRedactionRequested]=useState(true)
-  const [userName,setUserName]=useState('Dona Lucia')
+  const [userName,setUserName]=useState('Dona Lúcia')
   const [trustedContactName,setTrustedContactName]=useState('Gabriel')
   const [actionType,setActionType]=useState('pix')
   const [preview,setPreview]=useState<RedactPreviewResponse | null>(null)
@@ -111,7 +111,7 @@ export default function IntakePage(){
             </div>
             <StatusRail
               items={[
-                {label:'Monitoramento', value:'nao automatico', tone:'ready'},
+                {label:'Monitoramento', value:'não automático', tone:'ready'},
                 {label:'Consentimento', value:userConsent ? 'marcado' : 'pendente', tone:userConsent ? 'ready' : 'warn'},
                 {label:'Redaction', value:redactionRequested ? 'ativa' : 'manual', tone:'neutral'},
               ]}
@@ -255,9 +255,9 @@ export default function IntakePage(){
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Preview de redaction</div>
-              <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Texto mascarado antes da analise</h2>
+              <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Texto mascarado antes da análise</h2>
             </div>
-            {preview.__mock && <span className="rounded border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sky-700">Modo demonstracao</span>}
+            {preview.__mock && <span className="rounded border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sky-700">Modo demonstração</span>}
           </div>
           <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
             <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{preview.redacted_content}</p>
@@ -276,13 +276,13 @@ export default function IntakePage(){
         <div className="space-y-5">
           {result.__mock && (
             <Card className="border-sky-200 bg-sky-50">
-              <p className="text-sm font-semibold text-sky-800">Modo demonstracao: usando dados simulados.</p>
+              <p className="text-sm font-semibold text-sky-800">Modo demonstração: usando dados simulados.</p>
             </Card>
           )}
 
           <Card>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Privacy report</div>
-            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Relatorio de privacidade da analise</h2>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Relatório de privacidade da análise</h2>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-emerald-700">Consentimento</div>
@@ -290,7 +290,7 @@ export default function IntakePage(){
               </div>
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Monitoramento</div>
-                <p className="mt-2 text-sm font-black text-slate-950">{result.privacy_report.monitoring ? 'ativo' : 'nao ha monitoramento'}</p>
+                <p className="mt-2 text-sm font-black text-slate-950">{result.privacy_report.monitoring ? 'ativo' : 'não há monitoramento'}</p>
               </div>
               <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-cyan-700">Canal</div>
@@ -309,7 +309,7 @@ export default function IntakePage(){
               <div className="space-y-4">
                 <AIModeIndicator mode={analysis.ai_mode} />
                 <Card>
-                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Resultado da analise</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Resultado da análise</div>
                   <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">{analysis.scam_type}</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{analysis.report.summary}</p>
                 </Card>

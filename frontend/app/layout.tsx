@@ -1,12 +1,11 @@
 import './globals.css'
 import React from 'react'
 import Header from '@/components/Header'
-import DemoModeBanner from '@/components/DemoModeBanner'
 import GlobalAmbientBackground from '@/components/GlobalAmbientBackground'
 
 export const metadata = {
   title: 'CyberAlerta Guardian',
-  description: 'Antes do Pix. Antes do clique. Antes do prejuizo.'
+  description: 'Antes do Pix. Antes do clique. Antes do prejuízo.'
 }
 
 export default function RootLayout({children}:{children:React.ReactNode}){
@@ -19,11 +18,8 @@ export default function RootLayout({children}:{children:React.ReactNode}){
             href="#conteudo-principal"
             className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[120] focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-slate-950 focus:shadow-lg focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-slate-950"
           >
-            Pular para o conteudo principal
+            Pular para o conteúdo principal
           </a>
-          <div className="guardian-content-shell">
-            <DemoModeBanner />
-          </div>
           <div className="guardian-content-shell mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
             <Header />
             <main id="conteudo-principal" className="relative z-10 mb-14 mt-8" tabIndex={-1}>{children}</main>

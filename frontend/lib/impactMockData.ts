@@ -10,13 +10,13 @@ export const impactMetrics = {
 }
 
 export const manipulationPatterns = [
-  {label: 'Urgencia', count: 18},
+  {label: 'Urgência', count: 18},
   {label: 'Medo', count: 7},
-  {label: 'Falso vinculo familiar', count: 12},
+  {label: 'Falso vínculo familiar', count: 12},
   {label: 'Autoridade falsa', count: 6},
   {label: 'Isolamento', count: 10},
   {label: 'Pedido financeiro', count: 15},
-  {label: 'Pedido de senha/codigo', count: 9},
+  {label: 'Pedido de senha/código', count: 9},
   {label: 'Pedido de documento', count: 5},
 ]
 
@@ -45,9 +45,9 @@ export const globalApplicability = [
 export const demonstratedScenarios = [
   'Falso filho pedindo Pix',
   'Falso banco com link',
-  'Pedido de codigo SMS',
+  'Pedido de código SMS',
   'Falso suporte pedindo app remoto',
   'Falso emprego pedindo taxa',
 ]
 
-export const impactNote = 'Dados simulados para demonstracao do MVP.'
+export const impactNote = 'Dados simulados para demonstração do MVP.'

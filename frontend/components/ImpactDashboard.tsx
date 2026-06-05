@@ -1,5 +1,6 @@
 import React from 'react'
 import Card from '@/components/Card'
+import {StatusBadge} from '@/components/AppPrimitives'
 import {MetricPanel, PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 import {
   demonstratedScenarios,
@@ -12,7 +13,7 @@ import {
 
 const metricCards = [
   {
-    label: 'Decisoes perigosas pausadas',
+    label: 'Decisões perigosas pausadas',
     value: impactMetrics.dangerous_decisions_paused,
     detail: 'Intervenções antes da ação',
     tone: 'border-slate-200 bg-white',
@@ -36,25 +37,25 @@ const metricCards = [
     tone: 'border-emerald-200 bg-emerald-50',
   },
   {
-    label: 'Cenarios analisados',
+    label: 'Cenários analisados',
     value: impactMetrics.scenarios_analyzed,
-    detail: 'Simulacoes de risco',
+    detail: 'Simulações de risco',
     tone: 'border-slate-200 bg-white',
   },
   {
-    label: 'Taticas detectadas',
+    label: 'Táticas detectadas',
     value: impactMetrics.manipulation_tactics_detected,
     detail: 'Padrões de manipulação',
     tone: 'border-slate-200 bg-white',
   },
   {
-    label: 'Casos criticos identificados',
+    label: 'Casos críticos identificados',
     value: impactMetrics.critical_cases_identified,
     detail: 'Risco alto ou critico',
     tone: 'border-red-200 bg-red-50',
   },
   {
-    label: 'Acoes em Trust Lock',
+    label: 'Ações em Trust Lock',
     value: impactMetrics.trust_locks_activated,
     detail: 'Bloqueios preventivos',
     tone: 'border-slate-800 bg-slate-950 text-white',
@@ -65,7 +66,7 @@ const maxPatternCount = Math.max(...manipulationPatterns.map(pattern=>pattern.co
 const maxGlobalPatternCount = Math.max(...globalThreatPatterns.map(pattern=>pattern.count))
 
 function metricTone(label:string){
-  if(label.includes('Pix') || label.includes('criticos')) return 'risk' as const
+  if(label.includes('Pix') || label.includes('críticos')) return 'risk' as const
   if(label.includes('recuperação') || label.includes('familiares')) return 'safe' as const
   if(label.includes('Trust Lock') || label.includes('pausadas')) return 'cyan' as const
   return 'default' as const
@@ -85,7 +86,7 @@ export default function ImpactDashboard(){
             <StatusRail
               items={[
                 {label:'Analytics', value:'simulado', tone:'neutral'},
-                {label:'Persistencia', value:'sem banco', tone:'ready'},
+                {label:'Persistência', value:'sem banco', tone:'ready'},
                 {label:'Escopo', value:'MVP demo', tone:'warn'},
               ]}
             />
@@ -102,10 +103,10 @@ export default function ImpactDashboard(){
       <Card>
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Por que isso importa</div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">A pausa certa muda o resultado</h2>
+            <div className="app-label">Por que isso importa</div>
+            <h2 className="app-section-title mt-2">A pausa certa muda o resultado</h2>
           </div>
-          <p className="text-base leading-7 text-slate-600">
+          <p className="app-body-text text-base leading-7">
             Golpes digitais acontecem no intervalo entre a manipulação e a decisão da vítima. O CyberAlerta Guardian cria uma pausa de segurança antes do Pix, do clique, do envio de senha ou do compartilhamento de documentos.
           </p>
         </div>
@@ -115,27 +116,25 @@ export default function ImpactDashboard(){
         <Card>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Padrões de manipulação</div>
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Taticas detectadas na demo</h2>
+              <div className="app-label">Padrões de manipulação</div>
+              <h2 className="app-section-title mt-2">Táticas detectadas na demo</h2>
             </div>
-            <span className="rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
-              simulado
-            </span>
+            <StatusBadge tone="warning">Simulado</StatusBadge>
           </div>
 
           <div className="mt-6 space-y-4">
             {manipulationPatterns.map((pattern)=> {
               const width = `${Math.max(8, Math.round((pattern.count / maxPatternCount) * 100))}%`
-              const criticalTone = pattern.label === 'Pedido financeiro' || pattern.label === 'Falso vinculo familiar'
+              const criticalTone = pattern.label === 'Pedido financeiro' || pattern.label === 'Falso vínculo familiar'
 
               return (
                 <div key={pattern.label}>
                   <div className="mb-2 flex items-center justify-between gap-4">
-                    <span className="text-sm font-bold text-slate-700">{pattern.label}</span>
-                    <span className="text-sm font-black text-slate-950">{pattern.count}</span>
+                    <span className="text-sm font-bold text-slate-200">{pattern.label}</span>
+                    <span className="text-sm font-black text-white">{pattern.count}</span>
                   </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-                    <div className={`h-full rounded-full ${criticalTone ? 'bg-red-500' : 'bg-slate-900'}`} style={{width}} />
+                  <div className="h-3 overflow-hidden rounded bg-slate-950/80 ring-1 ring-white/10">
+                    <div className={`h-full ${criticalTone ? 'bg-red-500' : 'bg-cyan-300'}`} style={{width}} />
                   </div>
                 </div>
               )
@@ -144,15 +143,15 @@ export default function ImpactDashboard(){
         </Card>
 
         <Card>
-          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Cenarios demonstrados</div>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Cobertura do MVP</h2>
+          <div className="app-label">Cenários demonstrados</div>
+          <h2 className="app-section-title mt-2">Cobertura do MVP</h2>
           <div className="mt-6 grid gap-3">
             {demonstratedScenarios.map((scenario,index)=> (
-              <div key={scenario} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-xs font-black text-white">
+              <div key={scenario} className="app-card-row flex-row items-center">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-cyan-300/30 bg-cyan-300/10 text-xs font-black text-cyan-100">
                   {index + 1}
                 </span>
-                <span className="text-sm font-bold leading-5 text-slate-700">{scenario}</span>
+                <span className="text-sm font-bold leading-5 text-slate-200">{scenario}</span>
               </div>
             ))}
           </div>
@@ -162,18 +161,16 @@ export default function ImpactDashboard(){
       <Card>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Global applicability</div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">From Pix to global pre-damage intervention</h2>
+            <div className="app-label">Aplicabilidade global</div>
+            <h2 className="app-section-title mt-2">Do Pix à intervenção global pré-dano</h2>
           </div>
-          <span className="rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
-            MVP strategy
-          </span>
+          <StatusBadge tone="locked">Estratégia MVP</StatusBadge>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {globalApplicability.map((item)=> (
-            <div key={item.region} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{item.region}</div>
-              <div className="mt-2 text-sm font-black leading-5 text-slate-950">{item.focus}</div>
+            <div key={item.region} className="app-card-compact">
+              <div className="app-label">{item.region}</div>
+              <div className="mt-2 text-sm font-black leading-5 text-slate-100">{item.focus}</div>
             </div>
           ))}
         </div>
@@ -182,9 +179,9 @@ export default function ImpactDashboard(){
       <Card>
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Global threat patterns</div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Taticas que funcionam em qualquer mercado</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <div className="app-label">Padrões globais de ameaça</div>
+            <h2 className="app-section-title mt-2">Táticas que funcionam em qualquer mercado</h2>
+            <p className="app-body-text mt-3">
               O trilho de pagamento muda, mas os sinais de manipulação se repetem: urgência, autoridade falsa, isolamento, pedido financeiro e credenciais.
             </p>
           </div>
@@ -194,11 +191,11 @@ export default function ImpactDashboard(){
               return (
                 <div key={pattern.label}>
                   <div className="mb-2 flex items-center justify-between gap-4">
-                    <span className="text-sm font-bold text-slate-700">{pattern.label}</span>
-                    <span className="text-sm font-black text-slate-950">{pattern.count}</span>
+                    <span className="text-sm font-bold text-slate-200">{pattern.label}</span>
+                    <span className="text-sm font-black text-white">{pattern.count}</span>
                   </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-slate-900" style={{width}} />
+                  <div className="h-3 overflow-hidden rounded bg-slate-950/80 ring-1 ring-white/10">
+                    <div className="h-full bg-cyan-300" style={{width}} />
                   </div>
                 </div>
               )
@@ -207,15 +204,13 @@ export default function ImpactDashboard(){
         </div>
       </Card>
 
-      <Card className="border-dashed border-slate-300 bg-slate-50/70">
+      <Card className="border-dashed border-white/20">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Transparencia</div>
-            <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{impactNote}</p>
+            <div className="app-label">Transparência</div>
+            <p className="app-body-text mt-2 text-sm font-semibold">{impactNote}</p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600">
-            Sem persistencia real
-          </div>
+          <StatusBadge tone="neutral">Sem persistência real</StatusBadge>
         </div>
       </Card>
     </PageShell>
