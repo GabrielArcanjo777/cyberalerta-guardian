@@ -1,66 +1,91 @@
-import React from 'react'
+"use client"
 
-type FloatingCardTone = 'danger' | 'neutral' | 'safe'
+import Link from 'next/link'
+import {motion, type Variants} from 'framer-motion'
+import {usePrefersReducedMotion} from '@/components/usePrefersReducedMotion'
+import styles from './FloatingCard.module.css'
 
-type Props = {
-  title: string
-  lines: string[]
-  icon: 'warning' | 'shield' | 'users'
-  tone?: FloatingCardTone
-  className?: string
-  style?: React.CSSProperties
+type FloatingCardTone = 'risk' | 'lock' | 'trust' | 'human'
+type FloatingCardSide = 'left' | 'right'
+
+type FloatingCardProps = {
+  index:string
+  title:string
+  body:string
+  label:string
+  badge?:string
+  tone:FloatingCardTone
+  side:FloatingCardSide
+  delay?:number
+  href?:string
 }
 
-function WarningIcon(){
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3.7 2.7 20.2h18.6L12 3.7Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M12 8.2v5.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M12 17.1h.01" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
-  )
+function makeVariants(side:FloatingCardSide, reduceMotion:boolean, delay:number):Variants {
+  if(reduceMotion){
+    return {
+      hidden:{opacity:1, x:0, y:0, scale:1},
+      show:{opacity:1, x:0, y:0, scale:1, transition:{duration:0.01, delay:0}},
+    }
+  }
+
+  return {
+    hidden:{
+      opacity:0,
+      x:side === 'left' ? -24 : 24,
+      y:8,
+      scale:0.985,
+    },
+    show:{
+      opacity:1,
+      x:0,
+      y:0,
+      scale:1,
+      transition:{
+        duration:0.58,
+        delay,
+        ease:[0.22, 1, 0.36, 1],
+      },
+    },
+  }
 }
 
-function ShieldIcon(){
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3.2 5.2 5.9v5.2c0 4.5 2.8 8 6.8 9.7 4-1.7 6.8-5.2 6.8-9.7V5.9L12 3.2Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="m8.8 12 2.3 2.3 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function UsersIcon(){
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M9.5 11.2a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M4.2 19.2c.6-3.1 2.5-5 5.3-5s4.7 1.9 5.3 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M15.2 11.7a2.5 2.5 0 1 0 0-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M16.6 14.2c1.9.4 3.2 1.9 3.7 4.2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function Icon({icon}:{icon: Props['icon']}){
-  if(icon === 'warning') return <WarningIcon />
-  if(icon === 'users') return <UsersIcon />
-  return <ShieldIcon />
-}
-
-export default function FloatingCard({title, lines, icon, tone='neutral', className='', style}:Props){
-  return (
-    <article className={`floating-card floating-card-${tone} ${className}`.trim()} style={style}>
-      <div className="floating-card-icon">
-        <Icon icon={icon} />
+export default function FloatingCard({index,title,body,label,badge,tone,side,delay = 0,href}:FloatingCardProps){
+  const shouldReduceMotion = usePrefersReducedMotion()
+  const toneClass = {
+    risk:styles.risk,
+    lock:styles.lock,
+    trust:styles.trust,
+    human:styles.human,
+  }[tone]
+  const cardClass = `${styles.card} ${toneClass} ${href ? styles.link : ''}`
+  const cardContent = (
+    <>
+      <div className={styles.top}>
+        <span className={styles.index}>{index}</span>
+        <span className={styles.label}>{label}</span>
       </div>
-      <div>
-        <h3>{title}</h3>
-        {lines.map((line,index)=> (
-          <p key={line} className={index === 1 && tone === 'danger' ? 'floating-card-risk' : undefined}>
-            {line}
-          </p>
-        ))}
-      </div>
-    </article>
+      {badge && <span className={styles.badge}>{badge}</span>}
+      <h3 className={styles.title}>{title}</h3>
+      <p className={styles.body}>{body}</p>
+    </>
+  )
+
+  return (
+    <motion.div
+      className={styles.motion}
+      initial="hidden"
+      animate="show"
+      variants={makeVariants(side, shouldReduceMotion, delay)}
+    >
+      {href ? (
+        <Link href={href} className={cardClass} aria-label={`${title}. ${body}`}>
+          {cardContent}
+        </Link>
+      ) : (
+        <article className={cardClass}>
+          {cardContent}
+        </article>
+      )}
+    </motion.div>
   )
 }

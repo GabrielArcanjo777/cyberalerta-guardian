@@ -5,7 +5,7 @@ export default function ProofOfTrust({items}:{items:string[]}){
   return (
     <Card>
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Proof of Trust</div>
-      <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Checklist de verificacao</h3>
+      <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Checklist de verificação</h3>
 
       <div className="mt-5 grid gap-3">
         {items.map((item,index)=> (

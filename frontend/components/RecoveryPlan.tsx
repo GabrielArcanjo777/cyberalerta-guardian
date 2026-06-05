@@ -43,7 +43,7 @@ export default function RecoveryPlan({result}:{result:RecoveryResponse}){
     <div className="space-y-5">
       {result.__mock && (
         <Card className="border-sky-200 bg-sky-50">
-          <p className="text-sm font-semibold text-sky-800">Modo demonstracao: usando dados simulados.</p>
+          <p className="text-sm font-semibold text-sky-800">Modo demonstração: usando dados simulados.</p>
         </Card>
       )}
 
@@ -51,7 +51,7 @@ export default function RecoveryPlan({result}:{result:RecoveryResponse}){
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Recovery Mode</div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Plano de recuperacao</h2>
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Plano de recuperação</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{result.summary}</p>
           </div>
           <span className={`rounded border px-3 py-1 text-xs font-bold uppercase tracking-wide ${severityClass(result.severity)}`}>
@@ -81,16 +81,16 @@ export default function RecoveryPlan({result}:{result:RecoveryResponse}){
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <ListSection title="Evidencias para salvar" items={result.evidence_to_save} tone="border-cyan-200 bg-cyan-50 text-cyan-700" />
+        <ListSection title="Evidências para salvar" items={result.evidence_to_save} tone="border-cyan-200 bg-cyan-50 text-cyan-700" />
         <ListSection title="Contas para proteger" items={result.accounts_to_secure} tone="border-emerald-200 bg-emerald-50 text-emerald-700" />
-        <ListSection title="O que nao fazer agora" items={result.what_not_to_do} tone="border-red-200 bg-red-50 text-red-700" />
+        <ListSection title="O que não fazer agora" items={result.what_not_to_do} tone="border-red-200 bg-red-50 text-red-700" />
       </div>
 
       <Card className="border-amber-200 bg-amber-50">
         <div className="text-xs font-bold uppercase tracking-wide text-amber-700">Aviso importante</div>
         <p className="mt-2 text-sm font-semibold leading-6 text-slate-800">{result.disclaimer}</p>
         <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-800">
-          Nao substitui banco, autoridades ou orientacao profissional. Nao prometa recuperacao de dinheiro.
+          Não substitui banco, autoridades ou orientação profissional. Não prometa recuperação de dinheiro.
         </p>
       </Card>
     </div>

@@ -17,13 +17,13 @@ import AIModeIndicator from '@/components/AIModeIndicator'
 import MLScamIntelligenceCard from '@/components/MLScamIntelligenceCard'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import type {AnalyzeResponse, TrustedCircleAlert as TrustedCircleAlertModel} from '@/lib/types'
+import type {TrustedCircleAlert as TrustedCircleAlertModel} from '@/lib/types'
 import {TrustPipeline} from '@/components/AppPrimitives'
 import PrivacyConsentChecklist from '@/components/PrivacyConsentChecklist'
 import {beforePixPrivacyNotice} from '@/lib/privacyConsent'
 import {OperationalTimeline, PageHeader, PageShell, StatusRail} from '@/components/CommandCenter'
 
-const initialMessage = 'Mae, troquei de numero. Meu celular quebrou. Preciso pagar uma conta urgente. Faz um Pix de R$ 780? Nao liga agora porque estou em reuniao.'
+const initialMessage = 'Mãe, troquei de número. Meu celular quebrou. Preciso pagar uma conta urgente. Faz um Pix de R$ 780? Não liga agora porque estou em reunião.'
 
 const actionOptions = [
   {value: 'pix', label: 'Pix'},
@@ -31,7 +31,7 @@ const actionOptions = [
   {value: 'password', label: 'Senha'},
   {value: 'document', label: 'Documento'},
   {value: 'app', label: 'App remoto'},
-  {value: 'sms_code', label: 'Codigo SMS'},
+  {value: 'sms_code', label: 'Código SMS'},
 ]
 
 function humanize(value:string){
@@ -43,11 +43,11 @@ const fallbackTrustedAlert: TrustedCircleAlertModel = {
   contact_name: 'Gabriel',
   relationship: 'neto',
   urgency: 'low',
-  person_at_risk: 'Dona Lucia',
-  risk_summary: 'Nenhum alerta familiar necessario neste momento.',
-  scam_type: 'sem golpe critico confirmado',
-  recommended_action: 'Monitore e confirme por outro canal antes de qualquer acao.',
-  suggested_message: 'Dona Lucia, vamos confirmar essa mensagem juntos antes de voce agir.',
+  person_at_risk: 'Dona Lúcia',
+  risk_summary: 'Nenhum alerta familiar necessário neste momento.',
+  scam_type: 'sem golpe crítico confirmado',
+  recommended_action: 'Monitore e confirme por outro canal antes de qualquer ação.',
+  suggested_message: 'Dona Lúcia, vamos confirmar essa mensagem juntos antes de você agir.',
   status: 'monitoring',
   is_simulated: true,
   message: 'Nenhum alerta familiar necessario neste momento.'
@@ -56,7 +56,7 @@ const fallbackTrustedAlert: TrustedCircleAlertModel = {
 export default function BeforePix(){
   const [message,setMessage]=useState(initialMessage)
   const [action,setAction]=useState('pix')
-  const [result,setResult]=useState<AnalyzeResponse | null>(null)
+  const [result,setResult]=useState<any>(null)
   const [loading,setLoading]=useState(false)
   const [error,setError]=useState('')
 
@@ -65,7 +65,7 @@ export default function BeforePix(){
     setError('')
     try{
       const payload = {
-        user_name: 'Dona Lucia',
+        user_name: 'Dona Lúcia',
         age_group: 'elderly',
         trusted_contact_name: 'Gabriel',
         trusted_contact_relation: 'neto',
@@ -76,8 +76,8 @@ export default function BeforePix(){
       }
       const res = await analyzeMessage(payload)
       setResult(res)
-    }catch{
-      setError('Erro ao conectar com o servidor. Usando dados de demonstracao.')
+    }catch(err:any){
+      setError('Erro ao conectar com o servidor. Usando dados de demonstração.')
     }finally{
       setLoading(false)
     }
@@ -107,7 +107,7 @@ export default function BeforePix(){
               items={[
                 {label:'Canal', value:'WhatsApp', tone:'neutral'},
                 {label:'Contato seguro', value:'Gabriel', tone:'ready'},
-                {label:'Acao', value:humanize(action), tone:'warn'},
+                {label:'Ação', value:humanize(action), tone:'warn'},
               ]}
             />
             <OperationalTimeline
@@ -128,15 +128,15 @@ export default function BeforePix(){
         <Card className="overflow-hidden p-0">
           <div className="border-b border-slate-200 px-5 py-4 sm:px-6">
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Mensagem recebida</div>
-            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Analise antes da transferencia</h2>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Análise antes da transferência</h2>
           </div>
           <div className="space-y-5 p-5 sm:p-6">
             <label className="block">
-              <span className="mb-2 block text-sm font-bold text-slate-700">Conteudo da mensagem</span>
+              <span className="mb-2 block text-sm font-bold text-slate-700">Conteúdo da mensagem</span>
               <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 shadow-inner">
                 <div className="mb-3 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-wide text-emerald-700">
                   <span>Recebida agora</span>
-                  <span>numero novo</span>
+                  <span>número novo</span>
                 </div>
                 <textarea
                   value={message}
@@ -148,7 +148,7 @@ export default function BeforePix(){
             </label>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Tipo de acao perigosa</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Tipo de ação perigosa</label>
               <select
                 value={action}
                 onChange={e=>setAction(e.target.value)}
@@ -172,18 +172,18 @@ export default function BeforePix(){
             <div className="mt-4 flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-950 text-lg font-black text-white">DL</div>
               <div>
-                <div className="text-lg font-bold text-slate-950">Dona Lucia</div>
-                <div className="text-sm font-medium text-slate-500">72 anos, acao financeira iminente</div>
+                <div className="text-lg font-bold text-slate-950">Dona Lúcia</div>
+                <div className="text-sm font-medium text-slate-500">72 anos, ação financeira iminente</div>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Pessoa de confianca</div>
+                <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Pessoa de confiança</div>
                 <div className="mt-1 text-sm font-bold text-slate-900">Gabriel, neto</div>
               </div>
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Estado</div>
-                <div className="mt-1 text-sm font-bold text-slate-900">{result ? 'Analise concluida' : 'Aguardando analise'}</div>
+                <div className="mt-1 text-sm font-bold text-slate-900">{result ? 'Análise concluída' : 'Aguardando análise'}</div>
               </div>
             </div>
           </Card>
@@ -202,7 +202,7 @@ export default function BeforePix(){
 
       {result?.__mock && (
         <Card className="border-sky-200 bg-sky-50">
-          <p className="text-sm font-semibold text-sky-800">Dados em modo demonstracao porque o backend nao respondeu.</p>
+          <p className="text-sm font-semibold text-sky-800">Dados em modo demonstração porque o backend não respondeu.</p>
         </Card>
       )}
 
@@ -221,7 +221,7 @@ export default function BeforePix(){
               <FamilyConsole
                 alert={trustedAlert}
                 backHref="/before-pix"
-                backLabel="Voltar para analise"
+                backLabel="Voltar para análise"
               />
             </aside>
 
@@ -247,7 +247,7 @@ export default function BeforePix(){
 
               <Card>
                 <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Manipulation Badges</div>
-                <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Padroes detectados</h3>
+                <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Padrões detectados</h3>
                 <div className="mt-5">
                   <ManipulationBadges items={result.manipulations} />
                 </div>
@@ -295,7 +295,7 @@ export default function BeforePix(){
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Output console</div>
-              <p className="mt-2 text-lg font-bold text-slate-950">Aguardando primeira analise do Guardian</p>
+              <p className="mt-2 text-lg font-bold text-slate-950">Aguardando primeira análise do Guardian</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600">
               POST /analyze ready

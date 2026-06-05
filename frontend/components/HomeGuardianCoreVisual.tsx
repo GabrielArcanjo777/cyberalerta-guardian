@@ -14,7 +14,7 @@ function supportsWebGL(){
 
 function makeRing(radius:number, color:number, opacity:number){
   return new THREE.Mesh(
-    new THREE.TorusGeometry(radius, 0.008, 8, 112),
+    new THREE.TorusGeometry(radius, 0.006, 10, 192),
     new THREE.MeshBasicMaterial({color, transparent:true, opacity})
   )
 }
@@ -34,8 +34,8 @@ export default function HomeGuardianCoreVisual(){
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const motionScale = reducedMotion ? 0.12 : 1
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100)
-    camera.position.set(0, 0.12, 6.7)
+    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100)
+    camera.position.set(0, 0.12, 6.3)
 
     const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:'high-performance'})
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
@@ -51,26 +51,26 @@ export default function HomeGuardianCoreVisual(){
     const coreGroup = new THREE.Group()
     scene.add(root)
     root.add(coreGroup)
-    root.position.x = 0.16
-    root.scale.setScalar(0.92)
 
-    const coreGeometry = new THREE.IcosahedronGeometry(0.86, 2)
+    const coreGeometry = new THREE.DodecahedronGeometry(1.04, 2)
     const coreMaterial = new THREE.MeshStandardMaterial({
-      color:0x101419,
-      emissive:0x061015,
-      roughness:0.34,
-      metalness:0.72,
+      color:0x0d1116,
+      emissive:0x031015,
+      roughness:0.42,
+      metalness:0.66,
     })
     const core = new THREE.Mesh(coreGeometry, coreMaterial)
+    core.scale.set(0.86, 1.12, 0.72)
     coreGroup.add(core)
 
     const wire = new THREE.LineSegments(
       new THREE.EdgesGeometry(coreGeometry),
-      new THREE.LineBasicMaterial({color:0xb6c2cf, transparent:true, opacity:0.14})
+      new THREE.LineBasicMaterial({color:0xb6c2cf, transparent:true, opacity:0.16})
     )
+    wire.scale.copy(core.scale)
     coreGroup.add(wire)
 
-    const innerGeometry = new THREE.OctahedronGeometry(0.44, 1)
+    const innerGeometry = new THREE.OctahedronGeometry(0.46, 2)
     const innerMaterial = new THREE.MeshStandardMaterial({
       color:0x071013,
       emissive:0x063233,
@@ -78,12 +78,13 @@ export default function HomeGuardianCoreVisual(){
       metalness:0.4,
     })
     const inner = new THREE.Mesh(innerGeometry, innerMaterial)
+    inner.scale.set(0.72, 1.08, 0.64)
     coreGroup.add(inner)
 
     const rings = [
-      makeRing(1.28, 0x93a4b8, 0.12),
-      makeRing(1.62, 0x22d3ee, 0.1),
-      makeRing(2.02, 0x94a3b8, 0.07),
+      makeRing(1.46, 0x9aa4ad, 0.14),
+      makeRing(1.94, 0x5eead4, 0.08),
+      makeRing(2.44, 0x717985, 0.09),
     ]
     rings[0].rotation.x = Math.PI / 2.6
     rings[1].rotation.x = Math.PI / 2.1
@@ -92,19 +93,19 @@ export default function HomeGuardianCoreVisual(){
     rings[2].rotation.y = 0.44
     rings.forEach(ring=>coreGroup.add(ring))
 
-    const nodeGeometry = new THREE.SphereGeometry(0.034, 10, 10)
+    const nodeGeometry = new THREE.SphereGeometry(0.032, 16, 16)
     const nodeMaterial = new THREE.MeshBasicMaterial({color:0xb8c7d9, transparent:true, opacity:0.72})
     const safeNodeMaterial = new THREE.MeshBasicMaterial({color:0x34d399, transparent:true, opacity:0.72})
     const riskNodeMaterial = new THREE.MeshBasicMaterial({color:0xf87171, transparent:true, opacity:0.68})
     const nodePositions = [
-      [-1.55, 0.55, 0.42],
-      [-1.08, -0.62, -0.36],
-      [-0.18, 1.35, 0.1],
-      [1.3, 0.7, -0.28],
-      [1.58, -0.34, 0.3],
-      [0.48, -1.24, -0.2],
-      [0.18, 0.18, 1.62],
-      [-0.62, 0.18, -1.42],
+      [-1.66, 0.46, 0.32],
+      [-1.02, -0.72, -0.28],
+      [-0.12, 1.56, 0.06],
+      [1.26, 0.82, -0.22],
+      [1.72, -0.26, 0.24],
+      [0.34, -1.48, -0.16],
+      [0.1, 0.24, 1.38],
+      [-0.54, 0.12, -1.16],
     ]
     const nodes = nodePositions.map((position,index)=>{
       const material = index === 4 ? riskNodeMaterial : index === 6 ? safeNodeMaterial : nodeMaterial
@@ -125,19 +126,19 @@ export default function HomeGuardianCoreVisual(){
     meshGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3))
     const meshLines = new THREE.LineSegments(
       meshGeometry,
-      new THREE.LineBasicMaterial({color:0x7890a8, transparent:true, opacity:0.1})
+      new THREE.LineBasicMaterial({color:0x7c8794, transparent:true, opacity:0.12})
     )
     coreGroup.add(meshLines)
 
-    const pulseRing = makeRing(1.06, 0xf87171, 0.12)
+    const pulseRing = makeRing(1.06, 0xf87171, 0.09)
     pulseRing.rotation.x = Math.PI / 2.18
     pulseRing.rotation.y = 0.3
     coreGroup.add(pulseRing)
 
     const fieldGeometry = new THREE.BufferGeometry()
     const fieldPositions:number[] = []
-    for(let i = 0; i < 70; i += 1){
-      const radius = 2.25 + Math.random() * 0.95
+    for(let i = 0; i < 92; i += 1){
+      const radius = 2.45 + Math.random() * 1.08
       const angle = Math.random() * Math.PI * 2
       const z = (Math.random() - 0.5) * 2.4
       fieldPositions.push(Math.cos(angle) * radius, Math.sin(angle) * radius * 0.58, z)
@@ -145,15 +146,15 @@ export default function HomeGuardianCoreVisual(){
     fieldGeometry.setAttribute('position', new THREE.Float32BufferAttribute(fieldPositions, 3))
     const field = new THREE.Points(
       fieldGeometry,
-      new THREE.PointsMaterial({color:0x94a3b8, size:0.018, transparent:true, opacity:0.34})
+      new THREE.PointsMaterial({color:0x9aa4ad, size:0.015, transparent:true, opacity:0.34})
     )
     root.add(field)
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.34))
-    const key = new THREE.DirectionalLight(0xffffff, 1.12)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.28))
+    const key = new THREE.DirectionalLight(0xffffff, 0.96)
     key.position.set(2.4, 2.8, 4)
     scene.add(key)
-    const cyan = new THREE.PointLight(0x22d3ee, 0.72, 7)
+    const cyan = new THREE.PointLight(0x2dd4bf, 0.38, 7)
     cyan.position.set(-2.4, 1.4, 2.6)
     scene.add(cyan)
     const warm = new THREE.PointLight(0x64748b, 0.68, 6)
@@ -180,6 +181,7 @@ export default function HomeGuardianCoreVisual(){
       coreGroup.rotation.y = elapsed * 0.42
       coreGroup.rotation.x = Math.sin(elapsed * 0.54) * 0.08
       core.rotation.y = -elapsed * 0.2
+      core.rotation.z = Math.sin(elapsed * 0.4) * 0.045
       inner.rotation.x = elapsed * 0.56
       inner.rotation.y = -elapsed * 0.48
       rings[0].rotation.z = elapsed * 0.22
@@ -188,8 +190,8 @@ export default function HomeGuardianCoreVisual(){
       field.rotation.z = -elapsed * 0.04
       const pulse = 0.5 + (Math.sin(elapsed * 1.7) + 1) * 0.5
       pulseRing.scale.setScalar(1 + pulse * 0.08)
-      ;(pulseRing.material as THREE.MeshBasicMaterial).opacity = 0.06 + pulse * 0.16
-      ;(meshLines.material as THREE.LineBasicMaterial).opacity = 0.07 + pulse * 0.06
+      ;(pulseRing.material as THREE.MeshBasicMaterial).opacity = 0.04 + pulse * 0.12
+      ;(meshLines.material as THREE.LineBasicMaterial).opacity = 0.08 + pulse * 0.06
       nodes.forEach((node,index)=>{
         const localPulse = 0.94 + Math.sin(elapsed * 1.2 + index) * 0.08
         node.scale.setScalar(localPulse)
@@ -241,20 +243,19 @@ export default function HomeGuardianCoreVisual(){
     return (
       <div className="home-core-visual home-core-fallback">
         <div className="home-core-fallback-mark">CG</div>
-        <p>Defense Mesh Core</p>
+        <p>Núcleo de proteção assistida</p>
       </div>
     )
   }
 
   return (
     <div className="home-core-visual" aria-label="Núcleo visual de proteção assistida">
+      <div className="home-core-depth home-core-depth-a" />
+      <div className="home-core-depth home-core-depth-b" />
+      <div className="home-core-scan" />
       <div className="home-core-orbit home-core-orbit-a" />
       <div className="home-core-orbit home-core-orbit-b" />
       <div ref={mountRef} className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" />
-      <div className="home-core-caption">
-        <span>Defense Mesh Core</span>
-        <strong>Proteção assistida em tempo de decisão</strong>
-      </div>
     </div>
   )
 }

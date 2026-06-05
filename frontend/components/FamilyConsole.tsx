@@ -24,7 +24,7 @@ function statusLabel(status:string){
 export default function FamilyConsole({
   alert,
   backHref = '/before-pix',
-  backLabel = 'Voltar para analise',
+  backLabel = 'Voltar para análise',
 }:{alert:TrustedCircleAlert,backHref?:string,backLabel?:string}){
   const [contactDone,setContactDone]=useState(false)
   const visibleStatus = contactDone ? 'contact_completed' : alert.status

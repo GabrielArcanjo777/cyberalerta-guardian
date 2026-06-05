@@ -1,0 +1,685 @@
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+  margin: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: #05070b;
+}
+
+.grid,
+.glow {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.grid {
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.014) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+.glow {
+  top: 0;
+  right: 0;
+  width: 68%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse 660px 540px at 62% 48%,
+    rgba(13, 148, 136, 0.08) 0%,
+    transparent 66%
+  );
+}
+
+.inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1320px;
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: center;
+  gap: 36px;
+  margin: 0 auto;
+  padding-inline: 56px;
+}
+
+.copy {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 0;
+  margin-bottom: 22px;
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  border-radius: 99px;
+  background: rgba(20, 184, 166, 0.07);
+  color: #14b8a6;
+  padding: 4px 13px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.headline {
+  max-width: 520px;
+  margin: 0 0 18px;
+  color: #f8fafc;
+  font-size: 58px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.headline span {
+  display: block;
+}
+
+.heroEn .headline {
+  max-width: 500px;
+  font-size: 46px;
+}
+
+.accent {
+  color: #14b8a6;
+  font-style: italic;
+}
+
+.subtitle {
+  max-width: 420px;
+  margin: 0 0 32px;
+  color: rgba(226, 232, 240, 0.64);
+  font-size: 15px;
+  line-height: 1.68;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 30px;
+}
+
+.primaryCta,
+.secondaryCta {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.primaryCta {
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.secondaryCta {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: transparent;
+  color: rgba(248, 250, 252, 0.7);
+}
+
+.primaryCta:hover,
+.secondaryCta:hover {
+  transform: translateY(-1px);
+}
+
+.primaryCta:hover {
+  background: #115e59;
+}
+
+.secondaryCta:hover {
+  border-color: rgba(94, 234, 212, 0.36);
+  color: #f8fafc;
+}
+
+.primaryCta:focus-visible,
+.secondaryCta:focus-visible {
+  outline: 2px solid rgba(94, 234, 212, 0.72);
+  outline-offset: 4px;
+}
+
+.trustStrip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0;
+}
+
+.trustStrip span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(148, 163, 184, 0.5);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.trustStrip span::before {
+  content: "\2299";
+  color: rgba(20, 184, 166, 0.58);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.visual {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-width: 0;
+  height: 700px;
+  min-height: 620px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.phoneGlowAnchor {
+  position: absolute;
+  left: 40%;
+  top: 50%;
+  z-index: 1;
+  width: 520px;
+  max-width: 72%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.phoneGlow {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(20, 184, 166, 0.14), rgba(13, 148, 136, 0.045) 38%, transparent 68%);
+  box-shadow: inset 0 0 72px rgba(20, 184, 166, 0.035);
+}
+
+.phoneAnchor {
+  position: absolute;
+  left: 40%;
+  top: 50%;
+  z-index: 6;
+  transform: translate(-50%, -50%) rotate(-4deg);
+  transform-origin: center;
+  pointer-events: none;
+  animation: phone-float 7s ease-in-out 2.2s infinite;
+}
+
+.phoneFocus {
+  position: relative;
+  display: block;
+  width: 232px;
+  height: 454px;
+  border: 1px solid rgba(94, 234, 212, 0.46);
+  border-radius: 30px;
+  background:
+    linear-gradient(150deg, rgba(30, 41, 59, 0.98), rgba(3, 7, 18, 0.99)),
+    #030712;
+  box-shadow:
+    0 36px 90px rgba(0, 0, 0, 0.62),
+    0 0 0 7px rgba(15, 23, 42, 0.72),
+    0 0 70px rgba(20, 184, 166, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  padding: 10px;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.phoneFocus::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 12% -28%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.17), transparent 66%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+.phoneSpeaker {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 16px;
+  width: 46px;
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(148, 163, 184, 0.34);
+  transform: translateX(-50%);
+}
+
+.phoneScreen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(239, 68, 68, 0.15), transparent 32%),
+    radial-gradient(circle at 20% 88%, rgba(20, 184, 166, 0.12), transparent 38%),
+    linear-gradient(180deg, #07101c, #030712);
+  padding: 44px 15px 15px;
+}
+
+.phoneScreen::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.phoneStatusbar {
+  position: absolute;
+  z-index: 2;
+  left: 14px;
+  right: 14px;
+  top: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(226, 232, 240, 0.5);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.phoneStatusbar i {
+  width: 24px;
+  height: 5px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 2px;
+}
+
+.phoneAlertIcon {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  margin: 0 auto 18px;
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.23);
+  color: #fca5a5;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.phoneEyebrow,
+.phoneScreen strong,
+.phoneScreen p,
+.phoneRiskLines,
+.phoneAction,
+.phoneLockStatus {
+  position: relative;
+  z-index: 2;
+}
+
+.phoneEyebrow {
+  display: block;
+  color: #f87171;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.phoneScreen strong {
+  display: block;
+  margin-top: 7px;
+  color: #f8fafc;
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.phoneScreen p {
+  margin: 8px 0 0;
+  color: rgba(203, 213, 225, 0.6);
+  font-size: 9px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.phoneRiskLines {
+  display: grid;
+  gap: 5px;
+  margin-top: 16px;
+}
+
+.phoneRiskLines span {
+  display: block;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.phoneRiskLines span:nth-child(2) {
+  width: 78%;
+}
+
+.phoneRiskLines span:nth-child(3) {
+  width: 56%;
+}
+
+.phoneAction {
+  margin-top: 18px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 7px;
+  background: rgba(239, 68, 68, 0.78);
+  color: #fff;
+  padding: 7px 8px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.phoneLockStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 12px;
+  color: rgba(94, 234, 212, 0.72);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.phoneLockStatus i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.8);
+}
+
+.phonePipelineLink {
+  pointer-events: none;
+  position: absolute;
+  left: 55%;
+  top: 50%;
+  z-index: 4;
+  width: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(20, 184, 166, 0.08), rgba(20, 184, 166, 0.55));
+  transform-origin: left center;
+}
+
+.phonePipelineLink span {
+  position: absolute;
+  right: -3px;
+  top: -2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #14b8a6;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.72);
+}
+
+.pipelineStack {
+  position: absolute;
+  left: 66%;
+  top: 50%;
+  z-index: 7;
+  width: min(260px, 34%);
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.pipelineNode {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.pipelineConnector {
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  padding: 5px 0;
+  transform-origin: top center;
+  pointer-events: none;
+}
+
+.pipelineConnector span {
+  width: 1px;
+  height: 14px;
+  background: rgba(20, 184, 166, 0.22);
+}
+
+.pipelineConnector i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(20, 184, 166, 0.4);
+}
+
+@keyframes phone-float {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(-4deg);
+  }
+
+  50% {
+    transform: translate(-50%, calc(-50% - 4px)) rotate(-3.6deg);
+  }
+}
+
+@media (max-width: 1120px) {
+  .inner {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
+    gap: 20px;
+    padding-inline: 32px;
+  }
+
+  .headline {
+    font-size: 56px;
+  }
+
+  .heroEn .headline {
+    font-size: 46px;
+  }
+
+  .phoneAnchor {
+    left: 40%;
+  }
+
+  .phoneFocus {
+    width: 204px;
+    height: 400px;
+  }
+
+  .phonePipelineLink {
+    left: 54%;
+    width: 11%;
+  }
+
+  .pipelineStack {
+    left: 65%;
+    width: min(245px, 36%);
+  }
+}
+
+@media (max-width: 900px) {
+  .hero {
+    min-height: auto;
+  }
+
+  .inner {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-top: 56px;
+  }
+
+  .copy {
+    width: min(620px, 100%);
+  }
+
+  .headline,
+  .heroEn .headline {
+    max-width: 620px;
+    font-size: 58px;
+  }
+
+  .visual {
+    height: 680px;
+    min-height: 680px;
+  }
+
+  .phoneAnchor {
+    left: 40%;
+  }
+
+  .phoneFocus {
+    width: 210px;
+    height: 412px;
+  }
+
+  .phonePipelineLink {
+    left: 55%;
+    width: 11%;
+  }
+
+  .pipelineStack {
+    left: 66%;
+    width: min(250px, 34%);
+  }
+}
+
+@media (max-width: 700px) {
+  .inner {
+    padding: 40px 18px 0;
+  }
+
+  .headline,
+  .heroEn .headline {
+    font-size: 48px;
+    line-height: 1.02;
+  }
+
+  .subtitle {
+    max-width: 100%;
+  }
+
+  .visual {
+    height: 940px;
+    min-height: 940px;
+  }
+
+  .phoneAnchor {
+    left: 50%;
+    top: 215px;
+  }
+
+  .phoneFocus {
+    width: 190px;
+    height: 372px;
+  }
+
+  .phonePipelineLink {
+    display: none;
+  }
+
+  .pipelineStack {
+    left: 50%;
+    top: 465px;
+    width: min(340px, calc(100% - 20px));
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 480px) {
+  .headline,
+  .heroEn .headline {
+    font-size: 42px;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primaryCta,
+  .secondaryCta {
+    width: 100%;
+  }
+
+  .visual {
+    height: 950px;
+    min-height: 950px;
+  }
+
+  .pipelineStack {
+    width: calc(100% - 8px);
+  }
+}
+
+:global(html.guardian-reduced-motion) .copy > *,
+:global(html.guardian-reduced-motion) .phoneGlow,
+:global(html.guardian-reduced-motion) .phoneFocus,
+:global(html.guardian-reduced-motion) .phonePipelineLink,
+:global(html.guardian-reduced-motion) .pipelineConnector {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+:global(html.guardian-reduced-motion) .primaryCta,
+:global(html.guardian-reduced-motion) .secondaryCta {
+  transition: none;
+}
+
+:global(html.guardian-reduced-motion) .primaryCta:hover,
+:global(html.guardian-reduced-motion) .secondaryCta:hover {
+  transform: none;
+}

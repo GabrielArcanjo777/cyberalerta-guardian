@@ -82,7 +82,7 @@ export default function IntegrationsPage(){
   const [url,setUrl]=useState('https://banco-seguro-atualizacao.com/login?token=abc123')
   const [urlResult,setUrlResult]=useState<ConnectorResult | null>(null)
   const [urlLoading,setUrlLoading]=useState(false)
-  const [ocrContent,setOcrContent]=useState('print simulado: Mae, troquei de numero. Faz um Pix urgente agora.')
+  const [ocrContent,setOcrContent]=useState('print simulado: Mãe, troquei de número. Faz um Pix urgente agora.')
   const [ocrResult,setOcrResult]=useState<OCRPreviewResponse | null>(null)
   const [ocrLoading,setOcrLoading]=useState(false)
 
