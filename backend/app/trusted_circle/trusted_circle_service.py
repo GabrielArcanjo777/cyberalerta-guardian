@@ -5,8 +5,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 
-from app.guardian_console import admin_case_store
-from app.trusted_circle import escalation_log
+from app.storage import admin_case_store, trusted_circle_store
 from app.trusted_circle.escalation_rules import escalation_recommendation
 from app.trusted_circle.trusted_circle_models import (
     TrustedCircleEscalateRequest,
@@ -14,6 +13,12 @@ from app.trusted_circle.trusted_circle_models import (
     TrustedCircleEscalationRecord,
     TrustedCircleStatusResponse,
 )
+
+
+def _now_iso() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def _sanitize_aliases(contacts: List[str]) -> List[str]:
@@ -51,7 +56,7 @@ def _sync_admin_case(case_id: str, trusted_circle_status: str) -> None:
             case.proof_of_trust_status = "recommended"
     if trusted_circle_status == "review_suggested" and case.proof_of_trust_status == "not_started":
         case.proof_of_trust_status = "recommended"
-    case.updated_at = admin_case_store._now_iso()
+    case.updated_at = _now_iso()
     admin_case_store.save_case(case)
 
 
@@ -61,7 +66,7 @@ class TrustedCircleService:
             service="trusted-circle-escalation",
             mode="in_memory_demo",
             real_notifications_enabled=False,
-            escalation_count=escalation_log.count(),
+            escalation_count=trusted_circle_store.count(),
             demo_note=(
                 "Escalonamento simulado no MVP. Contatos são aliases; "
                 "nenhum WhatsApp, SMS ou e-mail real é enviado."
@@ -116,9 +121,9 @@ class TrustedCircleService:
                 ),
                 proof_of_trust_recommended=True,
                 sent_real_notification=False,
-                created_at=escalation_log._now_iso(),
+                created_at=_now_iso(),
             )
-            escalation_log.save(record)
+            trusted_circle_store.save(record)
             _sync_admin_case(payload.case_id, "review_suggested")
             return TrustedCircleEscalateResponse(
                 escalation_id=escalation_id,
@@ -144,9 +149,9 @@ class TrustedCircleService:
             message_to_guardian=message,
             proof_of_trust_recommended=True,
             sent_real_notification=False,
-            created_at=escalation_log._now_iso(),
+            created_at=_now_iso(),
         )
-        escalation_log.save(record)
+        trusted_circle_store.save(record)
         _sync_admin_case(payload.case_id, "simulated_notified")
 
         return TrustedCircleEscalateResponse(
@@ -163,7 +168,7 @@ class TrustedCircleService:
         )
 
     def get_escalation(self, escalation_id: str) -> TrustedCircleEscalationRecord:
-        record = escalation_log.get(escalation_id)
+        record = trusted_circle_store.get(escalation_id)
         if not record:
             raise HTTPException(status_code=404, detail="Escalonamento não encontrado.")
         return record

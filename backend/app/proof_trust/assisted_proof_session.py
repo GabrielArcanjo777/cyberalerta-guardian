@@ -8,7 +8,7 @@ from uuid import uuid4
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
-from app.guardian_console import admin_case_store
+from app.storage import admin_case_store, proof_trust_store
 from app.proof_trust.assisted_verification_steps import (
     all_steps_completed,
     build_initial_steps,
@@ -69,11 +69,15 @@ class AssistedProofSessionResponse(BaseModel):
     demo_note: str
 
 
-_SESSIONS: Dict[str, dict] = {}
-
-
 def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _load_session(session_id: str) -> dict:
+    record = proof_trust_store.get_session(session_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Sessão de verificação não encontrada.")
+    return record
 
 
 def _normalize_risk(risk_level: str) -> str:
@@ -109,7 +113,7 @@ def _sync_admin_case(case_id: str, session_status: SessionStatus, final_decision
         return
 
     case.proof_of_trust_status = "in_progress"
-    case.updated_at = admin_case_store._now_iso()
+    case.updated_at = _now_iso()
 
     if session_status == "in_progress":
         case.proof_of_trust_status = "in_progress"
@@ -168,7 +172,7 @@ class AssistedProofTrustService:
             "created_at": _now_iso(),
             "updated_at": _now_iso(),
         }
-        _SESSIONS[session_id] = record
+        record = proof_trust_store.save_session(record)
         _sync_admin_case(payload.case_id, "in_progress", None)
 
         case = admin_case_store.get_case(payload.case_id)
@@ -179,17 +183,13 @@ class AssistedProofTrustService:
         return _to_response(record)
 
     def get_session(self, session_id: str) -> AssistedProofSessionResponse:
-        record = _SESSIONS.get(session_id)
-        if not record:
-            raise HTTPException(status_code=404, detail="Sessão de verificação não encontrada.")
+        record = _load_session(session_id)
         return _to_response(record)
 
     def update_step(
         self, session_id: str, payload: AssistedProofStepUpdateRequest
     ) -> AssistedProofSessionResponse:
-        record = _SESSIONS.get(session_id)
-        if not record:
-            raise HTTPException(status_code=404, detail="Sessão de verificação não encontrada.")
+        record = _load_session(session_id)
 
         if record["status"] not in {"in_progress", "not_started"}:
             raise HTTPException(status_code=400, detail="Sessão já finalizada.")
@@ -245,4 +245,5 @@ class AssistedProofTrustService:
         else:
             _sync_admin_case(record["case_id"], "in_progress", record.get("final_decision"))
 
+        record = proof_trust_store.save_session(record)
         return _to_response(record)

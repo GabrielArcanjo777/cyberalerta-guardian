@@ -10,9 +10,11 @@ Set these values in `.env`:
 
 ```env
 EVOLUTION_API_URL=http://localhost:8080
-EVOLUTION_API_KEY=replace-with-local-demo-key
+EVOLUTION_API_KEY=
 EVOLUTION_INSTANCE_NAME=guardian-demo
 ```
+
+Keep the local demo key only in your uncommitted `.env`.
 
 Optional, for sending a demo alert to a responsible contact through the same Evolution instance:
 

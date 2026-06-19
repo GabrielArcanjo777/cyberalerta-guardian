@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
@@ -14,7 +15,12 @@ from app.guardian_console.admin_case_models import (
     GuardianConsoleStatusResponse,
     VALID_CASE_STATUSES,
 )
-from app.guardian_console import admin_case_store
+from app.storage import admin_case_store
+from app.storage.config import storage_config
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def build_trace_from_channel(
@@ -54,10 +60,11 @@ def summarize_content(content: str, max_len: int = 120) -> str:
 class AdminCaseService:
     def get_status(self) -> GuardianConsoleStatusResponse:
         admin_case_store.ensure_initialized()
+        storage_name = storage_config.storage_backend
         return GuardianConsoleStatusResponse(
             service="guardian-admin-case-console",
-            mode="in_memory_demo",
-            storage="mock_store",
+            mode="in_memory_demo" if storage_name == "memory" else "persistent_demo",
+            storage=storage_name,
             case_count=admin_case_store.case_count(),
             auth_enabled=False,
             notifications_enabled=False,
@@ -82,7 +89,7 @@ class AdminCaseService:
 
         case = self.get_case(case_id)
         case.status = payload.status
-        case.updated_at = admin_case_store._now_iso()
+        case.updated_at = _now_iso()
 
         if payload.status == "recovery_needed":
             case.recovery_status = "needed"
@@ -129,8 +136,8 @@ class AdminCaseService:
             recommended_action=payload.recommended_action,
             protected_person_short_reply=payload.protected_person_short_reply,
             status=payload.status,
-            created_at=admin_case_store._now_iso(),
-            updated_at=admin_case_store._now_iso(),
+            created_at=_now_iso(),
+            updated_at=_now_iso(),
         )
         return admin_case_store.upsert_case(case)
 

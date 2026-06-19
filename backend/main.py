@@ -1,7 +1,13 @@
+import hmac
 import json
+import logging
 from urllib.parse import parse_qsl
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from app.agents.orchestrator import GuardianOrchestrator
 from app.channels.simple_channel_models import (
     SimpleChannelStatusResponse,
@@ -84,8 +90,21 @@ from app.twilio_sandbox import (
     TwilioSandboxService,
     TwilioSandboxStatusCallbackResponse,
 )
+from app.core.config import config
+from app.core.middleware import SecurityHeadersMiddleware
+from app.core.security import require_api_key
 
-app = FastAPI(title="CyberAlerta Guardian Backend")
+logger = logging.getLogger("uvicorn.error")
+
+app = FastAPI(title="CyberAlerta Guardian Backend", debug=False)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 orchestrator = GuardianOrchestrator()
 simple_channel_service = SimpleChannelService()
 protected_person_response_service = ProtectedPersonResponseService()
@@ -125,6 +144,45 @@ def _ensure_twilio_signature(request: Request, payload: dict) -> None:
     if not twilio_sandbox_service.adapter.verify_signature(context):
         raise HTTPException(status_code=403, detail="Invalid Twilio signature")
 
+
+def _validate_analysis_payload(payload: AnalysisRequest) -> None:
+    message = str(payload.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty.")
+    if len(message) > config.max_message_length:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Message exceeds max length of {config.max_message_length} characters.",
+        )
+    payload.message = message
+
+
+def _validate_evolution_webhook_secret(request: Request) -> None:
+    if not config.evolution_webhook_secret:
+        return None
+
+    header = request.headers.get("X-Evolution-Webhook-Secret")
+    if not header or not hmac.compare_digest(header, config.evolution_webhook_secret):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception while processing request")
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal server error"},
+    )
+
+
 @app.get("/health")
 def health():
     return {
@@ -138,6 +196,7 @@ def examples():
 
 @app.post("/analyze", response_model=AnalysisResponse)
 def analyze(payload: AnalysisRequest):
+    _validate_analysis_payload(payload)
     SafetyPolicyService().check_text(payload.message)
     return orchestrator.run_analysis(payload)
 
@@ -190,7 +249,7 @@ def dual_bot_status():
 
 
 @app.post("/dual-bot/provider/protected-message", response_model=DualBotFlowResponse)
-async def dual_bot_provider_protected_message(request: Request):
+async def dual_bot_provider_protected_message(request: Request, api_key: None = Depends(require_api_key)):
     payload = await _json_payload_from_request(request)
     return dual_bot_service.receive_provider_message(payload=payload)
 
@@ -214,22 +273,22 @@ def dual_bot_guardian_feedback(case_id: str, payload: GuardianFeedbackRequest):
 
 
 @app.get("/consent/status", response_model=ConsentStatusResponse)
-def consent_status(protected_person_id: str = "demo-protected-person"):
+def consent_status(protected_person_id: str = "demo-protected-person", api_key: None = Depends(require_api_key)):
     return consent_service.get_status(protected_person_id)
 
 
 @app.post("/consent/accept", response_model=ConsentStatusResponse)
-def consent_accept(payload: ConsentAcceptRequest):
+def consent_accept(payload: ConsentAcceptRequest, api_key: None = Depends(require_api_key)):
     return consent_service.accept(payload)
 
 
 @app.post("/consent/revoke", response_model=ConsentStatusResponse)
-def consent_revoke(payload: ConsentRevokeRequest):
+def consent_revoke(payload: ConsentRevokeRequest, api_key: None = Depends(require_api_key)):
     return consent_service.revoke(payload)
 
 
 @app.post("/consent/bot/activate", response_model=ConsentStatusResponse)
-def consent_bot_activate(payload: ConsentBotActivationRequest):
+def consent_bot_activate(payload: ConsentBotActivationRequest, api_key: None = Depends(require_api_key)):
     try:
         return consent_service.activate_bot(payload)
     except ConsentActivationError as exc:
@@ -237,27 +296,27 @@ def consent_bot_activate(payload: ConsentBotActivationRequest):
 
 
 @app.post("/consent/bot/deactivate", response_model=ConsentStatusResponse)
-def consent_bot_deactivate(payload: ConsentBotActivationRequest):
+def consent_bot_deactivate(payload: ConsentBotActivationRequest, api_key: None = Depends(require_api_key)):
     return consent_service.deactivate_bot(payload)
 
 
 @app.post("/consent/scopes", response_model=ConsentStatusResponse)
-def consent_scopes(payload: ConsentScopeUpdateRequest):
+def consent_scopes(payload: ConsentScopeUpdateRequest, api_key: None = Depends(require_api_key)):
     return consent_service.update_scopes(payload)
 
 
 @app.get("/guardian-console/real/status", response_model=GuardianConsoleRealStatusResponse)
-def guardian_console_real_status():
+def guardian_console_real_status(api_key: None = Depends(require_api_key)):
     return guardian_console_real_flow_service.get_status()
 
 
 @app.get("/guardian-console/real/cases", response_model=GuardianConsoleRealCaseListResponse)
-def guardian_console_real_cases():
+def guardian_console_real_cases(api_key: None = Depends(require_api_key)):
     return guardian_console_real_flow_service.list_cases()
 
 
 @app.get("/guardian-console/real/cases/{case_id}", response_model=GuardianConsoleRealCaseDetail)
-def guardian_console_real_case_detail(case_id: str):
+def guardian_console_real_case_detail(case_id: str, api_key: None = Depends(require_api_key)):
     try:
         return guardian_console_real_flow_service.get_case_detail(case_id)
     except LookupError as exc:
@@ -267,7 +326,7 @@ def guardian_console_real_case_detail(case_id: str):
 
 
 @app.post("/guardian-console/real/cases/{case_id}/feedback", response_model=GuardianFeedbackResponse)
-def guardian_console_real_feedback(case_id: str, payload: GuardianFeedbackRequest):
+def guardian_console_real_feedback(case_id: str, payload: GuardianFeedbackRequest, api_key: None = Depends(require_api_key)):
     try:
         return guardian_console_real_flow_service.record_feedback(case_id, payload)
     except LookupError as exc:
@@ -301,6 +360,7 @@ def evolution_webhook_health():
 @app.post("/webhook/evolution", response_model=EvolutionDemoWebhookResponse)
 async def evolution_webhook(request: Request):
     payload = await _json_payload_from_request(request)
+    _validate_evolution_webhook_secret(request)
     try:
         return evolution_demo_service.handle_webhook(payload)
     except EvolutionDemoPayloadError as exc:
@@ -308,60 +368,60 @@ async def evolution_webhook(request: Request):
 
 
 @app.post("/protected-response/generate", response_model=ProtectedResponseGenerateResponse)
-def protected_response_generate(payload: ProtectedResponseGenerateRequest):
+def protected_response_generate(payload: ProtectedResponseGenerateRequest, api_key: None = Depends(require_api_key)):
     return protected_person_response_service.generate(payload)
 
 
 @app.get("/guardian-console/status", response_model=GuardianConsoleStatusResponse)
-def guardian_console_status():
+def guardian_console_status(api_key: None = Depends(require_api_key)):
     return admin_case_service.get_status()
 
 
 @app.get("/guardian-console/cases", response_model=AdminCaseListResponse)
-def guardian_console_cases():
+def guardian_console_cases(api_key: None = Depends(require_api_key)):
     return admin_case_service.list_cases()
 
 
 @app.get("/guardian-console/cases/{case_id}", response_model=AdminCase)
-def guardian_console_case_detail(case_id: str):
+def guardian_console_case_detail(case_id: str, api_key: None = Depends(require_api_key)):
     return admin_case_service.get_case(case_id)
 
 
 @app.patch("/guardian-console/cases/{case_id}/status", response_model=AdminCase)
-def guardian_console_case_status(case_id: str, payload: AdminCaseStatusUpdateRequest):
+def guardian_console_case_status(case_id: str, payload: AdminCaseStatusUpdateRequest, api_key: None = Depends(require_api_key)):
     return admin_case_service.update_status(case_id, payload)
 
 
 @app.post("/guardian-console/cases/from-channel", response_model=AdminCase)
-def guardian_console_case_from_channel(payload: AdminCaseFromChannelRequest):
+def guardian_console_case_from_channel(payload: AdminCaseFromChannelRequest, api_key: None = Depends(require_api_key)):
     return admin_case_service.create_from_channel(payload)
 
 
 @app.get("/trusted-circle/status", response_model=TrustedCircleStatusResponse)
-def trusted_circle_status():
+def trusted_circle_status(api_key: None = Depends(require_api_key)):
     return trusted_circle_service.get_status()
 
 
 @app.post("/trusted-circle/escalate", response_model=TrustedCircleEscalateResponse)
-def trusted_circle_escalate(payload: TrustedCircleEscalateRequest):
+def trusted_circle_escalate(payload: TrustedCircleEscalateRequest, api_key: None = Depends(require_api_key)):
     return trusted_circle_service.escalate(payload)
 
 
 @app.get("/trusted-circle/escalations/{escalation_id}", response_model=TrustedCircleEscalationRecord)
-def trusted_circle_escalation_detail(escalation_id: str):
+def trusted_circle_escalation_detail(escalation_id: str, api_key: None = Depends(require_api_key)):
     return trusted_circle_service.get_escalation(escalation_id)
 
 
 @app.post("/proof-trust/assisted-session", response_model=AssistedProofSessionResponse)
-def proof_trust_create_assisted_session(payload: AssistedProofSessionCreateRequest):
+def proof_trust_create_assisted_session(payload: AssistedProofSessionCreateRequest, api_key: None = Depends(require_api_key)):
     return assisted_proof_trust_service.create_session(payload)
 
 
 @app.get("/proof-trust/assisted-session/{session_id}", response_model=AssistedProofSessionResponse)
-def proof_trust_get_assisted_session(session_id: str):
+def proof_trust_get_assisted_session(session_id: str, api_key: None = Depends(require_api_key)):
     return assisted_proof_trust_service.get_session(session_id)
 
 
 @app.post("/proof-trust/assisted-session/{session_id}/step", response_model=AssistedProofSessionResponse)
-def proof_trust_update_assisted_step(session_id: str, payload: AssistedProofStepUpdateRequest):
+def proof_trust_update_assisted_step(session_id: str, payload: AssistedProofStepUpdateRequest, api_key: None = Depends(require_api_key)):
     return assisted_proof_trust_service.update_step(session_id, payload)
