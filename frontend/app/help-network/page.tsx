@@ -82,7 +82,7 @@ export default function HelpNetworkPage(){
                 </div>
                 <div className="app-action-panel">
                   <div className="app-label">Mensagem sugerida</div>
-                  <p className="app-body-text mt-2 text-sm font-semibold">"{playbook.suggested_message}"</p>
+                  <p className="app-body-text mt-2 text-sm font-semibold">&quot;{playbook.suggested_message}&quot;</p>
                 </div>
               </div>
 
@@ -117,7 +117,7 @@ export default function HelpNetworkPage(){
             <div key={template.id} className="app-action-panel">
               <div className="app-label">{template.audience}</div>
               <AppCardTitle className="mt-2 text-sm">{template.title}</AppCardTitle>
-              <p className="app-body-text mt-3 text-sm font-semibold">"{template.message}"</p>
+              <p className="app-body-text mt-3 text-sm font-semibold">&quot;{template.message}&quot;</p>
             </div>
           ))}
         </div>

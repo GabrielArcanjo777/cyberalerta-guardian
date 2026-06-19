@@ -17,7 +17,7 @@ import AIModeIndicator from '@/components/AIModeIndicator'
 import MLScamIntelligenceCard from '@/components/MLScamIntelligenceCard'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import type {TrustedCircleAlert as TrustedCircleAlertModel} from '@/lib/types'
+import type {AnalyzeResponse, TrustedCircleAlert as TrustedCircleAlertModel} from '@/lib/types'
 import {TrustPipeline} from '@/components/AppPrimitives'
 import PrivacyConsentChecklist from '@/components/PrivacyConsentChecklist'
 import {beforePixPrivacyNotice} from '@/lib/privacyConsent'
@@ -56,7 +56,7 @@ const fallbackTrustedAlert: TrustedCircleAlertModel = {
 export default function BeforePix(){
   const [message,setMessage]=useState(initialMessage)
   const [action,setAction]=useState('pix')
-  const [result,setResult]=useState<any>(null)
+  const [result,setResult]=useState<AnalyzeResponse | null>(null)
   const [loading,setLoading]=useState(false)
   const [error,setError]=useState('')
 
@@ -76,7 +76,7 @@ export default function BeforePix(){
       }
       const res = await analyzeMessage(payload)
       setResult(res)
-    }catch(err:any){
+    }catch{
       setError('Erro ao conectar com o servidor. Usando dados de demonstração.')
     }finally{
       setLoading(false)
