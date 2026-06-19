@@ -84,6 +84,361 @@ export type AdminCaseListResponse = {
   __mock?: boolean
 }
 
+export type GuardianConsoleBotState = {
+  name: string
+  active: boolean
+  provider: string
+  mode: string
+  last_event?: string | null
+}
+
+export type GuardianConsoleActivationState = {
+  protected_bot: GuardianConsoleBotState
+  responsible_bot: GuardianConsoleBotState
+  channel_provider: string
+  backend_state: string
+  simulated: boolean
+}
+
+export type GuardianConsoleTimelineEvent = {
+  event_id: string
+  event_type: string
+  label: string
+  description: string
+  aggregate_type: string
+  aggregate_id: string
+  occurred_at: string
+  status?: string | null
+  metadata: Record<string, unknown>
+}
+
+export type GuardianConsoleDeliveryView = {
+  protected_reply_status?: string | null
+  guardian_alert_status?: string | null
+  guardian_notified: boolean
+  latest_provider_message_id?: string | null
+}
+
+export type GuardianConsoleOutboundView = {
+  provider_message_id?: string | null
+  kind: string
+  to_label: string
+  body: string
+  status?: string | null
+  simulated: boolean
+}
+
+export type GuardianConsolePatternView = {
+  score: number
+  level: string
+  threat_type: string
+  threat_type_label: string
+  explanation: string
+  reasons: string[]
+  recommendation: string
+  signals: string[]
+  cluster_ids: string[]
+  recurrence: Record<string, number>
+  similar_message_ids: string[]
+  normalized_text_sha1: string
+  text_fingerprint: string
+  candidate_id?: string | null
+  feedback_label?: string | null
+}
+
+export type GuardianConsoleProtectedPersonView = {
+  protected_person_id: string
+  alias: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export type GuardianConsoleResponsibleContactView = {
+  guardian_id?: string | null
+  alias?: string | null
+  status?: string | null
+  notified: boolean
+  last_delivery_status?: string | null
+  address_label?: string | null
+}
+
+export type GuardianConsoleCaseStateView = {
+  case_id: string
+  status: string
+  source_message_id: string
+  risk_assessment_id: string
+  open: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type GuardianConsoleMessageView = {
+  message_id: string
+  provider_message_id?: string | null
+  direction: string
+  channel: string
+  body: string
+  summary: string
+  status: string
+  simulated: boolean
+  created_at: string
+}
+
+export type GuardianConsoleRiskAssessmentView = {
+  risk_assessment_id: string
+  score: number
+  risk_level: string
+  signals: string[]
+  explanation: string[]
+  case_threshold_reached: boolean
+  threshold_label: string
+  created_at: string
+}
+
+export type GuardianConsoleChannelStatusView = {
+  provider: string
+  mode: string
+  simulated: boolean
+  backend_state: string
+  protected_bot_active: boolean
+  responsible_bot_active: boolean
+  protected_reply_status?: string | null
+  guardian_alert_status?: string | null
+  guardian_notified: boolean
+  latest_provider_message_id?: string | null
+  environment_label: string
+}
+
+export type GuardianConsoleFeedbackView = {
+  available_actions: string[]
+  latest_action?: string | null
+  latest_actor?: string | null
+  latest_note?: string | null
+  latest_event_id?: string | null
+  latest_event_at?: string | null
+  guardian_confirmed: boolean
+  false_positive: boolean
+  resolved: boolean
+}
+
+export type GuardianConsoleAuditLogView = {
+  audit_log_id: string
+  event_id?: string | null
+  actor?: string | null
+  action: string
+  target_type: string
+  target_id: string
+  payload: Record<string, unknown>
+  created_at: string
+}
+
+export type GuardianConsoleAgentDecisionView = {
+  event_id: string
+  agent: string
+  summary: string
+  recommended_action: string
+  fallback_used: boolean
+  guardrails: string[]
+  occurred_at: string
+}
+
+export type GuardianConsoleConsentView = {
+  consent_id: string
+  status: string
+  bot_active: boolean
+  scopes: string[]
+  accepted_at?: string | null
+  revoked_at?: string | null
+  retention_message_body_days: number
+  retention_event_audit_days: number
+  delete_after_revocation_days: number
+  latest_event?: string | null
+  limitation_notice: string
+}
+
+export type GuardianConsoleRealCaseSummary = {
+  case_id: string
+  status: string
+  protected_person_alias: string
+  guardian_alias?: string | null
+  source_channel: string
+  risk_score: number
+  risk_level: string
+  risk_signals: string[]
+  pattern_score?: number | null
+  pattern_level?: string | null
+  message_summary: string
+  recommended_action: string
+  alert_delivered: boolean
+  guardian_confirmed: boolean
+  false_positive: boolean
+  resolved: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type GuardianConsoleRealCaseDetail = GuardianConsoleRealCaseSummary & {
+  source_message: string
+  activation: GuardianConsoleActivationState
+  delivery: GuardianConsoleDeliveryView
+  protected_reply: GuardianConsoleOutboundView
+  guardian_alert: GuardianConsoleOutboundView
+  protected_person: GuardianConsoleProtectedPersonView
+  responsible_contact: GuardianConsoleResponsibleContactView
+  case: GuardianConsoleCaseStateView
+  message: GuardianConsoleMessageView
+  risk_assessment: GuardianConsoleRiskAssessmentView
+  channel_status: GuardianConsoleChannelStatusView
+  feedback: GuardianConsoleFeedbackView
+  audit_log: GuardianConsoleAuditLogView[]
+  bot_events: GuardianConsoleTimelineEvent[]
+  agent_decisions: GuardianConsoleAgentDecisionView[]
+  consent: GuardianConsoleConsentView
+  environment_label: string
+  next_step: string
+  pattern?: GuardianConsolePatternView | null
+  timeline: GuardianConsoleTimelineEvent[]
+  feedback_actions: string[]
+}
+
+export type GuardianConsoleRealStatusResponse = {
+  service: string
+  mode: string
+  storage: string
+  channel_provider: string
+  case_count: number
+  open_case_count: number
+  protected_people_count: number
+  guardians_count: number
+  delivery_status_available: boolean
+  activation: GuardianConsoleActivationState
+  consent: GuardianConsoleConsentView
+  demo_note: string
+}
+
+export type GuardianConsoleRealCaseListResponse = {
+  cases: GuardianConsoleRealCaseSummary[]
+  total: number
+}
+
+export type GuardianFeedbackAction =
+  | 'confirm_scam'
+  | 'false_alarm'
+  | 'needs_review'
+  | 'mark_resolved'
+
+export type GuardianFeedbackPayload = {
+  action: GuardianFeedbackAction
+  guardian_alias?: string
+  note?: string
+}
+
+export type GuardianFeedbackResponse = {
+  case_id: string
+  action: GuardianFeedbackAction
+  previous_status: string
+  new_status: string
+  event_id: string
+  audit_event: string
+}
+
+export type DualBotInboundPayload = {
+  providerMessageId?: string
+  from?: string
+  to?: string
+  body: string
+  protected_person_alias?: string
+  guardian_alias?: string
+  guardian_address?: string
+  language?: string
+}
+
+export type DualBotFlowResponse = {
+  provider: string
+  duplicate: boolean
+  provider_message_id: string
+  message_id?: string | null
+  risk_assessment_id?: string | null
+  risk_score?: number | null
+  risk_level?: string | null
+  risk_signals: string[]
+  case_id?: string | null
+  case_created: boolean
+  protected_reply?: GuardianConsoleOutboundView | null
+  guardian_alert?: GuardianConsoleOutboundView | null
+  events: string[]
+}
+
+export type ConsentScope =
+  | 'protected_bot'
+  | 'responsible_alerts'
+  | 'pattern_analysis'
+  | 'case_history'
+  | 'demo_channel'
+
+export type ConsentRecord = {
+  consent_id: string
+  protected_person_id: string
+  protected_person_alias: string
+  guardian_id?: string | null
+  guardian_alias?: string | null
+  channel_provider: string
+  status: string
+  scopes: ConsentScope[]
+  bot_active: boolean
+  accepted_at?: string | null
+  revoked_at?: string | null
+  created_at: string
+  updated_at: string
+  retention_policy: {
+    policy_id: string
+    message_body_days: number
+    event_audit_days: number
+    delete_after_revocation_days: number
+    minimal_storage: boolean
+    policy_note: string
+  }
+  legal_basis: string
+  limitation_notice: string
+}
+
+export type ConsentEvent = {
+  consent_event_id: string
+  consent_id: string
+  event_type: string
+  actor: string
+  scopes: ConsentScope[]
+  reason?: string | null
+  occurred_at: string
+}
+
+export type ConsentStatusResponse = {
+  record: ConsentRecord
+  latest_event?: ConsentEvent | null
+  events: ConsentEvent[]
+  can_activate_bot: boolean
+  production_whatsapp_enabled: boolean
+  demo_notice: string
+}
+
+export type ConsentAcceptPayload = {
+  protected_person_id?: string
+  protected_person_alias?: string
+  guardian_id?: string | null
+  guardian_alias?: string | null
+  channel_provider?: string
+  scopes?: ConsentScope[]
+  actor?: string
+  reason?: string | null
+}
+
+export type ConsentActionPayload = {
+  protected_person_id?: string
+  actor?: string
+  reason?: string | null
+}
+
 export type TrustedCircleEscalatePayload = {
   case_id: string
   risk_level: string

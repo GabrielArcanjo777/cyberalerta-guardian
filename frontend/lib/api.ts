@@ -4,6 +4,17 @@ import {
   AdminCaseStatus,
   AnalyzePayload,
   GuardianConsoleStatusResponse,
+  GuardianConsoleRealCaseDetail,
+  GuardianConsoleRealCaseListResponse,
+  GuardianConsoleRealStatusResponse,
+  GuardianFeedbackPayload,
+  GuardianFeedbackResponse,
+  DualBotFlowResponse,
+  DualBotInboundPayload,
+  ConsentAcceptPayload,
+  ConsentActionPayload,
+  ConsentScope,
+  ConsentStatusResponse,
   IntakePayload,
   RecoveryPayload,
   RedactPreviewPayload,
@@ -347,6 +358,100 @@ export async function patchGuardianCaseStatus(caseId:string, status:AdminCaseSta
     if(!found) throw new Error('not-found')
     return {...found, status, __mock: true}
   }
+}
+
+export async function getGuardianConsoleRealStatus(){
+  const res = await fetch(`${API}/guardian-console/real/status`)
+  if(!res.ok) throw new Error('guardian-console-real-status-error')
+  return await res.json() as GuardianConsoleRealStatusResponse
+}
+
+export async function getGuardianConsoleRealCases(){
+  const res = await fetch(`${API}/guardian-console/real/cases`)
+  if(!res.ok) throw new Error('guardian-console-real-cases-error')
+  return await res.json() as GuardianConsoleRealCaseListResponse
+}
+
+export async function getGuardianConsoleRealCase(caseId:string){
+  const res = await fetch(`${API}/guardian-console/real/cases/${caseId}`)
+  if(!res.ok) throw new Error('guardian-console-real-case-error')
+  return await res.json() as GuardianConsoleRealCaseDetail
+}
+
+export async function postGuardianConsoleRealFeedback(caseId:string, payload:GuardianFeedbackPayload){
+  const res = await fetch(`${API}/guardian-console/real/cases/${caseId}/feedback`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  })
+  if(!res.ok) throw new Error('guardian-console-real-feedback-error')
+  return await res.json() as GuardianFeedbackResponse
+}
+
+export async function postDualBotMockProtectedMessage(payload:DualBotInboundPayload){
+  const res = await fetch(`${API}/dual-bot/mock/protected-message`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  })
+  if(!res.ok) throw new Error('dual-bot-mock-protected-message-error')
+  return await res.json() as DualBotFlowResponse
+}
+
+export async function getConsentStatus(protectedPersonId = 'demo-protected-person'){
+  const res = await fetch(`${API}/consent/status?protected_person_id=${encodeURIComponent(protectedPersonId)}`)
+  if(!res.ok) throw new Error('consent-status-error')
+  return await res.json() as ConsentStatusResponse
+}
+
+export async function postConsentAccept(payload:ConsentAcceptPayload){
+  const res = await fetch(`${API}/consent/accept`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  })
+  if(!res.ok) throw new Error('consent-accept-error')
+  return await res.json() as ConsentStatusResponse
+}
+
+export async function postConsentRevoke(payload:ConsentActionPayload){
+  const res = await fetch(`${API}/consent/revoke`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  })
+  if(!res.ok) throw new Error('consent-revoke-error')
+  return await res.json() as ConsentStatusResponse
+}
+
+export async function postConsentBotActivate(payload:ConsentActionPayload){
+  const res = await fetch(`${API}/consent/bot/activate`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  })
+  if(!res.ok) throw new Error('consent-bot-activate-error')
+  return await res.json() as ConsentStatusResponse
+}
+
+export async function postConsentBotDeactivate(payload:ConsentActionPayload){
+  const res = await fetch(`${API}/consent/bot/deactivate`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  })
+  if(!res.ok) throw new Error('consent-bot-deactivate-error')
+  return await res.json() as ConsentStatusResponse
+}
+
+export async function postConsentScopes(protectedPersonId:string, scopes:ConsentScope[]){
+  const res = await fetch(`${API}/consent/scopes`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({protected_person_id: protectedPersonId, scopes}),
+  })
+  if(!res.ok) throw new Error('consent-scopes-error')
+  return await res.json() as ConsentStatusResponse
 }
 
 function normalizeRiskLevel(riskLevel:string){
