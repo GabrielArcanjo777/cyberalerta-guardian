@@ -15,6 +15,7 @@ from app.consent.models import (
 )
 from app.event_model import BotEventType, LocalEventBus
 from app.event_model.models import utc_now
+from app.storage import consent_store
 
 
 CONSENT_EVENT_MAP = {
@@ -33,12 +34,10 @@ class ConsentActivationError(ValueError):
 class ConsentService:
     def __init__(self, event_bus: LocalEventBus | None = None) -> None:
         self._event_bus = event_bus
-        self._records: dict[str, ConsentRecord] = {}
-        self._events: dict[str, list[ConsentEvent]] = {}
 
     def get_status(self, protected_person_id: str = "demo-protected-person") -> ConsentStatusResponse:
         record = self._get_or_create_record(protected_person_id=protected_person_id)
-        events = self._events.get(record.consent_id, [])
+        events = consent_store.list_events(record.consent_id)
         return ConsentStatusResponse(
             record=record.model_copy(deep=True),
             latest_event=events[-1].model_copy(deep=True) if events else None,
@@ -47,7 +46,7 @@ class ConsentService:
         )
 
     def accept(self, request: ConsentAcceptRequest) -> ConsentStatusResponse:
-        record = self._get_or_create_record(
+        record = consent_store.get_or_create_record(
             protected_person_id=request.protected_person_id,
             protected_person_alias=request.protected_person_alias,
             guardian_id=request.guardian_id,
@@ -65,7 +64,7 @@ class ConsentService:
         record.accepted_at = record.accepted_at or now
         record.revoked_at = None
         record.updated_at = now
-        self._records[record.protected_person_id] = record
+        consent_store.save_record(record)
         self._record_event(
             record=record,
             event_type=ConsentEventType.ACCEPTED,
@@ -89,6 +88,7 @@ class ConsentService:
         record.bot_active = False
         record.revoked_at = now
         record.updated_at = now
+        consent_store.save_record(record)
         self._record_event(
             record=record,
             event_type=ConsentEventType.REVOKED,
@@ -112,6 +112,7 @@ class ConsentService:
         record.status = OptInStatus.ACTIVE
         record.bot_active = True
         record.updated_at = utc_now()
+        consent_store.save_record(record)
         self._record_event(
             record=record,
             event_type=ConsentEventType.BOT_ACTIVATED,
@@ -127,6 +128,7 @@ class ConsentService:
             record.status = OptInStatus.BOT_DISABLED
         record.bot_active = False
         record.updated_at = utc_now()
+        consent_store.save_record(record)
         self._record_event(
             record=record,
             event_type=ConsentEventType.BOT_DEACTIVATED,
@@ -140,6 +142,7 @@ class ConsentService:
         record = self._get_or_create_record(protected_person_id=request.protected_person_id)
         record.scopes = request.scopes
         record.updated_at = utc_now()
+        consent_store.save_record(record)
         self._record_event(
             record=record,
             event_type=ConsentEventType.SCOPE_CHANGED,
@@ -158,19 +161,13 @@ class ConsentService:
         guardian_alias: str | None = None,
         channel_provider: str = "mock",
     ) -> ConsentRecord:
-        existing = self._records.get(protected_person_id)
-        if existing:
-            return existing
-        record = ConsentRecord(
+        return consent_store.get_or_create_record(
             protected_person_id=protected_person_id,
             protected_person_alias=protected_person_alias,
             guardian_id=guardian_id,
             guardian_alias=guardian_alias,
             channel_provider=channel_provider,
         )
-        self._records[protected_person_id] = record
-        self._events[record.consent_id] = []
-        return record
 
     def _record_event(
         self,
@@ -188,7 +185,7 @@ class ConsentService:
             scopes=scopes,
             reason=reason,
         )
-        self._events.setdefault(record.consent_id, []).append(event)
+        consent_store.append_event(event)
         if self._event_bus is not None:
             self._event_bus.publish_type(
                 CONSENT_EVENT_MAP[event_type],
