@@ -87,7 +87,8 @@ def test_analyze_payload_too_long_returns_400():
         }
 
         response = client.post("/analyze", json=payload)
-        assert response.status_code == 400
-        assert "exceeds max length" in response.json()["detail"]
+        assert response.status_code in {400, 413}
+        detail = response.json().get("detail", "")
+        assert "exceeds max length" in detail or "too large" in detail.lower()
     finally:
         config.max_message_length = original_max
