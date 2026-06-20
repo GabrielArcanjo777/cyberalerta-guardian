@@ -11,6 +11,11 @@ venv/
 coverage/
 .pytest_cache/
 
+*.db
+*.sqlite
+*.sqlite3
+cyberalerta_guardian.db
+
 .env
 
 frontend/.env.local
