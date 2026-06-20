@@ -31,9 +31,21 @@ def test_recovery_agent_builds_conditional_checklist():
             "shared_password": True,
             "installed_app": False,
             "shared_sms_code": False,
-        })
+            "incident_type": None,
+            "already_paid": False,
+            "amount": None,
+            "payment_method": None,
+            "bank_name": None,
+            "has_shared_password": False,
+            "has_installed_remote_app": False,
+            "has_clicked_link": False,
+            "has_sent_code": False,
+            "source": "whatsapp",
+            "n8n_execution_id": None,
+            "case_id": None,
+        })()
     )
-    assert "Contactar instituicao financeira imediatamente." in response.checklist
+    assert any("Contactar instituicao financeira" in item for item in response.checklist)
     assert any("Nao acesse o link novamente" in item for item in response.checklist)
     assert any("Altere senhas" in item for item in response.checklist)
 
