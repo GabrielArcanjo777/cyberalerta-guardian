@@ -22,6 +22,23 @@ def test_main_case_returns_critical_and_trust_lock():
     assert data["scam_type"] == "falso familiar pedindo Pix"
     assert "urgencia" in data["manipulations"]
     assert data["trusted_circle_alert"]["should_alert"] is True
+    assert data["whatsapp_user_message"]
+    assert "Nao faca pix" in data["whatsapp_user_message"]
+    assert "sinais" in data["whatsapp_user_message"].lower()
+    assert data["whatsapp_trusted_contact_message"]
+    assert "Alerta CyberAlerta Guardian" in data["whatsapp_trusted_contact_message"]
+    assert data["short_explanation"]
+    assert data["next_best_action"]
+    joined_messages = " ".join(
+        [
+            data["whatsapp_user_message"],
+            data["whatsapp_trusted_contact_message"],
+            data["short_explanation"],
+            data["next_best_action"],
+        ]
+    ).lower()
+    assert "com certeza" not in joined_messages
+    assert "garant" not in joined_messages
 
 
 def test_false_bank_case_generates_proof_of_trust():

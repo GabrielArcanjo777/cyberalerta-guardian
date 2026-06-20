@@ -109,6 +109,10 @@ export const mockAnalyzeResult = {
     message:'Gabriel, Dona Lucia recebeu um pedido urgente de Pix de um numero novo dizendo ser familiar. Ligue para ela agora antes de qualquer pagamento.'
   },
   user_message:'Dona Lucia, pare agora. Nao faca Pix. Ligue para o numero antigo do seu neto.',
+  whatsapp_user_message:'Dona Lucia, pare agora. Nao faca Pix, nao clique em links e nao envie codigos. Esta mensagem tem sinais fortes de risco: urgencia, numero novo e pedido financeiro. Confirme por ligacao usando um numero que voce ja tinha salvo.',
+  whatsapp_trusted_contact_message:'Alerta CyberAlerta Guardian: Dona Lucia recebeu uma mensagem com sinais de risco. Risco: critico. Sinais: urgencia, numero novo e pedido financeiro. Ligue para ela usando um numero conhecido antes de qualquer pagamento ou clique.',
+  short_explanation:'Sinais avaliados: urgencia, numero novo e pedido financeiro. A orientacao e pausar e confirmar por canal confiavel.',
+  next_best_action:'Parar agora e confirmar por ligacao usando um numero conhecido.',
   report:{title:'Relatorio CyberAlerta Guardian',summary:'Possivel golpe do falso familiar com pedido de Pix urgente.',agent_decision:'Trust Lock ativado e contato de confianca alertado.',recommended_next_step:'Confirmar por ligacao no numero antigo antes de qualquer pagamento.'}
 }
 

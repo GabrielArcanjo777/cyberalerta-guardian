@@ -678,6 +678,10 @@ export type AnalyzeResponse = {
   intervention_playbook:InterventionPlaybook
   trusted_circle_alert:TrustedCircleAlert
   user_message:string
+  whatsapp_user_message?:string | null
+  whatsapp_trusted_contact_message?:string | null
+  short_explanation?:string | null
+  next_best_action?:string | null
   report:GuardianReport
   __mock?:boolean
 }

@@ -60,6 +60,10 @@ export default function AssistedProtectionDemo(){
   const meta = {
     ...assistedDemoMeta,
     shortReply: liveCase?.protected_person_short_reply || assistedDemoMeta.shortReply,
+    whatsappUserMessage: assistedDemoMeta.whatsappUserMessage,
+    whatsappTrustedContactMessage: assistedDemoMeta.whatsappTrustedContactMessage,
+    shortExplanation: assistedDemoMeta.shortExplanation,
+    nextBestAction: assistedDemoMeta.nextBestAction,
     riskScore: liveCase?.risk_score ?? assistedDemoMeta.riskScore,
     riskLevel: liveCase?.risk_level ?? assistedDemoMeta.riskLevel,
     guardian: liveCase?.guardian_alias ?? assistedDemoMeta.guardian,
@@ -186,6 +190,24 @@ export default function AssistedProtectionDemo(){
         <p className="app-muted-text mt-4 max-w-2xl text-sm">
           Linguagem simples, tom calmo, sem jargão técnico — máximo duas frases (Protected Person Response Agent).
         </p>
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="app-action-panel border-cyan-400/20">
+            <div className="app-label text-cyan-200/90">WhatsApp para pessoa protegida</div>
+            <p className="mt-2 text-sm font-medium leading-6 text-cyan-50">{meta.whatsappUserMessage}</p>
+          </div>
+          <div className="app-action-panel border-emerald-400/20">
+            <div className="app-label text-emerald-200/90">WhatsApp para contato de confianca</div>
+            <p className="mt-2 text-sm font-medium leading-6 text-emerald-50">{meta.whatsappTrustedContactMessage}</p>
+          </div>
+          <div className="app-action-panel">
+            <div className="app-label">Explicacao curta</div>
+            <p className="app-body-text mt-2 text-sm">{meta.shortExplanation}</p>
+          </div>
+          <div className="app-action-panel">
+            <div className="app-label">Proximo passo</div>
+            <p className="app-body-text mt-2 text-sm font-semibold text-white">{meta.nextBestAction}</p>
+          </div>
+        </div>
       </DemoStep>
 
       <DemoStep order={4} id="step-console-case" title="Caso criado no painel">

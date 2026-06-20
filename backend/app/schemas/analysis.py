@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 
 class AnalysisRequest(BaseModel):
@@ -64,4 +64,8 @@ class AnalysisResponse(BaseModel):
     intervention_playbook: InterventionPlaybook
     trusted_circle_alert: TrustedCircleAlert
     user_message: str
+    whatsapp_user_message: Optional[str] = None
+    whatsapp_trusted_contact_message: Optional[str] = None
+    short_explanation: Optional[str] = None
+    next_best_action: Optional[str] = None
     report: ReportModel

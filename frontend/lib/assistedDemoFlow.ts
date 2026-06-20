@@ -21,6 +21,13 @@ export const assistedDemoMeta = {
   forwardNote: 'Conteúdo recebido de forma voluntária pelo canal simples.',
   shortReply:
     'Não faça Pix agora. Essa mensagem tem sinais de golpe. Estou avisando seu contato de confiança.',
+  whatsappUserMessage:
+    'Pare agora. Não faça Pix, não clique em links e não envie códigos. Esta mensagem tem sinais fortes de risco: urgência, número novo e pedido de Pix. Confirme por ligação usando um número que você já tinha salvo.',
+  whatsappTrustedContactMessage:
+    'Alerta CyberAlerta Guardian: Dona Lucia recebeu uma mensagem com sinais de risco. Risco: alto. Sinais: urgência, número novo e pedido de Pix. Ligue para ela usando um número conhecido antes de qualquer pagamento ou clique.',
+  shortExplanation:
+    'O sistema identificou pressa, número novo, pedido de dinheiro e orientação para não ligar. Esses sinais justificam pausar a ação e confirmar por canal confiável.',
+  nextBestAction: 'Não pagar agora. Confirmar por ligação usando o contato antigo salvo.',
   caseId: 'case-demo-001',
   riskScore: 87,
   riskLevel: 'alto',

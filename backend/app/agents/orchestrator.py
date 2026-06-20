@@ -11,6 +11,7 @@ from app.agents.trusted_circle_agent import TrustedCircleAgent
 from app.agents.report_agent import ReportAgent
 from app.agents.recovery_agent import RecoveryAgent
 from app.services.safety_policy import SafetyPolicyService
+from app.services.whatsapp_templates import build_whatsapp_message_templates
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.schemas.recovery import RecoveryRequest, RecoveryResponse
 from app.schemas.report import ReportRequest, ReportResponse
@@ -47,6 +48,14 @@ class GuardianOrchestrator:
         intervention_playbook = self.intervention_playbook_agent.analyze(request.trusted_contact_name)
         trusted_circle_alert = self.trusted_circle_agent.analyze(risk_score, request.trusted_contact_name, request.user_name)
         report = self.report_agent.analyze(risk_level, scam_type, trusted_circle_alert.should_alert)
+        whatsapp_templates = build_whatsapp_message_templates(
+            user_name=request.user_name,
+            trusted_contact_name=request.trusted_contact_name,
+            trusted_contact_relation=request.trusted_contact_relation,
+            risk_level=risk_level,
+            signals=manipulations,
+            dangerous_action=dangerous_action,
+        )
 
         user_message = (
             f"{request.user_name}, pare agora. Nao faca {dangerous_action}. "
@@ -67,6 +76,10 @@ class GuardianOrchestrator:
             intervention_playbook=intervention_playbook,
             trusted_circle_alert=trusted_circle_alert,
             user_message=user_message,
+            whatsapp_user_message=whatsapp_templates.whatsapp_user_message,
+            whatsapp_trusted_contact_message=whatsapp_templates.whatsapp_trusted_contact_message,
+            short_explanation=whatsapp_templates.short_explanation,
+            next_best_action=whatsapp_templates.next_best_action,
             report=report,
         )
 
