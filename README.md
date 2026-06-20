@@ -438,14 +438,6 @@ Regra central:
 n8n orquestra. CyberAlerta decide.
 ```
 
-Docs relacionadas:
-
-- [docs/n8n/README.md](docs/n8n/README.md)
-- [docs/n8n/whatsapp-flow.md](docs/n8n/whatsapp-flow.md)
-- [docs/n8n/env-example.md](docs/n8n/env-example.md)
-- [docs/n8n/workflow-pseudo-json.json](docs/n8n/workflow-pseudo-json.json)
-- [docs/n8n/troubleshooting.md](docs/n8n/troubleshooting.md)
-
 ### Teste rápido sem n8n instalado
 
 Este teste chama diretamente o endpoint que o n8n chamaria. Ele não envia WhatsApp real e não usa API externa.
@@ -730,19 +722,3 @@ STORE_FULL_MESSAGE=false
 ```
 
 Não commit o arquivo `.db`.
-
-## Docs Úteis
-
-- [Roteiro da demo assistida](docs/assisted-protection-demo-script.md)
-- [Privacidade e consentimento](docs/assisted-protection-privacy.md)
-- [Channel Adapter Contract](docs/channel-adapter-contract.md)
-- [Dual Bot Flows V5](docs/dual-bot-flows-v5.md)
-- [Pattern Intelligence](docs/pattern-intelligence-testing.md)
-- [Agentes controlados](docs/controlled-agents-v5.md)
-- [Consentimento e opt-in](docs/consent-optin-lgpd-v5.md)
-- [n8n - Orquestração de Canais](docs/n8n/README.md)
-- [Fluxo WhatsApp via n8n](docs/n8n/whatsapp-flow.md)
-- [UX Writing Guidelines](docs/ux-writing-guidelines.md)
-- [Templates WhatsApp/n8n](docs/n8n-whatsapp-message-templates.md)
-- [Evolution Demo Adapter](docs/evolution-demo-adapter-setup.md)
-- [Twilio Sandbox](docs/twilio-sandbox-setup.md)
