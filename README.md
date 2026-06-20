@@ -211,8 +211,42 @@ resposta ao usuário / alerta familiar / recovery / log externo
 - Node.js compatível com Next.js 16.
 - npm.
 - Git.
+- Docker opcional, apenas se quiser rodar o n8n localmente em container.
 
 No Windows, se `python` não estiver no PATH, use `py` ou crie/ative uma venv explicitamente.
+
+## Setup Rápido Local
+
+Use dois terminais, um para o backend e outro para o frontend.
+
+Terminal 1, API:
+
+```powershell
+cd cyberalerta-guardian\backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 8000
+```
+
+Terminal 2, interface:
+
+```powershell
+cd cyberalerta-guardian\frontend
+npm install
+npm run dev
+```
+
+Acesse:
+
+```text
+Home: http://localhost:3000
+Demo assistida: http://localhost:3000/assisted-demo
+Health backend: http://localhost:8000/health
+Swagger/OpenAPI: http://localhost:8000/docs
+```
+
+Para testar o n8n sem WhatsApp real, deixe o backend rodando e use o exemplo da seção [Integração n8n/WhatsApp](#integração-n8nwhatsapp).
 
 ## Como Rodar o Backend
 
@@ -411,6 +445,102 @@ Docs relacionadas:
 - [docs/n8n/env-example.md](docs/n8n/env-example.md)
 - [docs/n8n/workflow-pseudo-json.json](docs/n8n/workflow-pseudo-json.json)
 - [docs/n8n/troubleshooting.md](docs/n8n/troubleshooting.md)
+
+### Teste rápido sem n8n instalado
+
+Este teste chama diretamente o endpoint que o n8n chamaria. Ele não envia WhatsApp real e não usa API externa.
+
+Com o backend rodando em `http://localhost:8000`, execute no PowerShell:
+
+```powershell
+$body = @{
+  message_id = "n8n-local-demo-001"
+  from = "masked-whatsapp-contact"
+  to = "cyberalerta-demo"
+  body = "Mae, troquei de numero. Preciso de Pix urgente. Nao liga agora."
+  channel = "whatsapp"
+  user_name = "Dona Lucia"
+  trusted_contact_name = "Gabriel"
+  trusted_contact_relation = "filho"
+  already_acted = $false
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Uri "http://localhost:8000/integrations/n8n/whatsapp/inbound" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Headers @{
+    "X-Request-ID" = "req-local-demo-001"
+    "X-N8N-Execution-ID" = "exec-local-demo-001"
+  } `
+  -Body $body
+```
+
+Resposta esperada:
+
+- `status`: `processed`
+- `case_id`: id local do caso
+- `risk_score` e `risk_level`
+- `n8n_action`: ação que o workflow deve seguir
+- `user_message`: resposta segura para a pessoa protegida
+- `trusted_contact_message`: alerta sugerido ao contato confiável, quando aplicável
+
+Se `N8N_WEBHOOK_SECRET` estiver configurado no backend, inclua também este header:
+
+```powershell
+"X-N8N-CyberAlerta-Secret" = "local-demo-secret-change-me"
+```
+
+### Rodando com n8n local
+
+O n8n é opcional para desenvolvimento. Se quiser testar o desenho do workflow localmente com Docker:
+
+```powershell
+docker run -it --rm --name cyberalerta-n8n -p 5678:5678 -e N8N_SECURE_COOKIE=false n8nio/n8n
+```
+
+Abra:
+
+```text
+http://localhost:5678
+```
+
+Workflow mínimo:
+
+1. Crie um `Webhook Trigger` com método `POST`.
+2. Normalize os campos para o contrato do backend.
+3. Adicione um nó `HTTP Request` apontando para:
+   - `http://host.docker.internal:8000/integrations/n8n/whatsapp/inbound`, se o n8n estiver em Docker.
+   - `http://localhost:8000/integrations/n8n/whatsapp/inbound`, se o n8n estiver rodando fora do Docker.
+4. Envie `Content-Type: application/json`.
+5. Envie `X-N8N-Execution-ID` com um identificador da execução.
+6. Se `N8N_WEBHOOK_SECRET` estiver definido, envie o header configurado em `N8N_WEBHOOK_HEADER`.
+7. Use o campo `n8n_action` da resposta para decidir o próximo passo.
+
+Payload mínimo esperado pelo backend:
+
+```json
+{
+  "message_id": "demo-message-001",
+  "from": "masked-whatsapp-contact",
+  "to": "cyberalerta-demo",
+  "body": "Mae, troquei de numero. Preciso de Pix urgente. Nao liga agora.",
+  "channel": "whatsapp",
+  "user_name": "Dona Lucia",
+  "trusted_contact_name": "Gabriel",
+  "trusted_contact_relation": "filho",
+  "already_acted": false
+}
+```
+
+Ações atuais que o workflow deve tratar:
+
+| `n8n_action` | Uso esperado no workflow |
+| --- | --- |
+| `ask_for_confirmation` | Responder com orientação curta e pedir verificação segura. |
+| `alert_trusted_contact` | Alertar o contato confiável com contexto resumido. |
+| `activate_trust_lock` | Tratar como risco alto e priorizar bloqueio/pausa antes da ação. |
+| `start_recovery` | Iniciar fluxo de recuperação quando a pessoa já clicou, pagou ou informou código. |
 
 ## Confiabilidade Operacional
 
