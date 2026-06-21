@@ -44,10 +44,12 @@ O Guardian organiza uma proteção assistida:
 | Pattern Intelligence | Implementado com regras | Sem ML pesado e sem IA externa. |
 | Agentes controlados | Implementados | Sem agente autônomo livre e sem LLM externo. |
 | Consentimento/opt-in | Implementado como base local | Não é consultoria jurídica nem compliance completo. |
+| Autenticação local | Implementado | Login email/senha, cookies HttpOnly, MFA/TOTP, RBAC e auditoria. |
+| Google OAuth/OIDC | Implementado como opcional | Desativado por padrão; exige configuração local segura. |
 | Persistência | `memory` ou SQLite local | SQLite é opcional via env; não há banco de produção. |
 | WhatsApp real | Não implementado | Existem mock, Evolution demo e Twilio sandbox controlado. |
 | n8n/WhatsApp | Parcial/MVP | Endpoint inbound n8n-first para WhatsApp local/controlado; CyberAlerta decide risco e ação. |
-| Produção | Não pronta | Sem autenticação completa, multi-tenant, observabilidade ou hardening final. |
+| Produção | Não pronta | Ainda falta multi-tenant, observabilidade gerenciada, migrações formais e hardening final. |
 
 ## Fluxo Principal da Demo
 
@@ -114,6 +116,15 @@ Exemplo de narrativa:
   - ações do responsável;
   - status de consentimento.
 - Consentimento/opt-in local com ativar, desativar, revogar e escopos.
+- Autenticação local por email/senha com hash PBKDF2-HMAC.
+- Sessão assinada em cookie HttpOnly com SameSite=Lax.
+- MFA/TOTP com setup, enable, verify e bloqueio de admin sem MFA.
+- Google OAuth/OIDC opcional, com state anti-CSRF, validação de issuer/audience/email verificado e auto-create seguro.
+- RBAC com roles `admin`, `analyst` e `viewer`.
+- Admin API com `/admin/users` e `/admin/audit-logs`.
+- Script `scripts/create_admin.py` para criação segura do admin inicial.
+- Auditoria de login, logout, MFA, Google e falhas de autenticação.
+- Rate limit básico em memória para login/MFA.
 - Storage em memória ou SQLite local para partes da demo.
 - Headers básicos de segurança e API key opcional para endpoints sensíveis.
 
@@ -133,7 +144,7 @@ Exemplo de narrativa:
 
 - Integração oficial futura com Meta Cloud API ou outro provider aprovado.
 - Persistência de produção com migrações, criptografia e retenção formal.
-- Autenticação, autorização e multi-tenant.
+- Multi-tenant, políticas refinadas por organização e gerenciamento completo de usuários.
 - Observabilidade, auditoria robusta e logging estruturado.
 - Políticas completas de LGPD, retenção e exclusão.
 - Testes end-to-end e cobertura ampliada no frontend.
@@ -291,6 +302,60 @@ Swagger/OpenAPI:
 http://localhost:8000/docs
 ```
 
+## Autenticação, Admin e MFA
+
+O backend agora possui autenticação local, Google OAuth opcional, MFA/TOTP, RBAC e auditoria. O estado padrão continua seguro para demo local: Google fica desativado e nenhum segredo real deve ser commitado.
+
+Para criar o primeiro administrador local, rode com a venv ativa:
+
+```powershell
+cd cyberalerta-guardian
+.\backend\.venv\Scripts\python.exe scripts\create_admin.py
+```
+
+Ou, se estiver dentro da pasta `backend` com a venv ativada:
+
+```powershell
+cd ..
+python scripts\create_admin.py
+```
+
+O script pede email, nome e senha, valida força mínima e não imprime a senha. A senha precisa ter 12 caracteres, maiúscula, minúscula, número e símbolo. Em desenvolvimento local, também é possível usar `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_NAME` e `INITIAL_ADMIN_PASSWORD`, mas nunca coloque esses valores no Git.
+
+**Persistência do admin:** o padrão `STORAGE_BACKEND=memory` é volátil — o admin criado some ao reiniciar. Para uso real local, configure antes de criar o admin:
+
+```env
+STORAGE_BACKEND=sqlite
+SQLITE_DATABASE_URL=sqlite:///./cyberalerta_guardian.db
+```
+
+Com SQLite, o admin e todos os usuários persistem entre reinicializações.
+
+Fluxo recomendado:
+
+1. Suba o backend.
+2. Crie o admin com `scripts/create_admin.py`.
+3. Acesse `http://localhost:3000/login`.
+4. Entre com email/senha.
+5. Abra `http://localhost:3000/mfa` e habilite TOTP.
+6. Acesse `http://localhost:3000/admin`.
+
+Administradores sem MFA conseguem entrar apenas para configurar MFA, mas não acessam `/admin/users` nem `/admin/audit-logs`. O token de sessão fica em cookie HttpOnly com SameSite=Lax; o frontend não usa `localStorage` para token.
+
+Google OAuth/OIDC é opcional. Para usar em desenvolvimento, configure valores fictícios substituindo pelos dados do seu projeto Google local:
+
+```env
+GOOGLE_OAUTH_ENABLED=true
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
+GOOGLE_AUTH_ALLOWED_EMAILS=admin@example.com
+GOOGLE_AUTH_ALLOWED_DOMAINS=example.com
+GOOGLE_AUTO_CREATE_USERS=false
+```
+
+Usuários criados automaticamente via Google, quando liberados por allowlist, nascem como `viewer`, nunca como `admin`.
+
 ## Como Rodar o Frontend
 
 ```bash
@@ -324,6 +389,9 @@ Se o backend estiver em outra porta, ajuste `NEXT_PUBLIC_API_URL` no `.env.local
 | `/family-console` | Guardian Console para responsável. |
 | `/intake` | Intake técnico com privacidade/redaction. |
 | `/integrations` | Demos de conectores e integrações. |
+| `/login` | Login local e entrada via Google OAuth opcional. |
+| `/mfa` | Setup e verificação MFA/TOTP. |
+| `/admin` | Painel administrativo de sessão, usuários, auditoria e status. |
 | `/ml-lab` | Laboratório rule-based/ML realista. |
 | `/recovery` | Fluxo de recuperação. |
 | `/report` | Relatório/registro. |
@@ -356,6 +424,24 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | `MAX_MESSAGE_LENGTH` | `4000` | Limite de texto analisado. |
 | `RATE_LIMIT_ENABLED` | `false` | Ativa rate limit em endpoints públicos/controlados. |
 | `RATE_LIMIT_PER_MINUTE` | `60` | Limite simples por minuto quando rate limit estiver ativo. |
+| `AUTH_SECRET_KEY` | vazio no exemplo | Segredo para assinar sessão local; defina valor forte no `.env`, nunca no Git. |
+| `AUTH_ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Expiração curta do cookie de sessão. |
+| `AUTH_REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Reservado para evolução de refresh token. |
+| `AUTH_COOKIE_NAME` | `cyberalerta_session` | Nome do cookie HttpOnly. |
+| `AUTH_COOKIE_SECURE` | `false` local, `true` produção | Cookie Secure. |
+| `AUTH_COOKIE_SAMESITE` | `lax` | Política SameSite do cookie. |
+| `AUTH_RATE_LIMIT_ENABLED` | `true` | Rate limit básico em login/MFA. |
+| `AUTH_REQUIRE_SENSITIVE_ROUTES` | `false` local, `true` produção | Exige sessão/role em rotas sensíveis antigas além da Admin API. |
+| `GOOGLE_OAUTH_ENABLED` | `false` | Ativa OAuth Google opcional. |
+| `GOOGLE_CLIENT_ID` | `your-google-client-id` | Client ID Google fictício/local. |
+| `GOOGLE_CLIENT_SECRET` | `your-google-client-secret` | Client secret Google; nunca commitar valor real. |
+| `GOOGLE_REDIRECT_URI` | `http://localhost:8000/auth/google/callback` | Callback OAuth. |
+| `GOOGLE_AUTH_ALLOWED_EMAILS` | `admin@example.com` | Allowlist de emails para auto-create Google. |
+| `GOOGLE_AUTH_ALLOWED_DOMAINS` | `example.com` | Allowlist de domínios para auto-create Google. |
+| `GOOGLE_AUTO_CREATE_USERS` | `false` | Se `true`, cria apenas usuários allowlisted como `viewer`. |
+| `INITIAL_ADMIN_EMAIL` | vazio | Opcional apenas em dev para `scripts/create_admin.py`. |
+| `INITIAL_ADMIN_NAME` | vazio | Opcional apenas em dev para `scripts/create_admin.py`. |
+| `INITIAL_ADMIN_PASSWORD` | vazio | Opcional apenas em dev; nunca commitar valor real. |
 | `N8N_WEBHOOK_SECRET` | vazio | Segredo local do webhook n8n; nunca commitar valor real. |
 | `N8N_WEBHOOK_HEADER` | `X-N8N-CyberAlerta-Secret` | Header esperado para integração n8n MVP/controlada. |
 | `N8N_BASE_URL` | vazio | URL local/controlada do n8n, quando usado. |
@@ -379,6 +465,18 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | Método | Rota | Finalidade | Público/protegido | Status |
 | --- | --- | --- | --- | --- |
 | `GET` | `/health` | Health check da API. | Público local | Implementado. |
+| `POST` | `/auth/login` | Login local email/senha. | Público; rate limit | Implementado. |
+| `POST` | `/auth/logout` | Encerra sessão e limpa cookie. | Sessão opcional | Implementado. |
+| `GET` | `/auth/me` | Descobre sessão atual pelo cookie HttpOnly. | Público | Implementado. |
+| `POST` | `/auth/change-password` | Troca senha do usuário autenticado. | Sessão exigida | Implementado. |
+| `POST` | `/auth/mfa/setup` | Gera segredo e QR TOTP. | Sessão exigida | Implementado. |
+| `POST` | `/auth/mfa/enable` | Habilita MFA com código TOTP. | Sessão exigida | Implementado. |
+| `POST` | `/auth/mfa/verify` | Valida token temporário MFA e cria sessão. | Público; rate limit | Implementado. |
+| `POST` | `/auth/mfa/disable` | Desabilita MFA para usuário não-admin. | Sessão exigida | Implementado. |
+| `GET` | `/auth/google/login` | Inicia Google OAuth/OIDC. | Público; desativado por padrão | Implementado. |
+| `GET` | `/auth/google/callback` | Callback Google OAuth/OIDC. | Público; valida state/audience/email | Implementado. |
+| `GET` | `/admin/users` | Lista usuários para administração. | Admin com MFA | Implementado. |
+| `GET` | `/admin/audit-logs` | Lista auditoria de autenticação. | Admin com MFA | Implementado. |
 | `GET` | `/examples` | Cenários de golpe de exemplo. | Público local | Implementado. |
 | `POST` | `/analyze` | Analisa mensagem suspeita e retorna risco, decisão, Trust Lock e relatório parcial. | Local; API key opcional | Implementado. |
 | `POST` | `/recovery` | Gera checklist de recuperação. | Local; API key opcional | Implementado. |
@@ -654,13 +752,18 @@ Se estiver usando a venv já criada no Windows:
 - Integrações externas são mock, demo ou sandbox, salvo implementação futura explícita.
 - n8n possui endpoint MVP local/controlado, mas ainda não é integração de produção nem substitui API oficial de WhatsApp.
 - API key é opcional e desativada no desenvolvimento local por padrão.
+- Sessão humana usa cookie HttpOnly; não use `localStorage` para tokens.
+- MFA/TOTP é obrigatório para acessar Admin API como administrador.
+- Google OAuth fica desativado por padrão e não transforma usuário em admin automaticamente.
+- `AUTH_SECRET_KEY`, `GOOGLE_CLIENT_SECRET`, `N8N_WEBHOOK_SECRET`, tokens e números reais devem existir apenas em `.env` local ou secret manager.
+- Rotas inbound do n8n continuam usando `N8N_WEBHOOK_SECRET` próprio; não troque esse controle por login humano.
 - SQLite local é útil para demo, mas não é banco de produção.
 - O MVP não substitui orientação jurídica, bancária ou policial.
 
 ## Roadmap Objetivo
 
 - Consolidar persistência com migrações e retenção formal.
-- Implementar autenticação e autorização reais.
+- Evoluir autenticação para multi-tenant, reset de senha, recovery codes e políticas por organização.
 - Separar ambientes de demo, homologação e produção.
 - Ampliar testes de frontend e e2e.
 - Adicionar observabilidade e logs estruturados.
@@ -682,6 +785,18 @@ Se estiver usando a venv já criada no Windows:
 - Confirme que o backend responde em `http://localhost:8000/health`.
 - Verifique `NEXT_PUBLIC_API_URL`.
 - Reinicie `npm run dev` após alterar `.env.local`.
+
+### Login funciona, mas `/admin` bloqueia
+
+- Admin precisa de MFA ativo.
+- Entre em `/login`, abra `/mfa`, gere a chave TOTP, confirme o código e volte para `/admin`.
+- Se perder o MFA em ambiente local, recrie ou sobrescreva o admin com `scripts/create_admin.py` e configure MFA de novo.
+
+### Google retorna "Google OAuth disabled"
+
+- O padrão seguro é `GOOGLE_OAUTH_ENABLED=false`.
+- Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `GOOGLE_REDIRECT_URI` apenas no `.env` local.
+- Confirme que o callback no Google Console é `http://localhost:8000/auth/google/callback`.
 
 ### Porta 3000 ocupada
 

@@ -1,3 +1,70 @@
+export type UserRole = 'admin' | 'analyst' | 'viewer'
+
+export type AuthUser = {
+  id: string
+  email: string
+  full_name: string
+  role: UserRole
+  is_active: boolean
+  is_admin: boolean
+  mfa_enabled: boolean
+}
+
+export type LoginPayload = {
+  email: string
+  password: string
+}
+
+export type LoginResponse = {
+  authenticated: boolean
+  mfa_required: boolean
+  temporary_token?: string | null
+  mfa_setup_required?: boolean
+  user?: AuthUser | null
+}
+
+export type MeResponse = {
+  authenticated: boolean
+  user?: AuthUser | null
+}
+
+export type MFASetupResponse = {
+  otpauth_uri: string
+  qr_code_base64: string
+  manual_secret: string
+}
+
+export type MFAStatusResponse = {
+  status: string
+  mfa_enabled: boolean
+}
+
+export type RecoveryCodesResponse = {
+  status: string
+  mfa_enabled: boolean
+  recovery_codes: string[]
+}
+
+export type AuthAuditLog = {
+  id: string
+  user_id?: string | null
+  email?: string | null
+  event_type: string
+  ip_address?: string | null
+  user_agent?: string | null
+  success: boolean
+  reason?: string | null
+  created_at: string
+}
+
+export type AdminUsersResponse = {
+  users: AuthUser[]
+}
+
+export type AdminAuditLogsResponse = {
+  logs: AuthAuditLog[]
+}
+
 export type SimpleChannelSubmitPayload = {
   protected_person_alias: string
   channel: 'whatsapp_mock'

@@ -1,4 +1,4 @@
-import hmac
+﻿import hmac
 import json
 import logging
 from urllib.parse import parse_qsl
@@ -93,6 +93,7 @@ from app.twilio_sandbox import (
 from app.core.config import config
 from app.core.middleware import RequestContextHeadersMiddleware, SecurityHeadersMiddleware
 from app.core.security import check_rate_limit, require_api_key, validate_message_text
+from app.auth import create_auth_router, require_sensitive_access
 from app.integrations.n8n import N8nIntegrationService, create_n8n_router
 
 logger = logging.getLogger("uvicorn.error")
@@ -120,6 +121,7 @@ dual_bot_service = DualBotFlowService()
 consent_service = ConsentService(dual_bot_service.event_model.event_bus)
 guardian_console_real_flow_service = GuardianConsoleRealFlowService(dual_bot_service, consent_service)
 n8n_integration_service = N8nIntegrationService(orchestrator=orchestrator)
+app.include_router(create_auth_router())
 app.include_router(create_n8n_router(n8n_integration_service))
 
 
@@ -271,22 +273,22 @@ def dual_bot_guardian_feedback(case_id: str, payload: GuardianFeedbackRequest):
 
 
 @app.get("/consent/status", response_model=ConsentStatusResponse)
-def consent_status(protected_person_id: str = "demo-protected-person", api_key: None = Depends(require_api_key)):
+def consent_status(protected_person_id: str = "demo-protected-person", access: None = Depends(require_sensitive_access)):
     return consent_service.get_status(protected_person_id)
 
 
 @app.post("/consent/accept", response_model=ConsentStatusResponse)
-def consent_accept(payload: ConsentAcceptRequest, api_key: None = Depends(require_api_key)):
+def consent_accept(payload: ConsentAcceptRequest, access: None = Depends(require_sensitive_access)):
     return consent_service.accept(payload)
 
 
 @app.post("/consent/revoke", response_model=ConsentStatusResponse)
-def consent_revoke(payload: ConsentRevokeRequest, api_key: None = Depends(require_api_key)):
+def consent_revoke(payload: ConsentRevokeRequest, access: None = Depends(require_sensitive_access)):
     return consent_service.revoke(payload)
 
 
 @app.post("/consent/bot/activate", response_model=ConsentStatusResponse)
-def consent_bot_activate(payload: ConsentBotActivationRequest, api_key: None = Depends(require_api_key)):
+def consent_bot_activate(payload: ConsentBotActivationRequest, access: None = Depends(require_sensitive_access)):
     try:
         return consent_service.activate_bot(payload)
     except ConsentActivationError as exc:
@@ -294,27 +296,27 @@ def consent_bot_activate(payload: ConsentBotActivationRequest, api_key: None = D
 
 
 @app.post("/consent/bot/deactivate", response_model=ConsentStatusResponse)
-def consent_bot_deactivate(payload: ConsentBotActivationRequest, api_key: None = Depends(require_api_key)):
+def consent_bot_deactivate(payload: ConsentBotActivationRequest, access: None = Depends(require_sensitive_access)):
     return consent_service.deactivate_bot(payload)
 
 
 @app.post("/consent/scopes", response_model=ConsentStatusResponse)
-def consent_scopes(payload: ConsentScopeUpdateRequest, api_key: None = Depends(require_api_key)):
+def consent_scopes(payload: ConsentScopeUpdateRequest, access: None = Depends(require_sensitive_access)):
     return consent_service.update_scopes(payload)
 
 
 @app.get("/guardian-console/real/status", response_model=GuardianConsoleRealStatusResponse)
-def guardian_console_real_status(api_key: None = Depends(require_api_key)):
+def guardian_console_real_status(access: None = Depends(require_sensitive_access)):
     return guardian_console_real_flow_service.get_status()
 
 
 @app.get("/guardian-console/real/cases", response_model=GuardianConsoleRealCaseListResponse)
-def guardian_console_real_cases(api_key: None = Depends(require_api_key)):
+def guardian_console_real_cases(access: None = Depends(require_sensitive_access)):
     return guardian_console_real_flow_service.list_cases()
 
 
 @app.get("/guardian-console/real/cases/{case_id}", response_model=GuardianConsoleRealCaseDetail)
-def guardian_console_real_case_detail(case_id: str, api_key: None = Depends(require_api_key)):
+def guardian_console_real_case_detail(case_id: str, access: None = Depends(require_sensitive_access)):
     try:
         return guardian_console_real_flow_service.get_case_detail(case_id)
     except LookupError as exc:
@@ -324,7 +326,7 @@ def guardian_console_real_case_detail(case_id: str, api_key: None = Depends(requ
 
 
 @app.post("/guardian-console/real/cases/{case_id}/feedback", response_model=GuardianFeedbackResponse)
-def guardian_console_real_feedback(case_id: str, payload: GuardianFeedbackRequest, api_key: None = Depends(require_api_key)):
+def guardian_console_real_feedback(case_id: str, payload: GuardianFeedbackRequest, access: None = Depends(require_sensitive_access)):
     try:
         return guardian_console_real_flow_service.record_feedback(case_id, payload)
     except LookupError as exc:
@@ -366,60 +368,60 @@ async def evolution_webhook(request: Request):
 
 
 @app.post("/protected-response/generate", response_model=ProtectedResponseGenerateResponse)
-def protected_response_generate(payload: ProtectedResponseGenerateRequest, api_key: None = Depends(require_api_key)):
+def protected_response_generate(payload: ProtectedResponseGenerateRequest, access: None = Depends(require_sensitive_access)):
     return protected_person_response_service.generate(payload)
 
 
 @app.get("/guardian-console/status", response_model=GuardianConsoleStatusResponse)
-def guardian_console_status(api_key: None = Depends(require_api_key)):
+def guardian_console_status(access: None = Depends(require_sensitive_access)):
     return admin_case_service.get_status()
 
 
 @app.get("/guardian-console/cases", response_model=AdminCaseListResponse)
-def guardian_console_cases(api_key: None = Depends(require_api_key)):
+def guardian_console_cases(access: None = Depends(require_sensitive_access)):
     return admin_case_service.list_cases()
 
 
 @app.get("/guardian-console/cases/{case_id}", response_model=AdminCase)
-def guardian_console_case_detail(case_id: str, api_key: None = Depends(require_api_key)):
+def guardian_console_case_detail(case_id: str, access: None = Depends(require_sensitive_access)):
     return admin_case_service.get_case(case_id)
 
 
 @app.patch("/guardian-console/cases/{case_id}/status", response_model=AdminCase)
-def guardian_console_case_status(case_id: str, payload: AdminCaseStatusUpdateRequest, api_key: None = Depends(require_api_key)):
+def guardian_console_case_status(case_id: str, payload: AdminCaseStatusUpdateRequest, access: None = Depends(require_sensitive_access)):
     return admin_case_service.update_status(case_id, payload)
 
 
 @app.post("/guardian-console/cases/from-channel", response_model=AdminCase)
-def guardian_console_case_from_channel(payload: AdminCaseFromChannelRequest, api_key: None = Depends(require_api_key)):
+def guardian_console_case_from_channel(payload: AdminCaseFromChannelRequest, access: None = Depends(require_sensitive_access)):
     return admin_case_service.create_from_channel(payload)
 
 
 @app.get("/trusted-circle/status", response_model=TrustedCircleStatusResponse)
-def trusted_circle_status(api_key: None = Depends(require_api_key)):
+def trusted_circle_status(access: None = Depends(require_sensitive_access)):
     return trusted_circle_service.get_status()
 
 
 @app.post("/trusted-circle/escalate", response_model=TrustedCircleEscalateResponse)
-def trusted_circle_escalate(payload: TrustedCircleEscalateRequest, api_key: None = Depends(require_api_key)):
+def trusted_circle_escalate(payload: TrustedCircleEscalateRequest, access: None = Depends(require_sensitive_access)):
     return trusted_circle_service.escalate(payload)
 
 
 @app.get("/trusted-circle/escalations/{escalation_id}", response_model=TrustedCircleEscalationRecord)
-def trusted_circle_escalation_detail(escalation_id: str, api_key: None = Depends(require_api_key)):
+def trusted_circle_escalation_detail(escalation_id: str, access: None = Depends(require_sensitive_access)):
     return trusted_circle_service.get_escalation(escalation_id)
 
 
 @app.post("/proof-trust/assisted-session", response_model=AssistedProofSessionResponse)
-def proof_trust_create_assisted_session(payload: AssistedProofSessionCreateRequest, api_key: None = Depends(require_api_key)):
+def proof_trust_create_assisted_session(payload: AssistedProofSessionCreateRequest, access: None = Depends(require_sensitive_access)):
     return assisted_proof_trust_service.create_session(payload)
 
 
 @app.get("/proof-trust/assisted-session/{session_id}", response_model=AssistedProofSessionResponse)
-def proof_trust_get_assisted_session(session_id: str, api_key: None = Depends(require_api_key)):
+def proof_trust_get_assisted_session(session_id: str, access: None = Depends(require_sensitive_access)):
     return assisted_proof_trust_service.get_session(session_id)
 
 
 @app.post("/proof-trust/assisted-session/{session_id}/step", response_model=AssistedProofSessionResponse)
-def proof_trust_update_assisted_step(session_id: str, payload: AssistedProofStepUpdateRequest, api_key: None = Depends(require_api_key)):
+def proof_trust_update_assisted_step(session_id: str, payload: AssistedProofStepUpdateRequest, access: None = Depends(require_sensitive_access)):
     return assisted_proof_trust_service.update_step(session_id, payload)
