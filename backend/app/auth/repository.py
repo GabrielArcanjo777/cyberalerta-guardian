@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, Protocol
 
 from app.auth.crypto import normalize_email
-from app.auth.models import AuthAuditLog, AuthUser, OAuthAccount, utc_now
+from app.auth.models import AuthAuditLog, AuthUser, MfaRecoveryCode, OAuthAccount, utc_now
 from app.core.config import config
 
 
@@ -21,6 +21,9 @@ class AuthRepository(Protocol):
     def get_oauth_account(self, provider: str, provider_user_id: str) -> Optional[OAuthAccount]: ...
     def append_audit_log(self, log: AuthAuditLog) -> AuthAuditLog: ...
     def list_audit_logs(self, limit: int = 100) -> list[AuthAuditLog]: ...
+    def save_recovery_codes(self, user_id: str, codes: list[MfaRecoveryCode]) -> list[MfaRecoveryCode]: ...
+    def list_recovery_codes(self, user_id: str) -> list[MfaRecoveryCode]: ...
+    def mark_recovery_code_used(self, code_id: str) -> None: ...
 
 
 class InMemoryAuthRepository:
@@ -29,6 +32,7 @@ class InMemoryAuthRepository:
         self._users_by_email: dict[str, str] = {}
         self._oauth_accounts: dict[tuple[str, str], OAuthAccount] = {}
         self._audit_logs: list[AuthAuditLog] = []
+        self._recovery_codes: dict[str, MfaRecoveryCode] = {}
         self._lock = threading.RLock()
 
     def create_user(self, user: AuthUser) -> AuthUser:
@@ -93,6 +97,28 @@ class InMemoryAuthRepository:
         with self._lock:
             logs = list(self._audit_logs)
         return [log.model_copy(deep=True) for log in sorted(logs, key=lambda item: item.created_at, reverse=True)[:limit]]
+
+    def save_recovery_codes(self, user_id: str, codes: list[MfaRecoveryCode]) -> list[MfaRecoveryCode]:
+        with self._lock:
+            existing = [c for c in self._recovery_codes.values() if c.user_id == user_id and c.used_at is None]
+            for code in existing:
+                code.used_at = utc_now()
+            stored_codes = []
+            for code in codes:
+                stored = code.model_copy()
+                self._recovery_codes[stored.id] = stored
+                stored_codes.append(stored.model_copy())
+        return stored_codes
+
+    def list_recovery_codes(self, user_id: str) -> list[MfaRecoveryCode]:
+        with self._lock:
+            return [c.model_copy() for c in self._recovery_codes.values() if c.user_id == user_id]
+
+    def mark_recovery_code_used(self, code_id: str) -> None:
+        with self._lock:
+            code = self._recovery_codes.get(code_id)
+            if code:
+                code.used_at = utc_now()
 
 
 class SQLiteAuthRepository:
@@ -167,6 +193,17 @@ class SQLiteAuthRepository:
                 user_agent TEXT,
                 success INTEGER NOT NULL,
                 reason TEXT,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        self._execute(
+            """
+            CREATE TABLE IF NOT EXISTS mfa_recovery_codes (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                code_hash TEXT NOT NULL,
+                used_at TEXT,
                 created_at TEXT NOT NULL
             )
             """
@@ -279,6 +316,41 @@ class SQLiteAuthRepository:
             (int(limit),),
         ).fetchall()
         return [AuthAuditLog.model_validate(dict(row)) for row in rows]
+
+    def save_recovery_codes(self, user_id: str, codes: list[MfaRecoveryCode]) -> list[MfaRecoveryCode]:
+        with self._lock:
+            self._execute(
+                "UPDATE mfa_recovery_codes SET used_at = ? WHERE user_id = ? AND used_at IS NULL",
+                (utc_now().isoformat(), user_id),
+            )
+            stored_codes = []
+            for code in codes:
+                stored = code.model_copy()
+                self._execute(
+                    "INSERT INTO mfa_recovery_codes (id, user_id, code_hash, used_at, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        stored.id,
+                        stored.user_id,
+                        stored.code_hash,
+                        stored.used_at.isoformat() if stored.used_at else None,
+                        stored.created_at.isoformat(),
+                    ),
+                )
+                stored_codes.append(stored)
+        return stored_codes
+
+    def list_recovery_codes(self, user_id: str) -> list[MfaRecoveryCode]:
+        rows = self._execute(
+            "SELECT * FROM mfa_recovery_codes WHERE user_id = ? ORDER BY created_at ASC",
+            (user_id,),
+        ).fetchall()
+        return [MfaRecoveryCode.model_validate(dict(row)) for row in rows]
+
+    def mark_recovery_code_used(self, code_id: str) -> None:
+        self._execute(
+            "UPDATE mfa_recovery_codes SET used_at = ? WHERE id = ?",
+            (utc_now().isoformat(), code_id),
+        )
 
     def _user_params(self, user: AuthUser) -> tuple:
         return (

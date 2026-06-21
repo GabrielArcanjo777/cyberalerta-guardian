@@ -39,6 +39,12 @@ export type MFAStatusResponse = {
   mfa_enabled: boolean
 }
 
+export type RecoveryCodesResponse = {
+  status: string
+  mfa_enabled: boolean
+  recovery_codes: string[]
+}
+
 export type AuthAuditLog = {
   id: string
   user_id?: string | null

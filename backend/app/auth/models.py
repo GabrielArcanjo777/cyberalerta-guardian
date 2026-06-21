@@ -32,6 +32,8 @@ class AuthEventType(str, Enum):
     MFA_SETUP_STARTED = "mfa_setup_started"
     MFA_ENABLED = "mfa_enabled"
     MFA_FAILED = "mfa_failed"
+    MFA_RECOVERY_CODE_USED = "mfa_recovery_code_used"
+    MFA_RECOVERY_CODES_GENERATED = "mfa_recovery_codes_generated"
     PASSWORD_CHANGED = "password_changed"
     ADMIN_CREATED = "admin_created"
     ACCOUNT_LOCKED = "account_locked"
@@ -75,6 +77,14 @@ class AuthAuditLog(BaseModel):
     user_agent: Optional[str] = None
     success: bool
     reason: Optional[str] = Field(default=None, max_length=240)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class MfaRecoveryCode(BaseModel):
+    id: str = Field(default_factory=lambda: new_id("mfa-rc"))
+    user_id: str
+    code_hash: str
+    used_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utc_now)
 
 

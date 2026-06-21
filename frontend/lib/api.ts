@@ -9,6 +9,7 @@ import {
   MFASetupResponse,
   MFAStatusResponse,
   MeResponse,
+  RecoveryCodesResponse,
   AnalyzePayload,
   GuardianConsoleStatusResponse,
   GuardianConsoleRealCaseDetail,
@@ -103,7 +104,7 @@ export async function postMfaEnable(code:string){
     method: 'POST',
     body: JSON.stringify({code}),
   })
-  return await res.json() as MFAStatusResponse
+  return await res.json() as RecoveryCodesResponse
 }
 
 export async function postMfaVerify(temporaryToken:string, code:string){
@@ -120,6 +121,11 @@ export async function postMfaDisable(password:string, code?:string){
     body: JSON.stringify({password, code}),
   })
   return await res.json() as MFAStatusResponse
+}
+
+export async function postMfaRegenerateRecoveryCodes(){
+  const res = await authFetch('/auth/mfa/recovery-codes/regenerate', {method: 'POST'})
+  return await res.json() as RecoveryCodesResponse
 }
 
 export async function getAdminUsers(){

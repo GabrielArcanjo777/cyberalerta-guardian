@@ -19,6 +19,7 @@ from app.auth.schemas import (
     MFAStatusResponse,
     MFAVerifyRequest,
     MeResponse,
+    RecoveryCodesResponse,
 )
 from app.auth.service import AuthResult, AuthService
 from app.core.config import config
@@ -98,15 +99,18 @@ def create_auth_router() -> APIRouter:
             manual_secret=manual_secret,
         )
 
-    @router.post("/auth/mfa/enable", response_model=MFAStatusResponse)
+    @router.post("/auth/mfa/enable", response_model=RecoveryCodesResponse)
     def mfa_enable(
         payload: MFACodeRequest,
         request: Request,
         user: AuthUser = Depends(require_authenticated_user),
         service: AuthService = Depends(get_auth_service),
-    ) -> MFAStatusResponse:
-        updated = service.enable_mfa(user, payload.code, request=request)
-        return MFAStatusResponse(mfa_enabled=updated.mfa_enabled)
+    ) -> RecoveryCodesResponse:
+        updated, recovery_codes = service.enable_mfa(user, payload.code, request=request)
+        return RecoveryCodesResponse(
+            mfa_enabled=True,
+            recovery_codes=recovery_codes,
+        )
 
     @router.post("/auth/mfa/verify", response_model=LoginResponse)
     def mfa_verify(
@@ -126,6 +130,21 @@ def create_auth_router() -> APIRouter:
     ) -> MFAStatusResponse:
         updated = service.disable_mfa(user, payload.password, payload.code, request=request)
         return MFAStatusResponse(mfa_enabled=updated.mfa_enabled)
+
+    @router.post("/auth/mfa/recovery-codes/regenerate", response_model=RecoveryCodesResponse)
+    def mfa_regenerate_recovery_codes(
+        request: Request,
+        user: AuthUser = Depends(require_authenticated_user),
+        service: AuthService = Depends(get_auth_service),
+    ) -> RecoveryCodesResponse:
+        if not user.mfa_enabled:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="MFA not enabled")
+        codes = service.regenerate_recovery_codes(user, request=request)
+        return RecoveryCodesResponse(
+            mfa_enabled=True,
+            recovery_codes=codes,
+        )
 
     @router.get("/auth/google/login")
     def google_login(

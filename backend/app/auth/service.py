@@ -13,16 +13,29 @@ from fastapi import HTTPException, Request, status
 from app.auth.crypto import (
     build_otpauth_uri,
     build_qr_svg_base64,
+    generate_recovery_codes,
     generate_totp_secret,
     hash_password,
+    hash_recovery_code,
     normalize_email,
     sign_token,
     validate_password_strength,
     verify_password,
+    verify_recovery_code,
     verify_token,
     verify_totp,
 )
-from app.auth.models import AuthAuditLog, AuthEventType, AuthUser, OAuthAccount, PublicUser, UserRole, utc_now
+from app.auth.google_oidc import GoogleOidcError, verify_google_id_token
+from app.auth.models import (
+    AuthAuditLog,
+    AuthEventType,
+    AuthUser,
+    MfaRecoveryCode,
+    OAuthAccount,
+    PublicUser,
+    UserRole,
+    utc_now,
+)
 from app.auth.repository import AuthRepository, get_auth_repository
 from app.auth.schemas import LoginRequest, LoginResponse
 from app.core.config import config
@@ -207,18 +220,34 @@ class AuthService:
         key = self._rate_limit_key(request, str(payload.get("email") if payload else "unknown"), "mfa")
         if config.auth_rate_limit_enabled and auth_rate_limiter.is_blocked(key):
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=INVALID_CREDENTIALS)
-        if not user or not user.is_active or not verify_totp(user.mfa_secret, code):
+        if not user or not user.is_active:
             auth_rate_limiter.record_failure(key)
             self.audit(AuthEventType.MFA_FAILED, user=user, email=user.email if user else None, success=False, reason="invalid_mfa", request=request)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS)
-        auth_rate_limiter.clear(key)
-        user = user.model_copy(update={"last_login_at": utc_now()})
-        self.repository.update_user(user)
-        self.audit(AuthEventType.LOGIN_SUCCESS, user=user, email=user.email, success=True, reason="mfa_verified", request=request)
-        return AuthResult(
-            response=LoginResponse(authenticated=True, user=PublicUser.from_user(user)),
-            session_token=self.create_session_token(user),
-        )
+        if verify_totp(user.mfa_secret, code):
+            auth_rate_limiter.clear(key)
+            user = user.model_copy(update={"last_login_at": utc_now()})
+            self.repository.update_user(user)
+            self.audit(AuthEventType.LOGIN_SUCCESS, user=user, email=user.email, success=True, reason="mfa_verified", request=request)
+            return AuthResult(
+                response=LoginResponse(authenticated=True, user=PublicUser.from_user(user)),
+                session_token=self.create_session_token(user),
+            )
+        all_codes = self.repository.list_recovery_codes(user.id)
+        for rc in all_codes:
+            if rc.used_at is None and verify_recovery_code(code, rc.code_hash):
+                self.repository.mark_recovery_code_used(rc.id)
+                auth_rate_limiter.clear(key)
+                user = user.model_copy(update={"last_login_at": utc_now()})
+                self.repository.update_user(user)
+                self.audit(AuthEventType.MFA_RECOVERY_CODE_USED, user=user, email=user.email, success=True, request=request)
+                return AuthResult(
+                    response=LoginResponse(authenticated=True, user=PublicUser.from_user(user)),
+                    session_token=self.create_session_token(user),
+                )
+        auth_rate_limiter.record_failure(key)
+        self.audit(AuthEventType.MFA_FAILED, user=user, email=user.email, success=False, reason="invalid_mfa", request=request)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS)
 
     def setup_mfa(self, user: AuthUser, request: Request | None = None) -> tuple[str, str, str]:
         secret = generate_totp_secret()
@@ -228,14 +257,30 @@ class AuthService:
         self.audit(AuthEventType.MFA_SETUP_STARTED, user=updated, email=updated.email, success=True, request=request)
         return otpauth_uri, build_qr_svg_base64(otpauth_uri), secret
 
-    def enable_mfa(self, user: AuthUser, code: str, request: Request | None = None) -> AuthUser:
+    def enable_mfa(self, user: AuthUser, code: str, request: Request | None = None) -> tuple[AuthUser, list[str]]:
         if not verify_totp(user.mfa_secret, code):
             self.audit(AuthEventType.MFA_FAILED, user=user, email=user.email, success=False, reason="enable_failed", request=request)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS)
         updated = user.model_copy(update={"mfa_enabled": True})
         updated = self.repository.update_user(updated)
+        raw_codes = generate_recovery_codes(10)
+        code_models = [
+            MfaRecoveryCode(user_id=updated.id, code_hash=hash_recovery_code(c))
+            for c in raw_codes
+        ]
+        self.repository.save_recovery_codes(updated.id, code_models)
         self.audit(AuthEventType.MFA_ENABLED, user=updated, email=updated.email, success=True, request=request)
-        return updated
+        return updated, raw_codes
+
+    def regenerate_recovery_codes(self, user: AuthUser, request: Request | None = None) -> list[str]:
+        raw_codes = generate_recovery_codes(10)
+        code_models = [
+            MfaRecoveryCode(user_id=user.id, code_hash=hash_recovery_code(c))
+            for c in raw_codes
+        ]
+        self.repository.save_recovery_codes(user.id, code_models)
+        self.audit(AuthEventType.MFA_RECOVERY_CODES_GENERATED, user=user, email=user.email, success=True, request=request)
+        return raw_codes
 
     def disable_mfa(self, user: AuthUser, password: str, code: str | None, request: Request | None = None) -> AuthUser:
         if user.is_admin:
@@ -277,7 +322,12 @@ class AuthService:
         if not verify_token(state, config.auth_secret_key, expected_type="google_state"):
             self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason="expired_state", request=request)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state")
-        profile = self._exchange_google_code(code, expected_nonce=state[-24:])
+        id_token = self._exchange_google_code_for_id_token(code)
+        try:
+            profile = verify_google_id_token(id_token, expected_nonce=state[-24:])
+        except GoogleOidcError as exc:
+            self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason=exc.reason, request=request)
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS) from exc
         user = self._user_from_google_profile(profile, request=request)
         if user.mfa_enabled:
             return AuthResult(
@@ -328,7 +378,7 @@ class AuthService:
     def _rate_limit_key(self, request: Request | None, email: str, bucket: str) -> str:
         return f"{bucket}:{_client_ip(request) or 'unknown'}:{normalize_email(email)}"
 
-    def _exchange_google_code(self, code: str, *, expected_nonce: str | None = None) -> dict:
+    def _exchange_google_code_for_id_token(self, code: str) -> str:
         if not config.google_client_id or not config.google_client_secret:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Google OAuth not configured")
         data = urllib.parse.urlencode(
@@ -346,25 +396,12 @@ class AuthService:
                 timeout=10,
             ) as response:
                 token_payload = json.loads(response.read().decode("utf-8"))
-            id_token = token_payload.get("id_token")
-            if not id_token:
-                raise ValueError("missing id_token")
-            with urllib.request.urlopen(
-                f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(id_token)}",
-                timeout=10,
-            ) as response:
-                profile = json.loads(response.read().decode("utf-8"))
-        except (urllib.error.URLError, ValueError, json.JSONDecodeError) as exc:
+        except (urllib.error.URLError, json.JSONDecodeError) as exc:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS) from exc
-        if profile.get("iss") not in {"https://accounts.google.com", "accounts.google.com"}:
+        id_token = token_payload.get("id_token")
+        if not id_token:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS)
-        if profile.get("aud") != config.google_client_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS)
-        if expected_nonce and profile.get("nonce") and profile.get("nonce") != expected_nonce:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS)
-        if str(profile.get("email_verified")).lower() != "true":
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS)
-        return profile
+        return id_token
 
     def _user_from_google_profile(self, profile: dict, request: Request | None = None) -> AuthUser:
         google_id = str(profile.get("sub") or "")
@@ -404,7 +441,6 @@ class AuthService:
 
 def hmac_compare(left: str, right: str) -> bool:
     import hmac
-
     return hmac.compare_digest(left, right)
 
 
