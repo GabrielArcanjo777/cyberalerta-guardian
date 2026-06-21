@@ -91,16 +91,18 @@ from app.twilio_sandbox import (
     TwilioSandboxStatusCallbackResponse,
 )
 from app.core.config import config
-from app.core.middleware import SecurityHeadersMiddleware
-from app.core.security import require_api_key
+from app.core.middleware import RequestContextHeadersMiddleware, SecurityHeadersMiddleware
+from app.core.security import check_rate_limit, require_api_key, validate_message_text
+from app.integrations.n8n import N8nIntegrationService, create_n8n_router
 
 logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="CyberAlerta Guardian Backend", debug=False)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestContextHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.allowed_origins,
+    allow_origins=config.cors_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -117,6 +119,8 @@ evolution_demo_service = EvolutionDemoService()
 dual_bot_service = DualBotFlowService()
 consent_service = ConsentService(dual_bot_service.event_model.event_bus)
 guardian_console_real_flow_service = GuardianConsoleRealFlowService(dual_bot_service, consent_service)
+n8n_integration_service = N8nIntegrationService(orchestrator=orchestrator)
+app.include_router(create_n8n_router(n8n_integration_service))
 
 
 async def _twilio_payload_from_request(request: Request) -> dict:
@@ -146,15 +150,7 @@ def _ensure_twilio_signature(request: Request, payload: dict) -> None:
 
 
 def _validate_analysis_payload(payload: AnalysisRequest) -> None:
-    message = str(payload.message or "").strip()
-    if not message:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty.")
-    if len(message) > config.max_message_length:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Message exceeds max length of {config.max_message_length} characters.",
-        )
-    payload.message = message
+    payload.message = validate_message_text(payload.message, field_name="message")
 
 
 def _validate_evolution_webhook_secret(request: Request) -> None:
@@ -195,13 +191,15 @@ def examples():
     return {"examples": get_example_scenarios()}
 
 @app.post("/analyze", response_model=AnalysisResponse)
-def analyze(payload: AnalysisRequest):
+def analyze(request: Request, payload: AnalysisRequest):
+    check_rate_limit(request, bucket="analyze")
     _validate_analysis_payload(payload)
     SafetyPolicyService().check_text(payload.message)
     return orchestrator.run_analysis(payload)
 
 @app.post("/recovery", response_model=RecoveryResponse)
-def recovery(payload: RecoveryRequest):
+def recovery(request: Request, payload: RecoveryRequest):
+    check_rate_limit(request, bucket="recovery")
     SafetyPolicyService().check_text(" ")
     return orchestrator.run_recovery(payload)
 
