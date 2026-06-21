@@ -1,7 +1,14 @@
 import {
   AdminCase,
+  AdminAuditLogsResponse,
+  AdminUsersResponse,
   AdminCaseListResponse,
   AdminCaseStatus,
+  LoginPayload,
+  LoginResponse,
+  MFASetupResponse,
+  MFAStatusResponse,
+  MeResponse,
   AnalyzePayload,
   GuardianConsoleStatusResponse,
   GuardianConsoleRealCaseDetail,
@@ -43,7 +50,99 @@ import {
   mockRecoveryResult,
 } from './mockData'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+const API = API_URL
+
+async function authFetch(path:string, init:RequestInit = {}){
+  const headers = new Headers(init.headers)
+  if(init.body && !headers.has('Content-Type')){
+    headers.set('Content-Type', 'application/json')
+  }
+  const res = await fetch(`${API}${path}`, {
+    ...init,
+    headers,
+    credentials: 'include',
+  })
+  if(!res.ok){
+    const body = await res.json().catch(()=>({detail:'Erro de autenticação'}))
+    throw new Error(typeof body.detail === 'string' ? body.detail : 'Erro de autenticação')
+  }
+  return res
+}
+
+export function getGoogleLoginUrl(){
+  return `${API}/auth/google/login`
+}
+
+export async function postLogin(payload:LoginPayload){
+  const res = await authFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  return await res.json() as LoginResponse
+}
+
+export async function postLogout(){
+  const res = await authFetch('/auth/logout', {method: 'POST'})
+  return await res.json() as {status:string}
+}
+
+export async function getAuthMe(){
+  const res = await authFetch('/auth/me')
+  return await res.json() as MeResponse
+}
+
+export async function postMfaSetup(){
+  const res = await authFetch('/auth/mfa/setup', {method: 'POST'})
+  return await res.json() as MFASetupResponse
+}
+
+export async function postMfaEnable(code:string){
+  const res = await authFetch('/auth/mfa/enable', {
+    method: 'POST',
+    body: JSON.stringify({code}),
+  })
+  return await res.json() as MFAStatusResponse
+}
+
+export async function postMfaVerify(temporaryToken:string, code:string){
+  const res = await authFetch('/auth/mfa/verify', {
+    method: 'POST',
+    body: JSON.stringify({temporary_token: temporaryToken, code}),
+  })
+  return await res.json() as LoginResponse
+}
+
+export async function postMfaDisable(password:string, code?:string){
+  const res = await authFetch('/auth/mfa/disable', {
+    method: 'POST',
+    body: JSON.stringify({password, code}),
+  })
+  return await res.json() as MFAStatusResponse
+}
+
+export async function getAdminUsers(){
+  const res = await authFetch('/admin/users')
+  return await res.json() as AdminUsersResponse
+}
+
+export async function getAdminAuditLogs(){
+  const res = await authFetch('/admin/audit-logs')
+  return await res.json() as AdminAuditLogsResponse
+}
+
+export async function getBackendHealth(){
+  const res = await fetch(`${API}/health`, {credentials: 'include'})
+  if(!res.ok) throw new Error('backend-health-error')
+  return await res.json() as {status:string; service:string}
+}
+
+export async function getN8nHealth(){
+  const res = await fetch(`${API}/integrations/n8n/health`, {credentials: 'include'})
+  if(!res.ok) throw new Error('n8n-health-error')
+  return await res.json() as Record<string, unknown>
+}
 
 export async function analyzeMessage(payload: AnalyzePayload): Promise<AnalyzeResponse>{
   try{

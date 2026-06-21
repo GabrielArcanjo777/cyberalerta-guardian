@@ -14,3 +14,7 @@ coverage/
 .env
 
 frontend/.env.local
+
+*.db
+*.sqlite
+*.sqlite3
