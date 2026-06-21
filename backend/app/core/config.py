@@ -1,4 +1,5 @@
 import os
+import secrets
 from typing import List
 
 from dotenv import load_dotenv
@@ -79,6 +80,21 @@ class AppConfig:
         self.beta_real_send_enabled = _env_bool("BETA_REAL_SEND_ENABLED", False)
         self.beta_allowed_recipients = _split_csv(os.getenv("BETA_ALLOWED_RECIPIENTS", ""))
         self.beta_require_allowed_recipient = _env_bool("BETA_REQUIRE_ALLOWED_RECIPIENT", True)
+        self.auth_secret_key = os.getenv("AUTH_SECRET_KEY") or secrets.token_urlsafe(32)
+        self.auth_access_token_expire_minutes = _env_int("AUTH_ACCESS_TOKEN_EXPIRE_MINUTES", 15)
+        self.auth_refresh_token_expire_days = _env_int("AUTH_REFRESH_TOKEN_EXPIRE_DAYS", 7)
+        self.auth_cookie_name = os.getenv("AUTH_COOKIE_NAME", "cyberalerta_session")
+        self.auth_cookie_secure = _env_bool("AUTH_COOKIE_SECURE", False)
+        self.auth_cookie_samesite = os.getenv("AUTH_COOKIE_SAMESITE", "lax").strip().lower()
+        self.auth_rate_limit_enabled = _env_bool("AUTH_RATE_LIMIT_ENABLED", True)
+        self.auth_require_sensitive_routes = _env_bool("AUTH_REQUIRE_SENSITIVE_ROUTES", False if self.is_development else True)
+        self.google_oauth_enabled = _env_bool("GOOGLE_OAUTH_ENABLED", False)
+        self.google_client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+        self.google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
+        self.google_redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
+        self.google_auth_allowed_emails = _split_csv(os.getenv("GOOGLE_AUTH_ALLOWED_EMAILS", ""))
+        self.google_auth_allowed_domains = _split_csv(os.getenv("GOOGLE_AUTH_ALLOWED_DOMAINS", ""))
+        self.google_auto_create_users = _env_bool("GOOGLE_AUTO_CREATE_USERS", False)
 
     @property
     def is_development(self):
