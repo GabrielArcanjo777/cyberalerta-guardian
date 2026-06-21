@@ -7,8 +7,8 @@ import React, {FormEvent, useState} from 'react'
 import Button from '@/components/Button'
 import Header from '@/components/Header'
 import ProtectedRoute from '@/components/ProtectedRoute'
-import {postMfaEnable, postMfaSetup, postMfaVerify} from '@/lib/api'
-import {MFASetupResponse} from '@/lib/types'
+import {postMfaEnable, postMfaSetup, postMfaVerify, postMfaRegenerateRecoveryCodes} from '@/lib/api'
+import {MFASetupResponse, RecoveryCodesResponse} from '@/lib/types'
 
 export default function MFAPage(){
   const router = useRouter()
@@ -19,6 +19,8 @@ export default function MFAPage(){
   const [message,setMessage] = useState<string | null>(null)
   const [error,setError] = useState<string | null>(null)
   const [loading,setLoading] = useState(false)
+  const [recoveryCodes,setRecoveryCodes] = useState<string[] | null>(null)
+  const [codesSaved,setCodesSaved] = useState(false)
 
   async function startSetup(){
     setLoading(true)
@@ -38,12 +40,29 @@ export default function MFAPage(){
     setLoading(true)
     setError(null)
     try{
-      await postMfaEnable(enableCode)
-      setMessage('MFA habilitado com sucesso.')
+      const result: RecoveryCodesResponse = await postMfaEnable(enableCode)
+      setMessage('MFA habilitado com sucesso. Salve os codigos de recuperacao abaixo.')
+      setRecoveryCodes(result.recovery_codes)
+      setCodesSaved(false)
       setSetup(null)
       setEnableCode('')
     }catch{
       setError('Codigo MFA invalido.')
+    }finally{
+      setLoading(false)
+    }
+  }
+
+  async function regenerateCodes(){
+    setLoading(true)
+    setError(null)
+    try{
+      const result: RecoveryCodesResponse = await postMfaRegenerateRecoveryCodes()
+      setMessage('Novos codigos de recuperacao gerados. Os anteriores foram invalidados.')
+      setRecoveryCodes(result.recovery_codes)
+      setCodesSaved(false)
+    }catch{
+      setError('Nao foi possivel gerar novos codigos.')
     }finally{
       setLoading(false)
     }
@@ -57,7 +76,7 @@ export default function MFAPage(){
       const result = await postMfaVerify(temporaryToken, verifyCode)
       router.push(result.user?.role === 'admin' ? '/admin' : '/family-console')
     }catch{
-      setError('Token temporario ou codigo MFA invalido.')
+      setError('Token temporario, codigo MFA ou codigo de recuperacao invalido.')
     }finally{
       setLoading(false)
     }
@@ -75,6 +94,33 @@ export default function MFAPage(){
           </p>
         </div>
 
+        {recoveryCodes && (
+          <div className="mb-8 rounded-md border border-amber-300/30 bg-amber-300/[0.08] p-5">
+            <h2 className="text-lg font-black text-amber-100">Codigos de Recuperacao</h2>
+            <p className="mt-2 text-sm text-amber-200/80">
+              Salve estes codigos em um local seguro. Eles so aparecem uma vez e podem ser usados para acessar sua conta se perder o autenticador.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {recoveryCodes.map((code, i) => (
+                <div key={i} className="rounded-md border border-amber-300/20 bg-slate-950/70 px-3 py-2 font-mono text-center text-sm text-amber-100">
+                  {code}
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button type="button" variant="ghost" onClick={()=>{
+                navigator.clipboard.writeText(recoveryCodes.join('\n'))
+                setCodesSaved(true)
+              }}>
+                {codesSaved ? 'Copiado!' : 'Copiar codigos'}
+              </Button>
+              <span className="flex items-center text-xs text-amber-200/60">
+                {codesSaved ? 'Codigos copiados. Guarde em local seguro.' : 'Guarde antes de sair desta pagina.'}
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-2">
           <ProtectedRoute>
             {(user)=>(
@@ -88,6 +134,14 @@ export default function MFAPage(){
                     {user.mfa_enabled ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
+
+                {user.mfa_enabled && (
+                  <div className="mt-4">
+                    <Button type="button" variant="ghost" onClick={regenerateCodes} disabled={loading}>
+                      {loading ? 'Gerando...' : 'Regenerar codigos de recuperacao'}
+                    </Button>
+                  </div>
+                )}
 
                 <Button type="button" className="mt-5 w-full" onClick={startSetup} disabled={loading}>
                   {loading ? 'Preparando...' : 'Gerar chave MFA'}
@@ -129,7 +183,7 @@ export default function MFAPage(){
           <div className="rounded-md border border-white/10 bg-slate-900/70 p-5">
             <h2 className="text-lg font-black text-white">Verificar login pendente</h2>
             <p className="mt-1 text-sm text-slate-300">
-              Use esta opcao se voce recebeu um token temporario no fluxo de login MFA.
+              Use esta opcao se voce recebeu um token temporario no fluxo de login MFA. Aceita codigo TOTP ou codigo de recuperacao.
             </p>
             <form className="mt-5 space-y-4" onSubmit={verifyMfa}>
               <label className="block text-sm font-semibold text-slate-200">
@@ -142,12 +196,13 @@ export default function MFAPage(){
                 />
               </label>
               <label className="block text-sm font-semibold text-slate-200">
-                Codigo MFA
+                Codigo MFA ou Recuperacao
                 <input
-                  inputMode="numeric"
+                  inputMode="text"
                   value={verifyCode}
                   onChange={event=>setVerifyCode(event.target.value)}
                   className="mt-2 h-11 w-full rounded-md border border-white/10 bg-slate-950 px-3 text-sm text-white outline-none focus:border-teal-300/60"
+                  placeholder="123456 ou XXXX-XXXX"
                   required
                 />
               </label>

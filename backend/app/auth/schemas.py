@@ -75,3 +75,9 @@ class AdminUsersResponse(BaseModel):
 
 class AdminAuditLogsResponse(BaseModel):
     logs: list[AuthAuditLog]
+
+
+class RecoveryCodesResponse(BaseModel):
+    status: str = "ok"
+    mfa_enabled: bool
+    recovery_codes: list[str]

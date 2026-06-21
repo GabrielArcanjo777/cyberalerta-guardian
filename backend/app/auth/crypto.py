@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import hmac
+import hmac as hmac_mod
 import json
 import secrets
 import struct
@@ -13,14 +13,22 @@ from typing import Any
 from urllib.parse import quote
 
 try:
+    from argon2 import PasswordHasher as _Argon2Hasher
+    from argon2.exceptions import VerifyMismatchError as _Argon2Mismatch
+except ImportError:
+    _Argon2Hasher = None  # type: ignore[assignment]
+    _Argon2Mismatch = None  # type: ignore[assignment]
+
+try:
     import qrcode
     from qrcode.image.svg import SvgPathImage
 except ImportError:
     qrcode = None
     SvgPathImage = None
 
-PASSWORD_SCHEME = "pbkdf2_sha256"
-PASSWORD_ITERATIONS = 210_000
+PASSWORD_SCHEME = "pbkdf2-sha256"
+ARGON2_SCHEME = "argon2id"
+PASSWORD_ITERATIONS = 600_000
 TOTP_PERIOD_SECONDS = 30
 TOTP_DIGITS = 6
 
@@ -39,6 +47,10 @@ def normalize_email(email: str) -> str:
 
 
 def hash_password(password: str) -> str:
+    if _Argon2Hasher is not None:
+        hasher = _Argon2Hasher(time_cost=3, memory_cost=65536, parallelism=1, hash_len=32, salt_len=16)
+        raw = hasher.hash(password)
+        return f"{ARGON2_SCHEME}${raw}"
     salt = secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, PASSWORD_ITERATIONS)
     return "$".join(
@@ -54,6 +66,16 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, stored_hash: str | None) -> bool:
     if not password or not stored_hash:
         return False
+    if stored_hash.startswith(f"{ARGON2_SCHEME}$"):
+        if _Argon2Hasher is None or _Argon2Mismatch is None:
+            return False
+        raw = stored_hash[len(ARGON2_SCHEME) + 1:]
+        try:
+            return _Argon2Hasher().verify(raw, password)
+        except _Argon2Mismatch:
+            return False
+        except Exception:
+            return False
     try:
         scheme, iterations_raw, salt_raw, digest_raw = stored_hash.split("$", 3)
         if scheme != PASSWORD_SCHEME:
@@ -64,7 +86,7 @@ def verify_password(password: str, stored_hash: str | None) -> bool:
     except (ValueError, TypeError):
         return False
     actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
-    return hmac.compare_digest(actual, expected)
+    return hmac_mod.compare_digest(actual, expected)
 
 
 def validate_password_strength(password: str) -> list[str]:
@@ -91,7 +113,7 @@ def sign_token(payload: dict[str, Any], secret: str, *, expires_in_seconds: int)
         "jti": secrets.token_urlsafe(16),
     }
     body = _b64url_encode(json.dumps(full_payload, separators=(",", ":"), sort_keys=True).encode("utf-8"))
-    signature = _b64url_encode(hmac.new(secret.encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
+    signature = _b64url_encode(hmac_mod.new(secret.encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
     return f"{body}.{signature}"
 
 
@@ -100,8 +122,8 @@ def verify_token(token: str | None, secret: str, *, expected_type: str | None = 
         return None
     try:
         body, signature = token.split(".", 1)
-        expected = _b64url_encode(hmac.new(secret.encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
-        if not hmac.compare_digest(signature, expected):
+        expected = _b64url_encode(hmac_mod.new(secret.encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
+        if not hmac_mod.compare_digest(signature, expected):
             return None
         payload = json.loads(_b64url_decode(body).decode("utf-8"))
     except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
@@ -121,7 +143,7 @@ def _totp_code(secret: str, counter: int) -> str:
     padded = secret + "=" * (-len(secret) % 8)
     key = base64.b32decode(padded, casefold=True)
     message = struct.pack(">Q", counter)
-    digest = hmac.new(key, message, hashlib.sha1).digest()
+    digest = hmac_mod.new(key, message, hashlib.sha1).digest()
     offset = digest[-1] & 0x0F
     value = struct.unpack(">I", digest[offset : offset + 4])[0] & 0x7FFFFFFF
     return str(value % (10**TOTP_DIGITS)).zfill(TOTP_DIGITS)
@@ -140,7 +162,7 @@ def verify_totp(secret: str | None, code: str | None, *, window: int = 1) -> boo
         return False
     counter = int(time.time()) // TOTP_PERIOD_SECONDS
     for offset in range(-window, window + 1):
-        if hmac.compare_digest(_totp_code(secret, counter + offset), normalized):
+        if hmac_mod.compare_digest(_totp_code(secret, counter + offset), normalized):
             return True
     return False
 
@@ -175,3 +197,19 @@ def build_qr_svg_base64(content: str) -> str:
         "</svg>"
     )
     return base64.b64encode(svg.encode("utf-8")).decode("ascii")
+
+
+def generate_recovery_codes(count: int = 10) -> list[str]:
+    codes: list[str] = []
+    for _ in range(count):
+        raw = secrets.token_hex(4).upper()
+        codes.append(f"{raw[:4]}-{raw[4:]}")
+    return codes
+
+
+def hash_recovery_code(code: str) -> str:
+    return hash_password(code)
+
+
+def verify_recovery_code(code: str, code_hash: str) -> bool:
+    return verify_password(code, code_hash)
