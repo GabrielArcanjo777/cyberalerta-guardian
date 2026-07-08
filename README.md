@@ -6,6 +6,14 @@ CyberAlerta Guardian é um MVP técnico de intervenção pré-dano contra golpes
 
 O projeto está em estágio **MVP/demo técnica**. Ele não é produção, não monitora conversas automaticamente, não substitui banco, polícia, advogado ou canais oficiais, e não deve ser vendido como detecção infalível de fraude.
 
+## Status atual
+
+O CyberAlerta Guardian está em **Beta Técnico Local**.
+
+O sistema já possui backend FastAPI, frontend Next.js, autenticação segura com Google OIDC, MFA/TOTP, recovery codes com Argon2id, RBAC, auditoria, rate limit, painel admin e integração n8n validada em ambiente local.
+
+A integração com WhatsApp Business Cloud está preparada em nível de workflow, mas a ativação real depende da liberação/provisionamento da Meta. No momento, o envio real pelo WhatsApp ainda não deve ser declarado como ativo.
+
 ## Problema
 
 Golpes digitais por engenharia social exploram pressa, confiança familiar, medo e falsa autoridade. Muitas vítimas só percebem o risco depois de transferir dinheiro, clicar em um link ou enviar um código.
@@ -47,7 +55,7 @@ O Guardian organiza uma proteção assistida:
 | Autenticação local | Implementado | Login email/senha, cookies HttpOnly, MFA/TOTP, RBAC e auditoria. |
 | Google OAuth/OIDC | Implementado como opcional | Desativado por padrão; exige configuração local segura. |
 | Persistência | `memory` ou SQLite local | SQLite é opcional via env; não há banco de produção. |
-| WhatsApp real | Não implementado | Existem mock, Evolution demo e Twilio sandbox controlado. |
+| WhatsApp (Evolution) | Implementado (não-oficial) | Canal via Evolution API/WhatsApp Web (Baileys). Pareamento por QR em `/whatsapp-setup`. Portfólio/demo, não produção; risco de ban do número. |
 | n8n/WhatsApp | Parcial/MVP | Endpoint inbound n8n-first para WhatsApp local/controlado; CyberAlerta decide risco e ação. |
 | Produção | Não pronta | Ainda falta multi-tenant, observabilidade gerenciada, migrações formais e hardening final. |
 
@@ -392,6 +400,7 @@ Se o backend estiver em outra porta, ajuste `NEXT_PUBLIC_API_URL` no `.env.local
 | `/login` | Login local e entrada via Google OAuth opcional. |
 | `/mfa` | Setup e verificação MFA/TOTP. |
 | `/admin` | Painel administrativo de sessão, usuários, auditoria e status. |
+| `/whatsapp-setup` | Pareia o número de WhatsApp (Evolution) via QR code. |
 | `/ml-lab` | Laboratório rule-based/ML realista. |
 | `/recovery` | Fluxo de recuperação. |
 | `/report` | Relatório/registro. |
@@ -461,6 +470,42 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | `EVOLUTION_WEBHOOK_SECRET` | vazio | Segredo opcional de webhook demo. |
 
 ## API Principal
+
+### Canal WhatsApp — Evolution API (WhatsApp Web / Baileys)
+
+O canal de WhatsApp usa a **Evolution API** (WhatsApp Web via Baileys): não-oficial,
+gratuita, ideal para portfólio/demo. **Não é a API oficial do WhatsApp Business e não é
+produção** — o número pode ser bloqueado pela Meta e a sessão pode cair, exigindo novo
+pareamento por QR. A integração oficial paga (Meta Cloud API) foi removida deste MVP.
+
+Suba a Evolution API localmente (Docker) e configure no `.env`:
+
+```env
+CHANNEL_PROVIDER=evolution
+DUAL_BOT_CHANNEL_PROVIDER=evolution
+EVOLUTION_API_URL=http://localhost:8080
+EVOLUTION_API_KEY=sua-chave-local
+EVOLUTION_INSTANCE_NAME=guardian-demo
+EVOLUTION_GUARDIAN_TO=            # número do responsável (opcional)
+EVOLUTION_WEBHOOK_SECRET=         # segredo opcional do webhook
+```
+
+#### Pareamento (QR code) e endpoints
+
+| Método | Rota | Finalidade | Protegido |
+| --- | --- | --- | --- |
+| `GET` | `/api/channels/evolution/status` | Estado da conexão (open/connecting/close). Aceita `?auto_reconnect=true`. | Sessão sensível |
+| `GET` | `/api/channels/evolution/qr` | QR code (base64) para parear o número. | Sessão sensível |
+| `POST` | `/api/channels/evolution/reconnect` | Força reconexão se a sessão cair. | Sessão sensível |
+| `POST` | `/webhook/evolution` | Recebe mensagens inbound e aciona risco/resposta/alerta. | `EVOLUTION_WEBHOOK_SECRET` opcional |
+
+Fluxo de pareamento: abra `http://localhost:3000/whatsapp-setup` (requer login), escaneie o
+QR com o WhatsApp (**Aparelhos conectados > Conectar aparelho**) e envie uma mensagem
+suspeita para o número pareado. O CyberAlerta analisa o risco, responde de forma protegida
+e alerta o responsável. A tela faz polling do status e oferece reconexão automática.
+
+**Aviso:** Nunca commitar `.env` com a `EVOLUTION_API_KEY` real. Canal não-oficial: risco de
+ban do número e de reautenticação por QR. Não use para volume/produção.
 
 | Método | Rota | Finalidade | Público/protegido | Status |
 | --- | --- | --- | --- | --- |
