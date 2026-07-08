@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from app.consent import ConsentService
+from app.core.config import config
 from app.dual_bot import (
     DualBotFlowService,
     GuardianFeedbackRequest,
@@ -147,7 +148,7 @@ class GuardianConsoleRealFlowService:
         return GuardianConsoleRealStatusResponse(
             service="guardian-console-real-flow",
             mode="dual_bot_local",
-            storage="in_memory_event_model",
+            storage=f"{config.storage_backend}_event_model",
             channel_provider=self._dual_bot_service.adapter.provider.value,
             case_count=len(cases),
             open_case_count=sum(1 for case in cases if case.status in OPEN_CASE_STATUSES),
@@ -236,7 +237,7 @@ class GuardianConsoleRealFlowService:
                 last_event=last_event,
             ),
             channel_provider=provider,
-            backend_state="local_in_memory",
+            backend_state=f"local_{config.storage_backend}",
             simulated=simulated,
         )
 

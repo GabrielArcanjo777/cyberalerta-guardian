@@ -11,6 +11,13 @@ if TYPE_CHECKING:
     from app.guardian_console.admin_case_models import AdminCase
     from app.trusted_circle.trusted_circle_models import TrustedCircleEscalationRecord
 
+# NOTE: the model classes above are imported *locally* inside the methods that
+# deserialize rows (not at module top level). These stores are pulled in eagerly
+# via `app.storage.__init__`, and the model packages transitively import services
+# that import storage back — so a top-level import here creates a cycle. Local
+# runtime imports (the pattern already used for AdminCaseMemoryStore below) both
+# avoid the cycle and make the names available at runtime.
+
 from app.storage.config import storage_config
 
 
@@ -61,10 +68,14 @@ class SQLiteAdminCaseStore:
                 self.save_case(case)
 
     def list_cases(self) -> List[AdminCase]:
+        from app.guardian_console.admin_case_models import AdminCase
+
         rows = self._conn.execute("SELECT payload FROM admin_cases ORDER BY updated_at DESC").fetchall()
         return [AdminCase.model_validate(json.loads(row["payload"])) for row in rows]
 
     def get_case(self, case_id: str) -> Optional[AdminCase]:
+        from app.guardian_console.admin_case_models import AdminCase
+
         row = self._conn.execute("SELECT payload FROM admin_cases WHERE case_id = ?", (case_id,)).fetchone()
         return AdminCase.model_validate(json.loads(row["payload"])) if row else None
 
@@ -126,6 +137,8 @@ class SQLiteConsentStore:
         guardian_alias: str | None = None,
         channel_provider: str = "mock",
     ) -> ConsentRecord:
+        from app.consent.models import ConsentRecord
+
         record = self.get_record(protected_person_id)
         if record:
             return record
@@ -156,6 +169,8 @@ class SQLiteConsentStore:
         return event
 
     def list_events(self, consent_id: str) -> List[ConsentEvent]:
+        from app.consent.models import ConsentEvent
+
         rows = self._conn.execute(
             "SELECT payload FROM consent_events WHERE consent_id = ? ORDER BY occurred_at ASC",
             (consent_id,),
@@ -163,6 +178,8 @@ class SQLiteConsentStore:
         return [ConsentEvent.model_validate(json.loads(row["payload"])) for row in rows]
 
     def get_record(self, protected_person_id: str) -> Optional[ConsentRecord]:
+        from app.consent.models import ConsentRecord
+
         row = self._conn.execute("SELECT payload FROM consent_records WHERE protected_person_id = ?", (protected_person_id,)).fetchone()
         return ConsentRecord.model_validate(json.loads(row["payload"])) if row else None
 
@@ -225,10 +242,14 @@ class SQLiteTrustedCircleStore:
         return record
 
     def get(self, escalation_id: str) -> Optional[TrustedCircleEscalationRecord]:
+        from app.trusted_circle.trusted_circle_models import TrustedCircleEscalationRecord
+
         row = self._conn.execute("SELECT payload FROM trusted_circle_escalations WHERE escalation_id = ?", (escalation_id,)).fetchone()
         return TrustedCircleEscalationRecord.model_validate(json.loads(row["payload"])) if row else None
 
     def list_all(self) -> List[TrustedCircleEscalationRecord]:
+        from app.trusted_circle.trusted_circle_models import TrustedCircleEscalationRecord
+
         rows = self._conn.execute("SELECT payload FROM trusted_circle_escalations ORDER BY created_at DESC").fetchall()
         return [TrustedCircleEscalationRecord.model_validate(json.loads(row["payload"])) for row in rows]
 
@@ -237,6 +258,8 @@ class SQLiteTrustedCircleStore:
         return int(row["total"]) if row else 0
 
     def latest_for_case(self, case_id: str) -> Optional[TrustedCircleEscalationRecord]:
+        from app.trusted_circle.trusted_circle_models import TrustedCircleEscalationRecord
+
         row = self._conn.execute(
             "SELECT payload FROM trusted_circle_escalations WHERE case_id = ? ORDER BY created_at DESC LIMIT 1", (case_id,)).fetchone()
         return TrustedCircleEscalationRecord.model_validate(json.loads(row["payload"])) if row else None

@@ -28,6 +28,7 @@ class AuthEventType(str, Enum):
     GOOGLE_LOGIN_STARTED = "google_login_started"
     GOOGLE_LOGIN_SUCCESS = "google_login_success"
     GOOGLE_LOGIN_FAILED = "google_login_failed"
+    USER_REGISTERED = "user_registered"
     LOGOUT = "logout"
     MFA_SETUP_STARTED = "mfa_setup_started"
     MFA_ENABLED = "mfa_enabled"

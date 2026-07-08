@@ -12,12 +12,25 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=256)
 
 
+class RegisterRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    full_name: str = Field(min_length=2, max_length=160)
+    password: str = Field(min_length=1, max_length=256)
+
+
 class LoginResponse(BaseModel):
     authenticated: bool = False
     mfa_required: bool = False
     temporary_token: Optional[str] = None
     mfa_setup_required: bool = False
     user: Optional[PublicUser] = None
+
+
+class GoogleAuthStatusResponse(BaseModel):
+    enabled: bool
+    configured: bool
+    auto_create_users: bool
+    redirect_uri: str
 
 
 class LogoutResponse(BaseModel):

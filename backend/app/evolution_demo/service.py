@@ -63,7 +63,7 @@ class EvolutionDemoService:
     def health(self) -> EvolutionDemoHealthResponse:
         return EvolutionDemoHealthResponse(
             provider=self.adapter.provider.value,
-            mode="demo",
+            mode="live_unofficial",
             production=False,
             api_url_configured=bool(self.config.api_url),
             api_key_configured=bool(self.config.api_key),
@@ -185,7 +185,7 @@ class EvolutionDemoService:
             protected_reply_sent=False,
             guardian_notified=False,
             events=[],
-            demo_notice=f"{message} EvolutionDemoAdapter remains demo-only.",
+            demo_notice=f"{message} Evolution is an unofficial WhatsApp Web channel (portfolio, not production).",
         )
 
     def _send_protected_reply(
