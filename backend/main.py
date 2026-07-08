@@ -69,7 +69,6 @@ from app.mock_whatsapp import (
     MockWhatsAppSimulatorService,
     MockWhatsAppStateResponse,
 )
-from app.channel_adapters import TwilioSignatureContext
 from app.dual_bot import (
     DualBotCaseContextResponse,
     DualBotFlowResponse,
@@ -90,12 +89,6 @@ from app.schemas.recovery import RecoveryRequest, RecoveryResponse
 from app.schemas.report import ReportRequest, ReportResponse
 from app.services.examples import get_example_scenarios
 from app.services.safety_policy import SafetyPolicyService
-from app.twilio_sandbox import (
-    TwilioSandboxHealthResponse,
-    TwilioSandboxInboundWebhookResponse,
-    TwilioSandboxService,
-    TwilioSandboxStatusCallbackResponse,
-)
 from app.event_model import EventModelService
 from app.core.config import config
 from app.core.middleware import RequestContextHeadersMiddleware, SecurityHeadersMiddleware
@@ -126,7 +119,6 @@ assisted_proof_trust_service = AssistedProofTrustService()
 # channel writes to one persisted store and the Guardian Console sees all cases.
 event_model = EventModelService.from_config()
 mock_whatsapp_service = MockWhatsAppSimulatorService(event_model=event_model)
-twilio_sandbox_service = TwilioSandboxService(event_model=event_model)
 evolution_demo_service = EvolutionDemoService(event_model=event_model)
 dual_bot_service = DualBotFlowService(event_model=event_model)
 consent_service = ConsentService(dual_bot_service.event_model.event_bus)
@@ -137,30 +129,11 @@ app.include_router(create_n8n_router(n8n_integration_service))
 app.include_router(create_evolution_router(), prefix="/api/channels/evolution")
 
 
-async def _twilio_payload_from_request(request: Request) -> dict:
-    raw_body = await request.body()
-    content_type = request.headers.get("content-type", "").lower()
-    if "application/json" in content_type and raw_body:
-        parsed = json.loads(raw_body.decode("utf-8"))
-        return dict(parsed)
-    return dict(parse_qsl(raw_body.decode("utf-8"), keep_blank_values=True))
-
-
 async def _json_payload_from_request(request: Request) -> dict:
     raw_body = await request.body()
     if not raw_body:
         return {}
     return dict(json.loads(raw_body.decode("utf-8")))
-
-
-def _ensure_twilio_signature(request: Request, payload: dict) -> None:
-    context = TwilioSignatureContext(
-        url=str(request.url),
-        params=payload,
-        signature=request.headers.get("X-Twilio-Signature"),
-    )
-    if not twilio_sandbox_service.adapter.verify_signature(context):
-        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
 
 
 def _validate_analysis_payload(payload: AnalysisRequest) -> None:
@@ -343,25 +316,6 @@ def guardian_console_real_feedback(case_id: str, payload: GuardianFeedbackReques
         return guardian_console_real_flow_service.record_feedback(case_id, payload)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-
-@app.get("/api/channels/twilio/whatsapp/health", response_model=TwilioSandboxHealthResponse)
-def twilio_whatsapp_health():
-    return twilio_sandbox_service.health()
-
-
-@app.post("/api/channels/twilio/whatsapp/inbound", response_model=TwilioSandboxInboundWebhookResponse)
-async def twilio_whatsapp_inbound(request: Request):
-    payload = await _twilio_payload_from_request(request)
-    _ensure_twilio_signature(request, payload)
-    return twilio_sandbox_service.handle_inbound(payload)
-
-
-@app.post("/api/channels/twilio/whatsapp/status", response_model=TwilioSandboxStatusCallbackResponse)
-async def twilio_whatsapp_status(request: Request):
-    payload = await _twilio_payload_from_request(request)
-    _ensure_twilio_signature(request, payload)
-    return twilio_sandbox_service.handle_status_callback(payload)
 
 
 @app.get("/webhook/evolution/health", response_model=EvolutionDemoHealthResponse)
