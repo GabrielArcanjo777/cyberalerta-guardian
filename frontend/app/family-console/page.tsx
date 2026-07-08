@@ -25,8 +25,8 @@ export default function FamilyConsolePage(){
           <StatusRail
             items={[
               {label:'Operador', value:'responsável', tone:'ready'},
-              {label:'Armazenamento', value:'demo in-memory', tone:'neutral'},
-              {label:'Envio real', value:'desligado', tone:'warn'},
+              {label:'Armazenamento', value:'SQLite (persistente)', tone:'ready'},
+              {label:'Canal', value:'Evolution · não-oficial', tone:'neutral'},
             ]}
           />
         }

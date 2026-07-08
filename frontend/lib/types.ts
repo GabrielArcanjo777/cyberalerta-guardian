@@ -15,12 +15,25 @@ export type LoginPayload = {
   password: string
 }
 
+export type RegisterPayload = {
+  email: string
+  full_name: string
+  password: string
+}
+
 export type LoginResponse = {
   authenticated: boolean
   mfa_required: boolean
   temporary_token?: string | null
   mfa_setup_required?: boolean
   user?: AuthUser | null
+}
+
+export type GoogleAuthStatusResponse = {
+  enabled: boolean
+  configured: boolean
+  auto_create_users: boolean
+  redirect_uri: string
 }
 
 export type MeResponse = {
@@ -856,4 +869,17 @@ export type OCRPreviewResponse = {
   confidence:number
   metadata:Record<string,unknown>
   __mock?:boolean
+}
+
+export type EvolutionConnectionState = {
+  provider:string
+  official:boolean
+  configured:boolean
+  instance:string|null
+  state:'not_configured'|'unreachable'|'close'|'connecting'|'open'|'unknown'
+  connected:boolean
+  qr_base64:string|null
+  pairing_code:string|null
+  detail:string|null
+  limitation_notice:string
 }

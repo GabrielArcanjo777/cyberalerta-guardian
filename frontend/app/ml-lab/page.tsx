@@ -91,7 +91,7 @@ export default function MLLabPage(){
         detail="Resultado não é prova absoluta. Use como apoio educativo e preventivo, sem API externa real nesta demo."
         aside={
           <div className="space-y-5">
-            <div className="text-2xl font-semibold tracking-tight text-white">Ferramenta demonstrativa</div>
+            <div className="text-2xl font-semibold tracking-tight text-slate-800">Ferramenta demonstrativa</div>
             <StatusRail
               items={[
                 {label:'Texto', value:'POST /analisar', tone:'ready'},
@@ -143,7 +143,7 @@ export default function MLLabPage(){
         </div>
       )}
 
-      <Card className="border-dashed border-white/20">
+      <Card className="border-dashed border-slate-200">
         <div className="app-label">Transparência</div>
         <p className="app-body-text mt-2 text-sm font-semibold">
           O laboratório usa endpoints locais: POST /analisar, POST /analisar-url e GET /ml/status. Nenhuma API externa real é chamada nesta sprint.

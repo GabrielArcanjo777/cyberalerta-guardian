@@ -88,7 +88,7 @@ export default function HelpNetworkPage(){
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-red-300">O que não fazer</div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-red-600">O que não fazer</div>
                   <ul className="mt-2 space-y-2">
                     {playbook.what_not_to_do.map((item)=> (
                       <li key={item} className="app-body-text text-sm font-semibold">{item}</li>
@@ -96,7 +96,7 @@ export default function HelpNetworkPage(){
                   </ul>
                 </div>
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-teal-200">Próximos passos</div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-teal-700">Próximos passos</div>
                   <ul className="mt-2 space-y-2">
                     {playbook.next_steps.map((item)=> (
                       <li key={item} className="app-body-text text-sm font-semibold">{item}</li>
@@ -123,7 +123,7 @@ export default function HelpNetworkPage(){
         </div>
       </Card>
 
-      <Card className="border-dashed border-white/20">
+      <Card className="border-dashed border-slate-200">
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-center">
           <div>
             <div className="app-label">Privacidade</div>

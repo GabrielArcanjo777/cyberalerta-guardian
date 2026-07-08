@@ -1,10 +1,7 @@
 "use client"
 
 import React, {useCallback, useEffect, useState} from 'react'
-import Button from '@/components/Button'
 import Card from '@/components/Card'
-import {AppBadge, AppCardTitle, AppSectionTitle} from '@/components/AppPrimitives'
-import {riskStatusClass} from '@/lib/appStatus'
 import {
   getGuardianConsoleRealCase,
   getGuardianConsoleRealCases,
@@ -26,7 +23,7 @@ import type {
 
 const statusLabels: Record<string, string> = {
   new: 'Novo',
-  under_review: 'Em revisao',
+  under_review: 'Em revisão',
   paused: 'Pausado',
   confirmed_scam: 'Golpe confirmado',
   false_alarm: 'Falso positivo',
@@ -41,10 +38,82 @@ const actionLabels: Record<GuardianFeedbackAction, string> = {
 }
 
 const actionNotes: Record<GuardianFeedbackAction, string> = {
-  confirm_scam: 'Responsavel confirmou o risco por canal independente.',
-  false_alarm: 'Responsavel marcou este caso como falso positivo.',
-  needs_review: 'Responsavel pediu revisao antes de concluir.',
-  mark_resolved: 'Responsavel encerrou o caso no console.',
+  confirm_scam: 'Responsável confirmou o risco por canal independente.',
+  false_alarm: 'Responsável marcou este caso como falso positivo.',
+  needs_review: 'Responsável pediu revisão antes de concluir.',
+  mark_resolved: 'Responsável encerrou o caso no console.',
+}
+
+// Cor de ação por semântica (confirmar = perigo, resolver = ok).
+const actionClasses: Record<GuardianFeedbackAction, string> = {
+  confirm_scam: 'border-red-500/50 bg-red-500/10 text-red-100 hover:bg-red-500/20',
+  false_alarm: 'border-slate-500/40 bg-slate-500/10 text-slate-200 hover:bg-slate-500/20',
+  needs_review: 'border-amber-400/45 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20',
+  mark_resolved: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20',
+}
+
+type RiskTheme = {
+  label: string
+  chip: string
+  dot: string
+  bar: string
+  banner: string
+  score: string
+}
+
+// Semáforo de risco: vermelho (alto/crítico), âmbar (médio), verde (baixo).
+const RISK_THEMES: Record<string, RiskTheme> = {
+  critical: {
+    label: 'Crítico',
+    chip: 'border-red-500/50 bg-red-500/15 text-red-200',
+    dot: 'bg-red-500',
+    bar: 'border-l-4 border-l-red-500',
+    banner: 'border-red-500/40 bg-red-950/40',
+    score: 'text-red-300',
+  },
+  high: {
+    label: 'Alto',
+    chip: 'border-red-500/45 bg-red-500/12 text-red-200',
+    dot: 'bg-red-500',
+    bar: 'border-l-4 border-l-red-500',
+    banner: 'border-red-500/35 bg-red-950/35',
+    score: 'text-red-300',
+  },
+  medium: {
+    label: 'Médio',
+    chip: 'border-amber-400/45 bg-amber-400/12 text-amber-100',
+    dot: 'bg-amber-400',
+    bar: 'border-l-4 border-l-amber-400',
+    banner: 'border-amber-400/35 bg-amber-950/30',
+    score: 'text-amber-300',
+  },
+  low: {
+    label: 'Baixo',
+    chip: 'border-emerald-400/45 bg-emerald-400/12 text-emerald-100',
+    dot: 'bg-emerald-400',
+    bar: 'border-l-4 border-l-emerald-400',
+    banner: 'border-emerald-400/35 bg-emerald-950/30',
+    score: 'text-emerald-300',
+  },
+}
+
+function riskTheme(level?: string | null): RiskTheme {
+  const key = (level || '').toLowerCase()
+  if (key === 'critical') return RISK_THEMES.critical
+  if (key === 'high' || key === 'alto') return RISK_THEMES.high
+  if (key === 'medium' || key === 'média' || key === 'media' || key === 'médio') return RISK_THEMES.medium
+  if (key === 'low' || key === 'baixo') return RISK_THEMES.low
+  return RISK_THEMES.medium
+}
+
+function RiskChip({level}: {level?: string | null}){
+  const theme = riskTheme(level)
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${theme.chip}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${theme.dot}`} aria-hidden />
+      Risco {theme.label}
+    </span>
+  )
 }
 
 function formatTime(iso:string){
@@ -74,14 +143,10 @@ function caseStateLabel(item:GuardianConsoleRealCaseSummary){
 
 function recurrenceText(recurrence:Record<string, number>){
   const entries = Object.entries(recurrence).filter(([,value])=>value > 0)
-  if(entries.length === 0) return 'sem recorrencia registrada'
+  if(entries.length === 0) return 'sem recorrência registrada'
   return entries
     .map(([key,value])=>`${key.replace(/_/g, ' ')}: ${value}`)
     .join(' · ')
-}
-
-function yesNo(value?:boolean | null){
-  return value ? 'sim' : 'nao'
 }
 
 function auditTarget(entry:GuardianConsoleAuditLogView){
@@ -122,7 +187,7 @@ export default function GuardianAdminConsole(){
         setSelected(null)
       }
     }catch{
-      setError('Nao foi possivel carregar o Guardian Console real. Verifique se o backend local esta ativo.')
+      setError('Não foi possível carregar o console. Verifique se o backend local está ativo.')
       setSelected(null)
     }finally{
       setLoading(false)
@@ -136,7 +201,7 @@ export default function GuardianAdminConsole(){
     try{
       setSelected(await getGuardianConsoleRealCase(caseId))
     }catch{
-      setError('Nao foi possivel carregar o detalhe do caso.')
+      setError('Não foi possível carregar o detalhe do caso.')
     }finally{
       setDetailLoading(false)
     }
@@ -145,6 +210,24 @@ export default function GuardianAdminConsole(){
   useEffect(()=>{
     loadConsole()
   },[loadConsole])
+
+  // Atualização silenciosa da fila: casos novos aparecem sem spinner e sem
+  // interromper o caso que o responsável está lendo.
+  useEffect(()=>{
+    const id = setInterval(async ()=>{
+      try{
+        const [status, list] = await Promise.all([
+          getGuardianConsoleRealStatus(),
+          getGuardianConsoleRealCases(),
+        ])
+        setConsoleStatus(status)
+        setCases(list.cases)
+      }catch{
+        // silencioso
+      }
+    }, 10000)
+    return ()=>clearInterval(id)
+  },[])
 
   async function createDemoFlow(){
     setSimulating(true)
@@ -159,7 +242,7 @@ export default function GuardianAdminConsole(){
       })
       await loadConsole(flow.case_id ?? null)
     }catch{
-      setError('Nao foi possivel simular o fluxo local do Dual Bot.')
+      setError('Não foi possível simular o fluxo local do Dual Bot.')
     }finally{
       setSimulating(false)
     }
@@ -172,12 +255,12 @@ export default function GuardianAdminConsole(){
     try{
       await postGuardianConsoleRealFeedback(selected.case_id, {
         action,
-        guardian_alias: selected.guardian_alias || 'Responsavel',
+        guardian_alias: selected.guardian_alias || 'Responsável',
         note: actionNotes[action],
       })
       await loadConsole(selected.case_id)
     }catch{
-      setError('Nao foi possivel registrar a acao do responsavel.')
+      setError('Não foi possível registrar a ação do responsável.')
     }finally{
       setUpdating(false)
     }
@@ -216,103 +299,57 @@ export default function GuardianAdminConsole(){
       }
       await loadConsole(selectedId)
     }catch{
-      setError('Nao foi possivel atualizar consentimento/opt-in.')
+      setError('Não foi possível atualizar consentimento/opt-in.')
     }finally{
       setConsentUpdating(false)
     }
   }
 
-  const activation = selected?.activation || consoleStatus?.activation
   const consent = selected?.consent || consoleStatus?.consent
   const selectedTimeline = selected?.bot_events?.length ? selected.bot_events : selected?.timeline ?? []
   const selectedActions = selected?.feedback?.available_actions?.filter(isFeedbackAction)
+  const openCount = consoleStatus?.open_case_count ?? cases.filter(c=>!c.resolved && !c.false_positive).length
+  const level = selected ? (selected.risk_assessment?.risk_level ?? selected.risk_level) : undefined
+  const theme = riskTheme(level)
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="card-muted !p-4">
-          <div className="app-label">Canal</div>
-          <p className="mt-2 text-lg font-semibold text-white">
-            {consoleStatus?.channel_provider || 'mock'}
-          </p>
-          <p className="app-muted-text mt-1 text-xs">
-            {selected?.environment_label || (activation?.simulated ? 'mock local / in-memory' : 'demo controlado')}
-          </p>
-        </Card>
-        <Card className="card-primary !p-4">
-          <div className="app-label">Casos</div>
-          <p className="mt-2 text-lg font-semibold text-white">{consoleStatus?.case_count ?? cases.length}</p>
-          <p className="app-muted-text mt-1 text-xs">{consoleStatus?.open_case_count ?? 0} abertos</p>
-        </Card>
-        <Card className="card-muted !p-4">
-          <div className="app-label">Bot Protegido</div>
-          <p className="mt-2 text-sm font-semibold text-white">
-            {activation?.protected_bot.active ? 'Ativo' : 'Inativo'}
-          </p>
-          <p className="app-muted-text mt-1 text-xs">{activation?.protected_bot.last_event || 'aguardando evento'}</p>
-        </Card>
-        <Card className="card-muted !p-4">
-          <div className="app-label">Bot Responsavel</div>
-          <p className="mt-2 text-sm font-semibold text-white">
-            {activation?.responsible_bot.active ? 'Ativo' : 'Inativo'}
-          </p>
-          <p className="app-muted-text mt-1 text-xs">
-            delivery {consoleStatus?.delivery_status_available ? 'rastreavel' : 'indisponivel'}
-          </p>
-        </Card>
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-slate-950/45 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-slate-100">Console real local</p>
-          <p className="app-muted-text mt-1 text-sm">
-            {consoleStatus?.demo_note || 'Dados consumidos do Event Model/Dual Bot local. Nao e painel estatico.'}
-          </p>
+    <div className="space-y-5">
+      {/* Resumo compacto */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/50 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div>
+            <div className="text-2xl font-bold text-white">{consoleStatus?.case_count ?? cases.length}</div>
+            <div className="app-muted-text text-xs">casos no total</div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2 text-2xl font-bold text-white">
+              <span className={`h-2.5 w-2.5 rounded-full ${openCount > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} aria-hidden />
+              {openCount}
+            </div>
+            <div className="app-muted-text text-xs">precisam de atenção</div>
+          </div>
+          <div>
+            <div className="text-sm font-semibold capitalize text-white">{consoleStatus?.channel_provider || 'mock'}</div>
+            <div className="app-muted-text text-xs">canal ativo</div>
+          </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button variant="ghost" className="h-10" onClick={()=>loadConsole(selectedId)} disabled={loading || simulating}>
+          <button
+            onClick={()=>loadConsole(selectedId)}
+            disabled={loading || simulating}
+            className="h-10 rounded-md border border-white/12 bg-slate-950/60 px-4 text-sm font-semibold text-slate-100 transition hover:border-white/25 disabled:opacity-50"
+          >
             Atualizar
-          </Button>
-          <Button className="h-10" onClick={createDemoFlow} disabled={simulating}>
-            {simulating ? 'Simulando...' : 'Simular fluxo local'}
-          </Button>
+          </button>
+          <button
+            onClick={createDemoFlow}
+            disabled={simulating}
+            className="h-10 rounded-md border border-teal-300/45 bg-teal-500/90 px-4 text-sm font-bold text-slate-950 transition hover:bg-teal-400 disabled:opacity-50"
+          >
+            {simulating ? 'Simulando…' : 'Simular caso'}
+          </button>
         </div>
       </div>
-
-      {consent && (
-        <Card className="card-muted">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="app-label">Consentimento e opt-in</div>
-              <AppCardTitle className="mt-2 text-xl">
-                Bot {consent.bot_active ? 'ativo' : 'inativo'} - opt-in {consent.status}
-              </AppCardTitle>
-              <p className="app-muted-text mt-2 text-sm">{consent.limitation_notice}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(consent.scopes.length ? consent.scopes : ['sem escopo ativo']).map(scope=> (
-                  <AppBadge key={scope}>{scope.replace(/_/g, ' ')}</AppBadge>
-                ))}
-              </div>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[420px]">
-              <Button className="h-10" disabled={consentUpdating} onClick={()=>updateConsent(['active', 'bot_disabled'].includes(consent.status) ? 'activate' : 'accept')}>
-                {['active', 'bot_disabled'].includes(consent.status) ? 'Reativar bot' : 'Aceitar opt-in'}
-              </Button>
-              <Button variant="ghost" className="h-10" disabled={consentUpdating || !consent.bot_active} onClick={()=>updateConsent('deactivate')}>
-                Desativar bot
-              </Button>
-              <Button variant="ghost" className="h-10" disabled={consentUpdating || consent.status === 'revoked'} onClick={()=>updateConsent('revoke')}>
-                Revogar
-              </Button>
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3 text-xs text-slate-400 md:grid-cols-3">
-            <span>Mensagens: {consent.retention_message_body_days} dias</span>
-            <span>Auditoria: {consent.retention_event_audit_days} dias</span>
-            <span>Revogacao: {consent.delete_after_revocation_days} dias</span>
-          </div>
-        </Card>
-      )}
 
       {error && (
         <div className="rounded-md border border-amber-300/25 bg-amber-950/25 px-4 py-3 text-sm font-medium text-amber-100">
@@ -320,354 +357,295 @@ export default function GuardianAdminConsole(){
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(300px,0.92fr)_minmax(0,1.42fr)]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.5fr)]">
+        {/* Fila de alertas — cor por risco na borda esquerda */}
         <Card className="card-secondary overflow-hidden p-0">
-          <div className="border-b border-white/10 px-4 py-3 sm:px-5">
-            <AppSectionTitle className="text-lg">Inbox de casos</AppSectionTitle>
-            <p className="app-muted-text mt-1 text-sm">Casos criados pelo Dual Bot Flow</p>
+          <div className="border-b border-white/10 px-5 py-3">
+            <h2 className="text-base font-bold text-white">Alertas</h2>
+            <p className="app-muted-text mt-0.5 text-xs">Mensagens suspeitas monitoradas</p>
           </div>
-          <div className="max-h-[620px] overflow-y-auto p-2">
-            {loading && <p className="app-muted-text p-3 text-sm">Carregando casos...</p>}
+          <div className="max-h-[640px] overflow-y-auto p-3">
+            {loading && <p className="app-muted-text p-2 text-sm">Carregando…</p>}
             {!loading && cases.length === 0 && (
-              <div className="p-3">
-                <p className="text-sm font-semibold text-white">Nenhum caso aberto ainda.</p>
+              <div className="p-2">
+                <p className="text-sm font-semibold text-white">Nenhum alerta ainda.</p>
                 <p className="app-muted-text mt-2 text-sm">
-                  Crie um fluxo local para popular o Event Model e demonstrar o Console ponta a ponta.
+                  Simule um caso para ver o fluxo completo funcionando.
                 </p>
-                <Button className="mt-4 h-10 w-full" onClick={createDemoFlow} disabled={simulating}>
-                  {simulating ? 'Simulando...' : 'Criar caso mock real'}
-                </Button>
+                <button
+                  onClick={createDemoFlow}
+                  disabled={simulating}
+                  className="mt-4 h-10 w-full rounded-md border border-teal-300/45 bg-teal-500/90 px-4 text-sm font-bold text-slate-950 transition hover:bg-teal-400 disabled:opacity-50"
+                >
+                  {simulating ? 'Simulando…' : 'Simular caso'}
+                </button>
               </div>
             )}
-            {cases.map(item=> (
-              <button
-                key={item.case_id}
-                type="button"
-                onClick={()=>selectCase(item.case_id)}
-                className={`mb-2 w-full rounded-md border p-3 text-left transition ${
-                  selectedId === item.case_id
-                    ? 'border-cyan-400/45 bg-cyan-950/25'
-                    : 'border-white/10 bg-slate-950/30 hover:border-white/20'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-white">{item.protected_person_alias}</div>
-                    <div className="app-muted-text mt-0.5 text-xs">
-                      Responsavel: {item.guardian_alias || 'nao vinculado'}
+            {cases.map(item=> {
+              const itemTheme = riskTheme(item.risk_level)
+              const active = selectedId === item.case_id
+              return (
+                <button
+                  key={item.case_id}
+                  type="button"
+                  onClick={()=>selectCase(item.case_id)}
+                  className={`mb-2 w-full rounded-md border bg-slate-950/40 p-3 text-left transition ${itemTheme.bar} ${
+                    active ? 'border-white/30 ring-1 ring-white/20' : 'border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-white">{item.protected_person_alias}</div>
+                      <div className="app-muted-text mt-0.5 truncate text-xs">
+                        {item.guardian_alias ? `resp. ${item.guardian_alias}` : 'sem responsável'}
+                      </div>
                     </div>
+                    <RiskChip level={item.risk_level} />
                   </div>
-                  <span className={riskStatusClass(item.risk_level)}>Risco {item.risk_level}</span>
-                </div>
-                <p className="mt-3 line-clamp-2 text-sm leading-5 text-slate-300">{item.message_summary}</p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
-                  <span>{caseStateLabel(item)}</span>
-                  <span>·</span>
-                  <span>{item.source_channel}</span>
-                  {item.pattern_level && (
-                    <>
-                      <span>·</span>
-                      <span>padrao {item.pattern_level}</span>
-                    </>
-                  )}
-                  <span>·</span>
-                  <span>{formatTime(item.updated_at)}</span>
-                </div>
-              </button>
-            ))}
+                  <p className="mt-2 line-clamp-2 text-sm leading-5 text-slate-300">{item.message_summary}</p>
+                  <div className="app-muted-text mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span>{caseStateLabel(item)}</span>
+                    <span>·</span>
+                    <span>{formatTime(item.updated_at)}</span>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </Card>
 
+        {/* Caso selecionado — visão enxuta */}
         <div className="space-y-4">
           {detailLoading && (
-            <Card className="card-muted">
-              <p className="app-muted-text text-sm">Carregando detalhe operacional...</p>
-            </Card>
+            <Card className="card-muted"><p className="app-muted-text text-sm">Carregando caso…</p></Card>
           )}
 
           {!detailLoading && selected ? (
             <>
-              <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-                <section className="guardian-case-risk-card">
-                  <div className="app-label text-red-200/90">Risco atual</div>
-                  <div className="mt-3 flex flex-wrap items-end gap-3">
-                    <span className="guardian-case-risk-score">{selected.risk_assessment?.score ?? selected.risk_score}</span>
-                    <span className={riskStatusClass(selected.risk_assessment?.risk_level ?? selected.risk_level)}>
-                      Risco {selected.risk_assessment?.risk_level ?? selected.risk_level}
-                    </span>
+              {/* Banner de risco */}
+              <div className={`rounded-xl border p-5 ${theme.banner}`}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`text-5xl font-black leading-none ${theme.score}`}>
+                      {selected.risk_assessment?.score ?? selected.risk_score}
+                    </div>
+                    <div>
+                      <RiskChip level={level} />
+                      <p className="mt-2 text-sm font-semibold text-white">
+                        {selected.protected_person?.alias ?? selected.protected_person_alias}
+                        <span className="app-muted-text font-normal"> · {statusLabels[selected.case?.status ?? selected.status] || selected.status}</span>
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-3 text-sm font-semibold leading-6 text-red-100/90">
-                    Status: {statusLabels[selected.case?.status ?? selected.status] || selected.case?.status || selected.status}
-                  </p>
-                </section>
-
-                <section className="guardian-case-action-card">
-                  <div className="app-label text-emerald-200/90">Acao recomendada</div>
-                  <p className="mt-3 text-lg font-semibold leading-7 text-emerald-50">
+                </div>
+                <div className="mt-4 rounded-lg border border-white/10 bg-slate-950/40 p-4">
+                  <div className="app-label">O que fazer</div>
+                  <p className="mt-1 text-base font-semibold leading-6 text-white">
                     {selected.next_step || selected.recommended_action}
                   </p>
-                  <p className="mt-3 text-sm leading-6 text-slate-400">
-                    Baseado no score, sinais detectados e feedback do responsavel registrado no Event Model.
-                  </p>
-                </section>
+                </div>
               </div>
 
-              <Card className="guardian-secondary-card">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="app-label">Caso ativo · {selected.case?.case_id ?? selected.case_id}</div>
-                    <AppCardTitle className="mt-2 text-xl">
-                      {selected.protected_person?.alias ?? selected.protected_person_alias} com responsavel {selected.responsible_contact?.alias || selected.guardian_alias || 'nao vinculado'}
-                    </AppCardTitle>
-                    <p className="app-muted-text mt-2 text-sm">
-                      Canal {selected.message?.channel ?? selected.source_channel} · alerta {deliveryLabel(selected.channel_status?.guardian_alert_status ?? selected.delivery.guardian_alert_status)}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <AppBadge>{selected.channel_status?.provider ?? selected.activation.channel_provider}</AppBadge>
-                    <AppBadge>{selected.channel_status?.environment_label ?? (selected.activation.simulated ? 'mock local' : 'demo')}</AppBadge>
-                  </div>
+              {/* Mensagem suspeita + sinais */}
+              <Card className="card-muted">
+                <div className="app-label">Mensagem suspeita</div>
+                <p className="mt-2 rounded-md border border-white/10 bg-slate-950/40 p-3 text-sm leading-6 text-slate-200">
+                  “{selected.message?.body ?? selected.source_message}”
+                </p>
+                <div className="app-muted-text mt-2 text-xs">
+                  Canal {selected.message?.channel ?? selected.source_channel} · {formatTime(selected.message?.created_at ?? selected.created_at)}
                 </div>
-
-                <div className="mt-5 grid gap-4 lg:grid-cols-3">
-                  <div className="app-action-panel">
-                    <div className="app-label">Pessoa protegida</div>
-                    <p className="app-body-text mt-2">{selected.protected_person?.alias ?? selected.protected_person_alias}</p>
-                    <p className="app-muted-text mt-2 text-xs">
-                      Status: {selected.protected_person?.status ?? 'active'} · ID {selected.protected_person?.protected_person_id?.slice(0, 18) ?? 'local'}
-                    </p>
-                  </div>
-                  <div className="app-action-panel">
-                    <div className="app-label">Responsavel vinculado</div>
-                    <p className="app-body-text mt-2">{selected.responsible_contact?.alias || selected.guardian_alias || 'nao vinculado'}</p>
-                    <p className="app-muted-text mt-2 text-xs">
-                      Notificado: {yesNo(selected.responsible_contact?.notified ?? selected.delivery.guardian_notified)} · entrega {deliveryLabel(selected.responsible_contact?.last_delivery_status ?? selected.delivery.guardian_alert_status)}
-                    </p>
-                  </div>
-                  <div className="app-action-panel">
-                    <div className="app-label">Canal e bots</div>
-                    <p className="app-body-text mt-2">{selected.channel_status?.provider ?? selected.activation.channel_provider}</p>
-                    <p className="app-muted-text mt-2 text-xs">
-                      Protegido {yesNo(selected.channel_status?.protected_bot_active ?? selected.activation.protected_bot.active)} · Responsavel {yesNo(selected.channel_status?.responsible_bot_active ?? selected.activation.responsible_bot.active)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                  <div className="app-action-panel">
-                    <div className="app-label">Mensagem que disparou o alerta</div>
-                    <p className="app-body-text mt-2">{selected.message?.body ?? selected.source_message}</p>
-                    <p className="app-muted-text mt-2 text-xs">
-                      Entrada {selected.message?.status ?? 'received'} · {formatTime(selected.message?.created_at ?? selected.created_at)}
-                    </p>
-                  </div>
-                  <div className="app-action-panel">
-                    <div className="app-label">Sinais detectados</div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(selected.risk_assessment?.signals ?? selected.risk_signals).map(signal=> (
-                        <AppBadge key={signal}>{signal.replace(/_/g, ' ')}</AppBadge>
-                      ))}
-                    </div>
-                    {selected.risk_assessment?.explanation?.length ? (
-                      <p className="app-muted-text mt-3 text-xs">
-                        {selected.risk_assessment.explanation.join(' · ')}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  <div className="app-action-panel border-cyan-400/20">
-                    <div className="app-label">Bot Protegido enviou</div>
-                    <p className="app-body-text mt-2">{selected.protected_reply.body}</p>
-                    <p className="app-muted-text mt-3 text-xs">
-                      Status: {deliveryLabel(selected.channel_status?.protected_reply_status ?? selected.protected_reply.status)} · {selected.protected_reply.simulated ? 'simulado' : 'provider controlado'}
-                    </p>
-                  </div>
-                  <div className="app-action-panel border-emerald-400/20">
-                    <div className="app-label">Bot Responsavel enviou</div>
-                    <p className="app-body-text mt-2">{selected.guardian_alert.body}</p>
-                    <p className="app-muted-text mt-3 text-xs">
-                      Status: {deliveryLabel(selected.channel_status?.guardian_alert_status ?? selected.guardian_alert.status)} · notificado: {yesNo(selected.channel_status?.guardian_notified ?? selected.delivery.guardian_notified)}
-                    </p>
-                  </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(selected.risk_assessment?.signals ?? selected.risk_signals).map(signal=> (
+                    <span key={signal} className={`rounded-full border px-2.5 py-1 text-xs font-medium ${theme.chip}`}>
+                      {signal.replace(/_/g, ' ')}
+                    </span>
+                  ))}
                 </div>
               </Card>
 
-              {selected.pattern && (
-                <Card className="card-evidence">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="app-label">Pattern Intelligence</div>
-                      <AppCardTitle className="mt-2 text-xl">{selected.pattern.threat_type_label || 'Padroes explicaveis'}</AppCardTitle>
-                      <p className="app-body-text mt-2">{selected.pattern.explanation}</p>
-                      <p className="app-muted-text mt-2 text-sm">{selected.pattern.recommendation}</p>
-                    </div>
-                    <span className={riskStatusClass(selected.pattern.level)}>
-                      Padrao {selected.pattern.level} · {selected.pattern.score}/100
-                    </span>
-                  </div>
-                  <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.85fr_0.85fr]">
-                    <div className="app-action-panel">
-                      <div className="app-label">Sinais de padrao</div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {selected.pattern.signals.map(signal=> (
-                          <AppBadge key={signal}>{signal.replace(/_/g, ' ')}</AppBadge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="app-action-panel">
-                      <div className="app-label">Recorrencia</div>
-                      <p className="app-body-text mt-2">{recurrenceText(selected.pattern.recurrence)}</p>
-                      <p className="app-muted-text mt-2 text-xs">
-                        Clusters: {selected.pattern.cluster_ids.length || 0} · feedback: {selected.pattern.feedback_label || 'pendente'}
-                      </p>
-                    </div>
-                    <div className="app-action-panel">
-                      <div className="app-label">Evidencias</div>
-                      <div className="mt-2 space-y-2">
-                        {selected.pattern.reasons.slice(0, 3).map(reason=> (
-                          <p key={reason} className="text-sm leading-5 text-slate-300">{reason}</p>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+              {/* O que os bots fizeram */}
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card className="card-muted">
+                  <div className="app-label">Resposta à pessoa protegida</div>
+                  <p className="app-body-text mt-2 text-sm leading-6">{selected.protected_reply.body}</p>
+                  <p className="app-muted-text mt-2 text-xs">
+                    {deliveryLabel(selected.channel_status?.protected_reply_status ?? selected.protected_reply.status)}
+                  </p>
                 </Card>
-              )}
-
-              {selected.agent_decisions?.length ? (
-                <Card className="card-evidence">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="app-label">Agentes controlados</div>
-                      <AppCardTitle className="mt-2 text-xl">Decisoes auditaveis</AppCardTitle>
-                      <p className="app-muted-text mt-2 text-sm">
-                        Saidas tipadas, com guardrails e revisao humana preservada.
-                      </p>
-                    </div>
-                    <AppBadge>{selected.agent_decisions.length} decisoes</AppBadge>
-                  </div>
-                  <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                    {selected.agent_decisions.map(decision=> (
-                      <div key={decision.event_id} className="app-action-panel">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-sm font-semibold text-white">{decision.agent}</span>
-                          {decision.fallback_used ? <AppBadge>fallback seguro</AppBadge> : <AppBadge>guardrails ok</AppBadge>}
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-slate-300">{decision.summary}</p>
-                        {decision.recommended_action ? (
-                          <p className="app-muted-text mt-2 text-xs">{decision.recommended_action}</p>
-                        ) : null}
-                        {decision.guardrails.length ? (
-                          <p className="mt-2 text-xs text-cyan-100/75">
-                            {decision.guardrails.slice(0, 2).join(' - ')}
-                          </p>
-                        ) : null}
-                        <p className="mt-2 text-xs text-slate-500">{formatTime(decision.occurred_at)}</p>
-                      </div>
-                    ))}
-                  </div>
+                <Card className="card-muted">
+                  <div className="app-label">Alerta ao responsável</div>
+                  <p className="app-body-text mt-2 text-sm leading-6">{selected.guardian_alert.body}</p>
+                  <p className="app-muted-text mt-2 text-xs">
+                    {selected.responsible_contact?.alias || selected.guardian_alias || 'não vinculado'} · {deliveryLabel(selected.channel_status?.guardian_alert_status ?? selected.guardian_alert.status)}
+                  </p>
                 </Card>
-              ) : null}
+              </div>
 
+              {/* Ações do responsável */}
               <Card className="card-action">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="app-label">Acoes do responsavel</div>
-                    <p className="app-muted-text mt-2 text-sm">
-                      Ultimo feedback: {selected.feedback?.latest_action ? `${selected.feedback.latest_action} por ${selected.feedback.latest_actor || 'responsavel'}` : 'pendente'}
-                    </p>
-                  </div>
-                  <span className={riskStatusClass(selected.risk_level)}>Risco {selected.risk_level}</span>
-                </div>
+                <div className="app-label">Suas ações</div>
+                <p className="app-muted-text mt-1 text-sm">
+                  Último feedback: {selected.feedback?.latest_action ? `${selected.feedback.latest_action} por ${selected.feedback.latest_actor || 'responsável'}` : 'nenhum ainda'}
+                </p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                   {(selectedActions?.length ? selectedActions : Object.keys(actionLabels) as GuardianFeedbackAction[]).map(action=> (
-                    <Button
+                    <button
                       key={action}
-                      variant={action === 'confirm_scam' ? 'primary' : 'ghost'}
-                      className="h-11"
+                      type="button"
                       disabled={updating}
                       onClick={()=>submitFeedback(action)}
+                      className={`h-11 rounded-md border px-3 text-sm font-semibold transition disabled:opacity-50 ${actionClasses[action]}`}
                     >
                       {actionLabels[action]}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </Card>
 
-              <Card className="card-evidence">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="app-label">Timeline auditavel</div>
-                    <AppCardTitle className="mt-2 text-xl">Eventos do caso</AppCardTitle>
-                  </div>
-                  <AppBadge>{selectedTimeline.length} eventos</AppBadge>
-                </div>
-                <ol className="guardian-operational-timeline mt-5">
-                  {selectedTimeline.map((event,index)=> (
-                    <li key={event.event_id} className="guardian-timeline-item">
-                      <span className="guardian-timeline-index">{String(index + 1).padStart(2,'0')}</span>
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold text-white">{event.label}</span>
-                          {event.status && <AppBadge>{deliveryLabel(event.status)}</AppBadge>}
+              {/* Detalhes técnicos — recolhido por padrão para não poluir */}
+              <details className="group rounded-xl border border-white/10 bg-slate-950/40">
+                <summary className="cursor-pointer list-none px-5 py-3 text-sm font-semibold text-slate-200 transition hover:text-white">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="text-slate-500 transition group-open:rotate-90">▶</span>
+                    Detalhes técnicos (linha do tempo, padrões, auditoria e consentimento)
+                  </span>
+                </summary>
+                <div className="space-y-4 border-t border-white/10 p-5">
+                  {/* Linha do tempo */}
+                  <section>
+                    <div className="app-label">Linha do tempo · {selectedTimeline.length} eventos</div>
+                    <ol className="guardian-operational-timeline mt-3">
+                      {selectedTimeline.map((event,index)=> (
+                        <li key={event.event_id} className="guardian-timeline-item">
+                          <span className="guardian-timeline-index">{String(index + 1).padStart(2,'0')}</span>
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-semibold text-white">{event.label}</span>
+                              {event.status && <AppBadgeText>{deliveryLabel(event.status)}</AppBadgeText>}
+                            </div>
+                            <p className="mt-1 text-sm leading-6 text-slate-400">{event.description}</p>
+                            <p className="mt-1 text-xs text-slate-500">{formatTime(event.occurred_at)} · {event.event_type}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </section>
+
+                  {/* Pattern Intelligence */}
+                  {selected.pattern && (
+                    <section className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="app-label">Pattern Intelligence · {selected.pattern.threat_type_label || 'padrões'}</div>
+                        <RiskChip level={selected.pattern.level} />
+                      </div>
+                      <p className="app-body-text mt-2 text-sm">{selected.pattern.explanation}</p>
+                      <p className="app-muted-text mt-1 text-sm">{selected.pattern.recommendation}</p>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <div className="app-muted-text text-xs">Sinais de padrão</div>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            {selected.pattern.signals.map(signal=> (
+                              <AppBadgeText key={signal}>{signal.replace(/_/g, ' ')}</AppBadgeText>
+                            ))}
+                          </div>
                         </div>
-                        <p className="mt-1 text-sm leading-6 text-slate-400">{event.description}</p>
-                        <p className="mt-1 text-xs text-slate-500">{formatTime(event.occurred_at)} · {event.event_type}</p>
+                        <div>
+                          <div className="app-muted-text text-xs">Recorrência</div>
+                          <p className="app-body-text mt-1 text-sm">{recurrenceText(selected.pattern.recurrence)}</p>
+                        </div>
                       </div>
-                    </li>
-                  ))}
-                </ol>
-              </Card>
+                    </section>
+                  )}
 
-              <Card className="card-muted">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="app-label">Audit log</div>
-                    <AppCardTitle className="mt-2 text-xl">Registro auditavel</AppCardTitle>
-                  </div>
-                  <AppBadge>{selected.audit_log?.length ?? 0} registros</AppBadge>
-                </div>
-                <div className="mt-4 grid gap-2">
-                  {(selected.audit_log ?? []).slice(-6).map(entry=> (
-                    <div key={entry.audit_log_id} className="flex flex-col gap-1 rounded-md border border-white/10 bg-slate-950/35 p-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-white">{entry.action}</p>
-                        <p className="app-muted-text mt-1 text-xs">{auditTarget(entry)}</p>
+                  {/* Decisões dos agentes */}
+                  {selected.agent_decisions?.length ? (
+                    <section>
+                      <div className="app-label">Decisões dos agentes · {selected.agent_decisions.length}</div>
+                      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                        {selected.agent_decisions.map(decision=> (
+                          <div key={decision.event_id} className="rounded-md border border-white/10 bg-slate-950/30 p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-sm font-semibold text-white">{decision.agent}</span>
+                              <AppBadgeText>{decision.fallback_used ? 'fallback seguro' : 'guardrails ok'}</AppBadgeText>
+                            </div>
+                            <p className="mt-2 text-sm leading-6 text-slate-300">{decision.summary}</p>
+                            <p className="mt-2 text-xs text-slate-500">{formatTime(decision.occurred_at)}</p>
+                          </div>
+                        ))}
                       </div>
-                      <p className="text-xs text-slate-500">{formatTime(entry.created_at)}</p>
+                    </section>
+                  ) : null}
+
+                  {/* Audit log */}
+                  <section>
+                    <div className="app-label">Registro auditável · {selected.audit_log?.length ?? 0}</div>
+                    <div className="mt-3 grid gap-2">
+                      {(selected.audit_log ?? []).slice(-6).map(entry=> (
+                        <div key={entry.audit_log_id} className="flex flex-col gap-1 rounded-md border border-white/10 bg-slate-950/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-white">{entry.action}</p>
+                            <p className="app-muted-text mt-1 text-xs">{auditTarget(entry)}</p>
+                          </div>
+                          <p className="text-xs text-slate-500">{formatTime(entry.created_at)}</p>
+                        </div>
+                      ))}
+                      {!(selected.audit_log?.length) && (
+                        <p className="app-muted-text text-sm">Nenhum registro para este caso.</p>
+                      )}
                     </div>
-                  ))}
-                  {!(selected.audit_log?.length) && (
-                    <p className="app-muted-text text-sm">Nenhum registro de auditoria para este caso.</p>
+                  </section>
+
+                  {/* Consentimento / opt-in */}
+                  {consent && (
+                    <section className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <div className="app-label">Consentimento · opt-in {consent.status}</div>
+                          <p className="app-muted-text mt-2 text-sm">{consent.limitation_notice}</p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {(consent.scopes.length ? consent.scopes : ['sem escopo ativo']).map(scope=> (
+                              <AppBadgeText key={scope}>{scope.replace(/_/g, ' ')}</AppBadgeText>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[360px]">
+                          <button className="h-10 rounded-md border border-teal-300/45 bg-teal-500/90 px-3 text-sm font-bold text-slate-950 transition hover:bg-teal-400 disabled:opacity-50" disabled={consentUpdating} onClick={()=>updateConsent(['active', 'bot_disabled'].includes(consent.status) ? 'activate' : 'accept')}>
+                            {['active', 'bot_disabled'].includes(consent.status) ? 'Reativar bot' : 'Aceitar opt-in'}
+                          </button>
+                          <button className="h-10 rounded-md border border-white/12 bg-slate-950/60 px-3 text-sm font-semibold text-slate-100 transition hover:border-white/25 disabled:opacity-50" disabled={consentUpdating || !consent.bot_active} onClick={()=>updateConsent('deactivate')}>
+                            Desativar bot
+                          </button>
+                          <button className="h-10 rounded-md border border-red-500/40 bg-red-500/10 px-3 text-sm font-semibold text-red-100 transition hover:bg-red-500/20 disabled:opacity-50" disabled={consentUpdating || consent.status === 'revoked'} onClick={()=>updateConsent('revoke')}>
+                            Revogar
+                          </button>
+                        </div>
+                      </div>
+                      <div className="app-muted-text mt-3 grid gap-2 text-xs sm:grid-cols-3">
+                        <span>Mensagens: {consent.retention_message_body_days} dias</span>
+                        <span>Auditoria: {consent.retention_event_audit_days} dias</span>
+                        <span>Revogação: {consent.delete_after_revocation_days} dias</span>
+                      </div>
+                    </section>
                   )}
                 </div>
-              </Card>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Card className="card-muted !p-4">
-                  <div className="app-label">Responsavel confirmou</div>
-                  <p className="mt-2 text-sm font-semibold text-white">{yesNo(selected.feedback?.guardian_confirmed ?? selected.guardian_confirmed)}</p>
-                </Card>
-                <Card className="card-muted !p-4">
-                  <div className="app-label">Falso positivo</div>
-                  <p className="mt-2 text-sm font-semibold text-white">{yesNo(selected.feedback?.false_positive ?? selected.false_positive)}</p>
-                </Card>
-                <Card className="card-muted !p-4">
-                  <div className="app-label">Resolucao</div>
-                  <p className="mt-2 text-sm font-semibold text-white">{(selected.feedback?.resolved ?? selected.resolved) ? 'resolvido' : 'pendente'}</p>
-                </Card>
-              </div>
+              </details>
             </>
           ) : null}
 
           {!loading && !detailLoading && !selected && cases.length > 0 && (
-            <Card>
-              <p className="app-muted-text">Selecione um caso na fila para ver detalhes operacionais.</p>
-            </Card>
+            <Card><p className="app-muted-text">Selecione um alerta na fila para ver os detalhes.</p></Card>
           )}
         </div>
       </div>
     </div>
+  )
+}
+
+function AppBadgeText({children}: {children: React.ReactNode}){
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/12 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
+      {children}
+    </span>
   )
 }

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "framer-motion": "^12.40.0",
+    "lucide-react": "^1.21.0",
     "next": "^16.2.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -17,7 +18,7 @@
   },
   "devDependencies": {
     "@types/node": "25.9.1",
-    "@types/react": "19.2.15",
+    "@types/react": "^18.3.12",
     "@types/three": "^0.184.1",
     "autoprefixer": "^10.4.0",
     "eslint": "^9.39.4",

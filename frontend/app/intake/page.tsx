@@ -95,7 +95,7 @@ export default function IntakePage(){
   const analysis = result?.analysis
 
   return (
-    <PageShell>
+    <PageShell className="guardian-light-page">
       <PageHeader
         eyebrow="Entrada com privacidade"
         title="Enviar mensagem suspeita"
@@ -105,7 +105,7 @@ export default function IntakePage(){
           <div className="space-y-5">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.08em] text-cyan-300">Privacidade por design</div>
-              <p className="mt-3 text-sm leading-6 text-slate-300">
+              <p className="mt-3 text-sm leading-6 text-slate-600">
                 Entrada manual, consentimento explícito, redaction opcional e metadados mínimos. Sem monitoramento automático.
               </p>
             </div>
@@ -147,17 +147,17 @@ export default function IntakePage(){
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <Card className="overflow-hidden p-0">
-          <div className="border-b border-white/10 px-5 py-4 sm:px-6">
+          <div className="border-b border-slate-200 px-5 py-4 sm:px-6">
             <div className="app-label">Entrada voluntária</div>
-            <h2 className="mt-2 text-xl font-bold tracking-tight text-white">Conteúdo que você escolheu enviar</h2>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-800">Conteúdo que você escolheu enviar</h2>
           </div>
           <div className="space-y-5 p-5 sm:p-6">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-300">Canal de entrada</label>
+              <label className="mb-2 block text-sm font-semibold text-slate-600">Canal de entrada</label>
               <select
                 value={channel}
                 onChange={e=>setChannel(e.target.value as IntakeChannel)}
-                className="h-12 w-full rounded-md border border-white/10 bg-slate-950/50 px-4 text-sm font-semibold text-slate-100 focus:border-cyan-400/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                className="h-12 w-full rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-100"
               >
                 {channelOptions.map(option=> (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -166,55 +166,55 @@ export default function IntakePage(){
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-slate-300">Mensagem suspeita (trecho apenas)</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-600">Mensagem suspeita (trecho apenas)</span>
               <textarea
                 value={content}
                 onChange={e=>setContent(e.target.value)}
                 rows={8}
-                className="w-full rounded-md border border-white/10 bg-slate-950/50 p-4 text-sm leading-6 text-slate-100 focus:border-cyan-400/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                className="w-full rounded-md border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-800 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-100"
               />
             </label>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-300">Pessoa (alias)</span>
-                <input value={userName} onChange={e=>setUserName(e.target.value)} className="h-11 w-full rounded-md border border-white/10 bg-slate-950/50 px-3 text-sm text-slate-100" />
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Pessoa (alias)</span>
+                <input value={userName} onChange={e=>setUserName(e.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800" />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-300">Contato (alias)</span>
-                <input value={trustedContactName} onChange={e=>setTrustedContactName(e.target.value)} className="h-11 w-full rounded-md border border-white/10 bg-slate-950/50 px-3 text-sm text-slate-100" />
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Contato (alias)</span>
+                <input value={trustedContactName} onChange={e=>setTrustedContactName(e.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800" />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-300">Ação suspeita</span>
-                <select value={actionType} onChange={e=>setActionType(e.target.value)} className="h-11 w-full rounded-md border border-white/10 bg-slate-950/50 px-3 text-sm text-slate-100">
+                <span className="mb-2 block text-sm font-semibold text-slate-600">Ação suspeita</span>
+                <select value={actionType} onChange={e=>setActionType(e.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800">
                   {actionOptions.map(option=> <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
             </div>
 
-            <div className="space-y-3 rounded-md border border-white/10 bg-slate-950/40 p-4">
+            <div className="space-y-3 rounded-md border border-slate-100 bg-slate-50 p-4">
               <label className="flex items-start gap-3">
                 <input type="checkbox" checked={userConsent} onChange={e=>setUserConsent(e.target.checked)} className="mt-1 h-5 w-5" />
-                <span className="text-sm font-semibold leading-6 text-slate-300">
+                <span className="text-sm font-semibold leading-6 text-slate-600">
                   Eu escolhi compartilhar este trecho voluntariamente. Entendo que o Guardian não monitora conversas
                   automaticamente e que o MVP não conecta WhatsApp real.
                 </span>
               </label>
               <label className="flex items-start gap-3">
                 <input type="checkbox" checked={redactionRequested} onChange={e=>setRedactionRequested(e.target.checked)} className="mt-1 h-5 w-5" />
-                <span className="text-sm font-semibold leading-6 text-slate-300">
+                <span className="text-sm font-semibold leading-6 text-slate-600">
                   Mascarar CPF, telefone, e-mail e chaves antes da análise (recomendado).
                 </span>
               </label>
               <label className="flex items-start gap-3">
                 <input type="checkbox" checked={containsSensitiveData} onChange={e=>setContainsSensitiveData(e.target.checked)} className="mt-1 h-5 w-5" />
-                <span className="text-sm font-semibold leading-6 text-slate-300">
+                <span className="text-sm font-semibold leading-6 text-slate-600">
                   A mensagem pode conter dados pessoais — evite senhas e documentos reais.
                 </span>
               </label>
             </div>
 
-            {error && <p className="rounded-md border border-red-400/30 bg-red-950/30 p-3 text-sm font-semibold text-red-200">{error}</p>}
+            {error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Button type="button" variant="ghost" onClick={onPreview} disabled={loadingPreview} className="h-12">
@@ -234,10 +234,10 @@ export default function IntakePage(){
               {channelOptions.map(option=> (
                 <div
                   key={option.value}
-                  className={`rounded-md border p-4 ${option.value === channel ? 'border-cyan-400/40 bg-cyan-950/25' : 'border-white/10 bg-slate-950/35'}`}
+                  className={`rounded-md border p-4 ${option.value === channel ? 'border-teal-300 bg-teal-50' : 'border-slate-200 bg-slate-50'}`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="text-sm font-semibold text-slate-100">{option.label}</div>
+                    <div className="text-sm font-semibold text-slate-800">{option.label}</div>
                     <span className={`app-badge shrink-0 ${option.value === channel ? 'app-badge-accent' : ''}`}>
                       {option.status}
                     </span>
@@ -257,16 +257,16 @@ export default function IntakePage(){
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Preview de redaction</div>
               <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Texto mascarado antes da análise</h2>
             </div>
-            {preview.__mock && <span className="rounded border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sky-700">Modo demonstração</span>}
+            {preview.__mock && <span className="rounded border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sky-800">Modo demonstração</span>}
           </div>
-          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-4">
             <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{preview.redacted_content}</p>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {preview.items_masked.length === 0 ? (
-              <span className="rounded border border-slate-200 bg-white px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-500">Nenhum item mascarado</span>
+              <span className="rounded border border-slate-200 bg-white px-3 py-1 text-xs font-bold tracking-wide text-slate-600">Nenhum item mascarado</span>
             ) : preview.items_masked.map(item=> (
-              <span key={item} className="rounded border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700">{reportLabel(item)}</span>
+              <span key={item} className="rounded border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold tracking-wide text-emerald-800">{reportLabel(item)}</span>
             ))}
           </div>
         </Card>
@@ -284,15 +284,15 @@ export default function IntakePage(){
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Privacy report</div>
             <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Relatório de privacidade da análise</h2>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-emerald-700">Consentimento</div>
                 <p className="mt-2 text-sm font-black text-slate-950">{result.privacy_report.consent_verified ? 'verificado' : 'ausente'}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Monitoramento</div>
                 <p className="mt-2 text-sm font-black text-slate-950">{result.privacy_report.monitoring ? 'ativo' : 'não há monitoramento'}</p>
               </div>
-              <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-4">
+              <div className="rounded-lg border border-cyan-100 bg-cyan-50/80 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-cyan-700">Canal</div>
                 <p className="mt-2 text-sm font-black text-slate-950">{reportLabel(result.privacy_report.channel)}</p>
               </div>

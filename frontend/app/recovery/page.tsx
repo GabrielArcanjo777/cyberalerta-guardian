@@ -42,7 +42,7 @@ export default function Recovery(){
   }
 
   return (
-    <PageShell maxWidth="6xl">
+    <PageShell maxWidth="6xl" className="guardian-light-page">
       <PageHeader
         eyebrow="Após o incidente"
         title="Recovery — orientação organizada"
@@ -67,9 +67,9 @@ export default function Recovery(){
       <PrivacyConsentChecklist compact />
 
       <Card className="overflow-hidden p-0">
-        <div className="border-b border-white/10 px-5 py-4 sm:px-6">
+        <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
           <div className="app-label">Checklist de ocorrência (demo)</div>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-white">O que aconteceu?</h2>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-800">O que aconteceu?</h2>
         </div>
 
         <div className="space-y-5 p-5 sm:p-6">
@@ -79,8 +79,8 @@ export default function Recovery(){
                 key={option.key}
                 className={`cursor-pointer rounded-md border p-4 transition ${
                   state[option.key]
-                    ? 'border-cyan-400/40 bg-cyan-950/30'
-                    : 'border-white/10 bg-slate-950/30 hover:border-white/20'
+                    ? 'border-teal-300 bg-teal-50'
+                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -91,8 +91,8 @@ export default function Recovery(){
                     className="mt-1 h-5 w-5 cursor-pointer"
                   />
                   <div>
-                    <div className="text-sm font-semibold text-white">{option.label}</div>
-                    <p className="mt-1 text-sm leading-5 text-slate-400">{option.description}</p>
+                    <div className="text-sm font-semibold text-slate-800">{option.label}</div>
+                    <p className="mt-1 text-sm leading-5 text-slate-500">{option.description}</p>
                   </div>
                 </div>
               </label>
@@ -105,8 +105,8 @@ export default function Recovery(){
         </div>
       </Card>
 
-      <Card className="border-amber-400/20 bg-amber-950/15">
-        <div className="app-label text-amber-200/90">Limites do MVP</div>
+      <Card className="border-amber-200 bg-amber-50">
+        <div className="app-label text-amber-700">Limites do MVP</div>
         <p className="app-body-text mt-2 text-sm">
           Esta tela não registra denúncia automática nem bloqueia contas. Em caso real, preserve evidências e procure o
           banco, a polícia (ex.: DEIC) ou suporte oficial. Não compartilhe senhas, códigos ou documentos neste formulário.

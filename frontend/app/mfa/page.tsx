@@ -5,7 +5,6 @@ import Image from 'next/image'
 import {useRouter} from 'next/navigation'
 import React, {FormEvent, useState} from 'react'
 import Button from '@/components/Button'
-import Header from '@/components/Header'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import {postMfaEnable, postMfaSetup, postMfaVerify, postMfaRegenerateRecoveryCodes} from '@/lib/api'
 import {MFASetupResponse, RecoveryCodesResponse} from '@/lib/types'
@@ -83,141 +82,153 @@ export default function MFAPage(){
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <Header />
-      <section className="mx-auto w-full max-w-5xl px-4 py-10">
-        <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-200">MFA/TOTP</p>
-          <h1 className="mt-3 text-3xl font-black text-white sm:text-4xl">Autenticacao em dois fatores</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+    <div className="guardian-mfa-page">
+      <div className="guardian-mfa-grid" aria-hidden="true" />
+      <div className="guardian-mfa-glow guardian-mfa-glow-a" aria-hidden="true" />
+      <div className="guardian-mfa-glow guardian-mfa-glow-b" aria-hidden="true" />
+
+      <section className="guardian-mfa-shell">
+        <div className="guardian-mfa-header">
+        <div className="guardian-mfa-brand">
+            <span className="guardian-mfa-brand-mark">
+              <span className="guardian-mfa-brand-dot" />
+            </span>
+            <span className="guardian-mfa-brand-name">CYBERALERTA GUARDIAN</span>
+          </div>
+          <span className="guardian-mfa-eyebrow">
+            <span className="guardian-mfa-eyebrow-dot" />
+            MFA / TOTP
+          </span>
+          <h1 className="guardian-mfa-title">Verificacao adicional para acesso privilegiado</h1>
+          <p className="guardian-mfa-subtitle">
             Configure um autenticador TOTP para proteger acessos administrativos. O app nao registra codigos MFA em log.
           </p>
         </div>
 
         {recoveryCodes && (
-          <div className="mb-8 rounded-md border border-amber-300/30 bg-amber-300/[0.08] p-5">
-            <h2 className="text-lg font-black text-amber-100">Codigos de Recuperacao</h2>
-            <p className="mt-2 text-sm text-amber-200/80">
+          <div className="guardian-mfa-recovery">
+            <h2 className="guardian-mfa-recovery-title">Codigos de Recuperacao</h2>
+            <p className="guardian-mfa-recovery-subtitle">
               Salve estes codigos em um local seguro. Eles so aparecem uma vez e podem ser usados para acessar sua conta se perder o autenticador.
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="guardian-mfa-recovery-grid">
               {recoveryCodes.map((code, i) => (
-                <div key={i} className="rounded-md border border-amber-300/20 bg-slate-950/70 px-3 py-2 font-mono text-center text-sm text-amber-100">
+                <div key={i} className="guardian-mfa-recovery-code">
                   {code}
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="guardian-mfa-recovery-actions">
               <Button type="button" variant="ghost" onClick={()=>{
                 navigator.clipboard.writeText(recoveryCodes.join('\n'))
                 setCodesSaved(true)
               }}>
                 {codesSaved ? 'Copiado!' : 'Copiar codigos'}
               </Button>
-              <span className="flex items-center text-xs text-amber-200/60">
+              <span className="guardian-mfa-recovery-hint">
                 {codesSaved ? 'Codigos copiados. Guarde em local seguro.' : 'Guarde antes de sair desta pagina.'}
               </span>
             </div>
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="guardian-mfa-grid-panels">
           <ProtectedRoute>
             {(user)=>(
-              <div className="rounded-md border border-white/10 bg-slate-900/70 p-5">
-                <div className="flex items-start justify-between gap-4">
+              <div className="guardian-mfa-panel">
+                <div className="guardian-mfa-panel-header">
                   <div>
-                    <h2 className="text-lg font-black text-white">Configurar MFA</h2>
-                    <p className="mt-1 text-sm text-slate-300">{user.email}</p>
+                    <h2 className="guardian-mfa-panel-title">Configurar MFA</h2>
+                    <p className="guardian-mfa-panel-email">{user.email}</p>
                   </div>
-                  <span className={`rounded-md border px-2.5 py-1 text-xs font-bold ${user.mfa_enabled ? 'border-teal-300/30 bg-teal-300/[0.12] text-teal-100' : 'border-amber-300/30 bg-amber-300/[0.12] text-amber-100'}`}>
+                  <span className={`guardian-mfa-badge ${user.mfa_enabled ? 'is-active' : 'is-inactive'}`}>
                     {user.mfa_enabled ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
 
                 {user.mfa_enabled && (
-                  <div className="mt-4">
+                  <div className="guardian-mfa-regen">
                     <Button type="button" variant="ghost" onClick={regenerateCodes} disabled={loading}>
                       {loading ? 'Gerando...' : 'Regenerar codigos de recuperacao'}
                     </Button>
                   </div>
                 )}
 
-                <Button type="button" className="mt-5 w-full" onClick={startSetup} disabled={loading}>
+                <Button type="button" className="guardian-mfa-button-primary" onClick={startSetup} disabled={loading}>
                   {loading ? 'Preparando...' : 'Gerar chave MFA'}
                 </Button>
 
                 {setup && (
-                  <form className="mt-5 space-y-4" onSubmit={enableMfa}>
-                    <div className="grid gap-4 sm:grid-cols-[160px_1fr] sm:items-start">
+                  <form className="guardian-mfa-form" onSubmit={enableMfa}>
+                    <div className="guardian-mfa-qr-block">
                       <Image
                         src={`data:image/svg+xml;base64,${setup.qr_code_base64}`}
                         alt="QR Code MFA"
                         width={160}
                         height={160}
                         unoptimized
-                        className="h-40 w-40 rounded-md border border-white/10 bg-white p-2"
+                        className="guardian-mfa-qr"
                       />
-                      <div className="rounded-md border border-white/10 bg-slate-950 p-3">
-                        <p className="text-xs font-bold uppercase text-slate-400">Chave manual</p>
-                        <p className="mt-2 break-all font-mono text-sm text-teal-100">{setup.manual_secret}</p>
+                      <div className="guardian-mfa-manual">
+                        <p className="guardian-mfa-manual-label">Chave manual</p>
+                        <p className="guardian-mfa-manual-key">{setup.manual_secret}</p>
                       </div>
                     </div>
-                    <label className="block text-sm font-semibold text-slate-200">
+                    <label className="guardian-mfa-label">
                       Codigo de 6 digitos
                       <input
                         inputMode="numeric"
                         value={enableCode}
                         onChange={event=>setEnableCode(event.target.value)}
-                        className="mt-2 h-11 w-full rounded-md border border-white/10 bg-slate-950 px-3 text-sm text-white outline-none focus:border-teal-300/60"
+                        className="guardian-mfa-input"
                         required
                       />
                     </label>
-                    <Button type="submit" className="w-full" disabled={loading}>Habilitar MFA</Button>
+                    <Button type="submit" className="guardian-mfa-button-primary" disabled={loading}>Habilitar MFA</Button>
                   </form>
                 )}
               </div>
             )}
           </ProtectedRoute>
 
-          <div className="rounded-md border border-white/10 bg-slate-900/70 p-5">
-            <h2 className="text-lg font-black text-white">Verificar login pendente</h2>
-            <p className="mt-1 text-sm text-slate-300">
+          <div className="guardian-mfa-panel">
+            <h2 className="guardian-mfa-panel-title">Verificar login pendente</h2>
+            <p className="guardian-mfa-panel-subtitle">
               Use esta opcao se voce recebeu um token temporario no fluxo de login MFA. Aceita codigo TOTP ou codigo de recuperacao.
             </p>
-            <form className="mt-5 space-y-4" onSubmit={verifyMfa}>
-              <label className="block text-sm font-semibold text-slate-200">
-                Temporary token
+            <form className="guardian-mfa-form" onSubmit={verifyMfa}>
+              <label className="guardian-mfa-label">
+                Token temporario
                 <input
                   value={temporaryToken}
                   onChange={event=>setTemporaryToken(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-md border border-white/10 bg-slate-950 px-3 text-sm text-white outline-none focus:border-teal-300/60"
+                  className="guardian-mfa-input"
                   required
                 />
               </label>
-              <label className="block text-sm font-semibold text-slate-200">
+              <label className="guardian-mfa-label">
                 Codigo MFA ou Recuperacao
                 <input
                   inputMode="text"
                   value={verifyCode}
                   onChange={event=>setVerifyCode(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-md border border-white/10 bg-slate-950 px-3 text-sm text-white outline-none focus:border-teal-300/60"
+                  className="guardian-mfa-input"
                   placeholder="123456 ou XXXX-XXXX"
                   required
                 />
               </label>
-              <Button type="submit" className="w-full" disabled={loading}>Verificar</Button>
+              <Button type="submit" className="guardian-mfa-button-primary" disabled={loading}>Verificar</Button>
             </form>
           </div>
         </div>
 
-        {message && <p className="mt-5 rounded-md border border-teal-300/20 bg-teal-300/[0.08] p-4 text-sm text-teal-100">{message}</p>}
-        {error && <p className="mt-5 rounded-md border border-red-300/20 bg-red-400/[0.08] p-4 text-sm text-red-100">{error}</p>}
+        {message && <div className="guardian-mfa-message guardian-mfa-message-ok">{message}</div>}
+        {error && <div className="guardian-mfa-message guardian-mfa-message-error">{error}</div>}
 
-        <Link href="/admin" className="mt-6 inline-flex text-sm font-bold text-teal-200 hover:text-teal-100">
-          Voltar para admin
-        </Link>
+        <div className="guardian-mfa-footer-link">
+          <Link href="/admin" className="guardian-mfa-link">Voltar para admin</Link>
+        </div>
       </section>
-    </main>
+    </div>
   )
 }

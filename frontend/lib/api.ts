@@ -6,10 +6,12 @@ import {
   AdminCaseStatus,
   LoginPayload,
   LoginResponse,
+  GoogleAuthStatusResponse,
   MFASetupResponse,
   MFAStatusResponse,
   MeResponse,
   RecoveryCodesResponse,
+  RegisterPayload,
   AnalyzePayload,
   GuardianConsoleStatusResponse,
   GuardianConsoleRealCaseDetail,
@@ -40,6 +42,7 @@ import {
   AssistedProofStepUpdatePayload,
   ProofTrustStepItem,
   AnalyzeResponse,
+  EvolutionConnectionState,
 } from './types'
 import { createMockOCRPreview, createMockURLCheck, mockConnectorStatuses } from './connectorMockData'
 import {
@@ -82,6 +85,20 @@ export async function postLogin(payload:LoginPayload){
     body: JSON.stringify(payload),
   })
   return await res.json() as LoginResponse
+}
+
+export async function postRegister(payload:RegisterPayload){
+  const res = await authFetch('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  return await res.json() as LoginResponse
+}
+
+export async function getGoogleAuthStatus(){
+  const res = await fetch(`${API}/auth/google/status`, {credentials: 'include'})
+  if(!res.ok) throw new Error('google-auth-status-error')
+  return await res.json() as GoogleAuthStatusResponse
 }
 
 export async function postLogout(){
@@ -829,6 +846,21 @@ export async function postAssistedProofSessionStep(
   }catch{
     return mockUpdateProofStep(sessionId, payload)
   }
+}
+
+export async function getEvolutionStatus(autoReconnect = false){
+  const res = await authFetch(`/api/channels/evolution/status${autoReconnect ? '?auto_reconnect=true' : ''}`)
+  return await res.json() as EvolutionConnectionState
+}
+
+export async function getEvolutionQr(){
+  const res = await authFetch('/api/channels/evolution/qr')
+  return await res.json() as EvolutionConnectionState
+}
+
+export async function postEvolutionReconnect(){
+  const res = await authFetch('/api/channels/evolution/reconnect', { method: 'POST' })
+  return await res.json() as EvolutionConnectionState
 }
 
 export async function postOCRPreview(source:string, content:string){

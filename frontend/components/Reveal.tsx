@@ -1,7 +1,7 @@
 "use client"
 
 import {motion, type HTMLMotionProps, type Variants} from 'framer-motion'
-import type {ReactNode} from 'react'
+import {type ReactNode} from 'react'
 import {usePrefersReducedMotion} from '@/components/usePrefersReducedMotion'
 
 type RevealProps = Omit<HTMLMotionProps<'div'>, 'initial' | 'whileInView' | 'viewport' | 'transition' | 'variants'> & {
@@ -34,8 +34,8 @@ const cV:Variants = {
 }
 
 const iV:Variants = {
-  hidden:{opacity:0, y:28, scale:0.988},
-  show:{opacity:1, y:0, scale:1, transition:{duration:0.64, ease}},
+  hidden:{opacity:0, y:22, scale:0.992},
+  show:{opacity:1, y:0, scale:1, transition:{duration:0.68, ease}},
 }
 
 const visibleV:Variants = {
@@ -45,16 +45,17 @@ const visibleV:Variants = {
 
 export function Reveal({children, delay = 0, amount = 0.18, className, ...props}:RevealProps){
   const shouldReduceMotion = usePrefersReducedMotion()
+  const shouldAnimate = !shouldReduceMotion
 
   return (
     <motion.div
       {...props}
       className={className}
-      initial={shouldReduceMotion ? false : {opacity:0, y:28}}
-      whileInView={shouldReduceMotion ? undefined : {opacity:1, y:0}}
-      animate={shouldReduceMotion ? {opacity:1, y:0} : undefined}
-      viewport={{once:true, amount}}
-      transition={{duration:0.64, ease, delay}}
+      initial={shouldAnimate ? {opacity:0, y:22} : false}
+      whileInView={shouldAnimate ? {opacity:1, y:0} : undefined}
+      animate={shouldAnimate ? undefined : {opacity:1, y:0}}
+      viewport={{once:true, amount:Math.min(amount, 0.16), margin:'0px 0px -6% 0px'}}
+      transition={{duration:0.68, ease, delay}}
     >
       {children}
     </motion.div>
@@ -71,19 +72,20 @@ export function RevealGroup({
   ...props
 }:RevealGroupProps){
   const shouldReduceMotion = usePrefersReducedMotion()
+  const shouldAnimate = !shouldReduceMotion
 
   return (
     <motion.div
       {...props}
       className={className}
-      variants={shouldReduceMotion ? visibleV : {
+      variants={shouldAnimate ? {
         ...cV,
         show:{transition:{delayChildren, staggerChildren}},
-      }}
-      initial={shouldReduceMotion ? false : 'hidden'}
-      whileInView={shouldReduceMotion ? undefined : 'show'}
-      animate={shouldReduceMotion ? 'show' : undefined}
-      viewport={{once:true, amount, margin}}
+      } : visibleV}
+      initial={shouldAnimate ? 'hidden' : false}
+      whileInView={shouldAnimate ? 'show' : undefined}
+      animate={shouldAnimate ? undefined : 'show'}
+      viewport={{once:true, amount:Math.min(amount, 0.16), margin:margin || '0px 0px -6% 0px'}}
     >
       {children}
     </motion.div>
@@ -92,14 +94,17 @@ export function RevealGroup({
 
 export function RevealItem({children, className, ...props}:RevealItemProps){
   const shouldReduceMotion = usePrefersReducedMotion()
+  const shouldAnimate = !shouldReduceMotion
 
   return (
     <motion.div
       {...props}
       className={className}
-      variants={shouldReduceMotion ? visibleV : iV}
-      initial={shouldReduceMotion ? false : undefined}
-      animate={shouldReduceMotion ? 'show' : undefined}
+      variants={shouldAnimate ? iV : visibleV}
+      initial={shouldAnimate ? 'hidden' : false}
+      whileInView={shouldAnimate ? 'show' : undefined}
+      viewport={{once:true, amount:0.18}}
+      transition={shouldAnimate ? undefined : {duration:0.01}}
     >
       {children}
     </motion.div>
@@ -108,22 +113,21 @@ export function RevealItem({children, className, ...props}:RevealItemProps){
 
 export function MotionCard({children, className, ...props}:MotionCardProps){
   const shouldReduceMotion = usePrefersReducedMotion()
+  const shouldAnimate = !shouldReduceMotion
 
   return (
     <motion.article
       {...props}
       className={className}
-      variants={shouldReduceMotion ? visibleV : iV}
-      initial={shouldReduceMotion ? false : undefined}
-      animate={shouldReduceMotion ? 'show' : undefined}
+      variants={shouldAnimate ? iV : visibleV}
+      initial={shouldAnimate ? 'hidden' : false}
+      whileInView={shouldAnimate ? 'show' : undefined}
+      viewport={{once:true, amount:0.18}}
+      transition={shouldAnimate ? undefined : {duration:0.01}}
     >
       {children}
     </motion.article>
   )
-}
-
-export function TitleReveal(props:RevealProps){
-  return <Reveal {...props} />
 }
 
 export function TextReveal(props:RevealProps){
@@ -136,14 +140,15 @@ export function CardReveal(props:RevealProps){
 
 export function LineReveal({delay = 0, amount = 0.18, className, ...props}:Omit<RevealProps, 'children'>){
   const shouldReduceMotion = usePrefersReducedMotion()
+  const shouldAnimate = !shouldReduceMotion
 
   return (
     <motion.div
       {...props}
       className={className}
-      initial={shouldReduceMotion ? false : {opacity:0, scaleX:0}}
-      whileInView={shouldReduceMotion ? undefined : {opacity:1, scaleX:1}}
-      animate={shouldReduceMotion ? {opacity:1, scaleX:1} : undefined}
+      initial={shouldAnimate ? {opacity:0, scaleX:0} : false}
+      whileInView={shouldAnimate ? {opacity:1, scaleX:1} : undefined}
+      animate={shouldAnimate ? undefined : {opacity:1, scaleX:1}}
       viewport={{once:true, amount}}
       transition={{duration:0.64, ease, delay}}
     />

@@ -2,34 +2,107 @@
 
 import Link from 'next/link'
 import {useRouter} from 'next/navigation'
-import React, {FormEvent, useState} from 'react'
+import React, {FormEvent, useEffect, useState} from 'react'
 import Button from '@/components/Button'
-import Header from '@/components/Header'
-import {getGoogleLoginUrl, postLogin, postMfaVerify} from '@/lib/api'
+import {
+  getGoogleLoginUrl,
+  postLogin,
+  postMfaVerify,
+  postRegister,
+} from '@/lib/api'
 import {LoginResponse} from '@/lib/types'
+
+type AuthMode = 'login' | 'register'
+
+function nextRouteFor(result: LoginResponse){
+  if(result.mfa_setup_required) return '/mfa'
+  return result.user?.role === 'admin' ? '/admin' : '/family-console'
+}
+
+function authErrorMessage(error: unknown, fallback: string){
+  if(error instanceof Error && error.message) return error.message
+  return fallback
+}
+
+const googleFailureMessages: Record<string, string> = {
+  config: 'Google OAuth nao esta configurado corretamente no backend.',
+  state: 'Sessao de autenticacao expirada. Tente novamente.',
+  token: 'Falha ao validar resposta do Google.',
+  user: 'Conta Google nao autorizada para este ambiente.',
+  unknown: 'Nao foi possivel concluir o login com Google. Tente novamente.',
+}
 
 export default function LoginPage(){
   const router = useRouter()
+  const [mode,setMode] = useState<AuthMode>('login')
   const [email,setEmail] = useState('')
+  const [fullName,setFullName] = useState('')
   const [password,setPassword] = useState('')
+  const [passwordConfirm,setPasswordConfirm] = useState('')
   const [mfaCode,setMfaCode] = useState('')
   const [pendingMfa,setPendingMfa] = useState<LoginResponse | null>(null)
   const [loading,setLoading] = useState(false)
   const [error,setError] = useState<string | null>(null)
+  const [notice,setNotice] = useState<string | null>(null)
+
+  useEffect(()=>{
+    const query = new URLSearchParams(window.location.search)
+    const google = query.get('google')
+    const reason = query.get('reason')
+    const auth = query.get('auth')
+    if(auth === 'google'){
+      setNotice('Login com Google concluido.')
+    }
+    if(google === 'disabled'){
+      setError('Google OAuth esta desabilitado no backend. Use login local ou configure as variaveis GOOGLE_* no .env.')
+    }
+    if(google === 'not_configured'){
+      setError('Google OAuth esta quase pronto, mas ainda falta GOOGLE_CLIENT_SECRET no .env local. O client ID ja pode ficar salvo com seguranca fora do Git.')
+    }
+    if(google === 'failed'){
+      setError(
+        reason && googleFailureMessages[reason]
+          ? googleFailureMessages[reason]
+          : 'Nao foi possivel concluir o login com Google. Verifique credenciais, redirect URI e dominio permitido.'
+      )
+    }
+    if(google === 'mfa_required'){
+      setError('Esta conta Google exige MFA local. Entre com email e senha para concluir a verificacao.')
+    }
+  },[])
 
   async function onSubmit(event:FormEvent<HTMLFormElement>){
     event.preventDefault()
     setLoading(true)
     setError(null)
+    setNotice(null)
     try{
       const result = await postLogin({email, password})
       if(result.mfa_required){
         setPendingMfa(result)
         return
       }
-      router.push(result.user?.role === 'admin' ? '/admin' : '/family-console')
-    }catch{
-      setError('Credenciais invalidas.')
+      router.push(nextRouteFor(result))
+    }catch(error){
+      setError(authErrorMessage(error, 'Credenciais invalidas.'))
+    }finally{
+      setLoading(false)
+    }
+  }
+
+  async function onRegisterSubmit(event:FormEvent<HTMLFormElement>){
+    event.preventDefault()
+    setLoading(true)
+    setError(null)
+    setNotice(null)
+    try{
+      if(password !== passwordConfirm){
+        throw new Error('As senhas nao conferem.')
+      }
+      const result = await postRegister({email, full_name: fullName, password})
+      router.push(nextRouteFor(result))
+    }catch(error){
+      setError(authErrorMessage(error, 'Nao foi possivel criar a conta.'))
     }finally{
       setLoading(false)
     }
@@ -40,81 +113,211 @@ export default function LoginPage(){
     if(!pendingMfa?.temporary_token) return
     setLoading(true)
     setError(null)
+    setNotice(null)
     try{
       const result = await postMfaVerify(pendingMfa.temporary_token, mfaCode)
-      router.push(result.user?.role === 'admin' ? '/admin' : '/family-console')
-    }catch{
-      setError('Codigo MFA invalido.')
+      router.push(nextRouteFor(result))
+    }catch(error){
+      setError(authErrorMessage(error, 'Codigo MFA invalido.'))
     }finally{
       setLoading(false)
     }
   }
 
   function startGoogleLogin(){
-    window.location.href = getGoogleLoginUrl()
+    window.location.assign(getGoogleLoginUrl())
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <Header />
-      <section className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-5xl items-center px-4 py-10">
-        <div className="grid w-full gap-6 lg:grid-cols-[1fr_0.85fr] lg:items-start">
-          <div className="space-y-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-200">Acesso seguro</p>
-            <h1 className="text-3xl font-black text-white sm:text-4xl">Entrar no CyberAlerta Guardian</h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-300">
-              Use sua conta local ou Google OAuth configurado no backend. A sessao fica em cookie HttpOnly e tokens nao sao salvos no navegador.
+    <div className="guardian-auth-page">
+      <div className="guardian-auth-grid" aria-hidden="true" />
+      <div className="guardian-auth-glow guardian-auth-glow-a" aria-hidden="true" />
+      <div className="guardian-auth-glow guardian-auth-glow-b" aria-hidden="true" />
+      <div className="guardian-auth-scanline" aria-hidden="true" />
+
+      <section className="guardian-auth-shell">
+        <div className="guardian-auth-left">
+          <div className="guardian-auth-brand">
+            <span className="guardian-auth-brand-mark">
+              <span className="guardian-auth-brand-dot" />
+            </span>
+            <span className="guardian-auth-brand-name">CYBERALERTA GUARDIAN</span>
+          </div>
+
+          <div className="guardian-auth-left-content">
+            <span className="guardian-auth-eyebrow">
+              <span className="guardian-auth-eyebrow-dot" />
+              ACESSO SEGURO
+            </span>
+            <h1 className="guardian-auth-title">
+              Entre no painel do Guardian.
+            </h1>
+            <p className="guardian-auth-subtitle">
+              Acesse para revisar alertas, decisoes de risco e trilhas de auditoria. Toda sessao e protegida em cookie HttpOnly, com MFA disponivel para contas administrativas.
             </p>
-            <div className="rounded-md border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-300">
-              Administradores precisam habilitar MFA antes de acessar APIs administrativas.
+
+            <div className="guardian-auth-trace" aria-hidden="true">
+              <div className="guardian-auth-trace-row">
+                <span className="guardian-auth-trace-label">SYS_AUTH</span>
+                <span className="guardian-auth-trace-value">ready</span>
+              </div>
+              <div className="guardian-auth-trace-row">
+                <span className="guardian-auth-trace-label">TRUST_LOCK</span>
+                <span className="guardian-auth-trace-value guardian-auth-trace-value-ok">active</span>
+              </div>
+              <div className="guardian-auth-trace-row">
+                <span className="guardian-auth-trace-label">CHANNEL</span>
+                <span className="guardian-auth-trace-value">http_cookie</span>
+              </div>
+              <div className="guardian-auth-trace-row">
+                <span className="guardian-auth-trace-label">OAUTH</span>
+                <span className="guardian-auth-trace-value">controlled</span>
+              </div>
+              <div className="guardian-auth-trace-line" />
+              <div className="guardian-auth-trace-prompt">
+                <span className="guardian-auth-trace-cursor">$</span>
+                <span className="guardian-auth-trace-cursor-blink">_</span>
+              </div>
             </div>
           </div>
 
-          <div className="rounded-md border border-white/10 bg-slate-900/70 p-5 shadow-[0_24px_72px_rgba(2,6,23,0.42)]">
-            {!pendingMfa ? (
-              <form className="space-y-4" onSubmit={onSubmit}>
-                <label className="block text-sm font-semibold text-slate-200">
+          <div className="guardian-auth-left-footer">
+            <span>Beta Tecnico Local</span>
+            <span className="guardian-auth-left-footer-dot" />
+            <span>Demo Local</span>
+          </div>
+        </div>
+
+        <div className="guardian-auth-right">
+          <div className="guardian-auth-panel">
+            <div className="guardian-auth-tabs">
+              <button
+                type="button"
+                onClick={()=>{
+                  setMode('login')
+                  setPendingMfa(null)
+                  setError(null)
+                }}
+                className={`guardian-auth-tab ${mode === 'login' && !pendingMfa ? 'is-active' : ''}`}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                onClick={()=>{
+                  setMode('register')
+                  setPendingMfa(null)
+                  setError(null)
+                }}
+                className={`guardian-auth-tab ${mode === 'register' && !pendingMfa ? 'is-active' : ''}`}
+              >
+                Criar conta
+              </button>
+            </div>
+
+            {notice && <div className="guardian-auth-notice guardian-auth-notice-ok">{notice}</div>}
+            {error && <div className="guardian-auth-notice guardian-auth-notice-error">{error}</div>}
+
+            {!pendingMfa && mode === 'login' && (
+              <form className="guardian-auth-form" onSubmit={onSubmit}>
+                <label className="guardian-auth-label">
                   Email
                   <input
                     type="email"
                     value={email}
                     onChange={event=>setEmail(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-md border border-white/10 bg-slate-950 px-3 text-sm text-white outline-none focus:border-teal-300/60"
+                    className="guardian-auth-input"
                     autoComplete="email"
                     required
                   />
                 </label>
-                <label className="block text-sm font-semibold text-slate-200">
+                <label className="guardian-auth-label">
                   Senha
                   <input
                     type="password"
                     value={password}
                     onChange={event=>setPassword(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-md border border-white/10 bg-slate-950 px-3 text-sm text-white outline-none focus:border-teal-300/60"
+                    className="guardian-auth-input"
                     autoComplete="current-password"
                     required
                   />
                 </label>
 
-                {error && <p className="rounded-md border border-red-300/20 bg-red-400/[0.08] p-3 text-sm text-red-100">{error}</p>}
-
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="guardian-auth-button-primary" disabled={loading}>
                   {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
 
                 <button
                   type="button"
                   onClick={startGoogleLogin}
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-white/12 bg-white/[0.04] px-4 text-sm font-bold text-slate-100 transition hover:border-teal-300/40 hover:bg-white/[0.07]"
+                  className="guardian-auth-button-google"
                 >
                   Entrar com Google
                 </button>
               </form>
-            ) : (
-              <form className="space-y-4" onSubmit={onMfaSubmit}>
-                <div>
-                  <p className="text-sm font-bold text-white">Verificacao MFA</p>
-                  <p className="mt-1 text-sm text-slate-300">Digite o codigo de 6 digitos do seu autenticador.</p>
+            )}
+
+            {!pendingMfa && mode === 'register' && (
+              <form className="guardian-auth-form" onSubmit={onRegisterSubmit}>
+                <label className="guardian-auth-label">
+                  Nome
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={event=>setFullName(event.target.value)}
+                    className="guardian-auth-input"
+                    autoComplete="name"
+                    required
+                  />
+                </label>
+                <label className="guardian-auth-label">
+                  Email
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={event=>setEmail(event.target.value)}
+                    className="guardian-auth-input"
+                    autoComplete="email"
+                    required
+                  />
+                </label>
+                <label className="guardian-auth-label">
+                  Senha
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={event=>setPassword(event.target.value)}
+                    className="guardian-auth-input"
+                    autoComplete="new-password"
+                    required
+                  />
+                </label>
+                <label className="guardian-auth-label">
+                  Confirmar senha
+                  <input
+                    type="password"
+                    value={passwordConfirm}
+                    onChange={event=>setPasswordConfirm(event.target.value)}
+                    className="guardian-auth-input"
+                    autoComplete="new-password"
+                    required
+                  />
+                </label>
+
+                <Button type="submit" className="guardian-auth-button-primary" disabled={loading}>
+                  {loading ? 'Criando conta...' : 'Criar conta segura'}
+                </Button>
+                <p className="guardian-auth-hint">
+                  Cadastros pela interface entram como viewer. Perfis admin devem ser criados por fluxo administrativo.
+                </p>
+              </form>
+            )}
+
+            {pendingMfa && (
+              <form className="guardian-auth-form" onSubmit={onMfaSubmit}>
+                <div className="guardian-auth-mfa-header">
+                  <p className="guardian-auth-mfa-title">Verificacao MFA</p>
+                  <p className="guardian-auth-mfa-subtitle">Digite o codigo de 6 digitos do seu autenticador.</p>
                 </div>
                 <input
                   inputMode="numeric"
@@ -122,26 +325,33 @@ export default function LoginPage(){
                   maxLength={6}
                   value={mfaCode}
                   onChange={event=>setMfaCode(event.target.value)}
-                  className="h-12 w-full rounded-md border border-white/10 bg-slate-950 px-3 text-center text-lg font-black tracking-[0.25em] text-white outline-none focus:border-teal-300/60"
+                  className="guardian-auth-input guardian-auth-input-mfa"
                   autoComplete="one-time-code"
                   required
                 />
-                {error && <p className="rounded-md border border-red-300/20 bg-red-400/[0.08] p-3 text-sm text-red-100">{error}</p>}
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="guardian-auth-button-primary" disabled={loading}>
                   {loading ? 'Verificando...' : 'Verificar'}
                 </Button>
-                <button type="button" className="text-sm font-bold text-slate-300 hover:text-white" onClick={()=>setPendingMfa(null)}>
+                <button type="button" className="guardian-auth-back" onClick={()=>setPendingMfa(null)}>
                   Voltar para login
                 </button>
               </form>
             )}
 
-            <div className="mt-5 border-t border-white/10 pt-4 text-xs text-slate-400">
-              Precisa configurar MFA? <Link href="/mfa" className="font-bold text-teal-200">Abrir configuracao</Link>
+            <div className="guardian-auth-panel-footer">
+              <span>Sessao protegida por cookie HttpOnly</span>
+              <span className="guardian-auth-sep">·</span>
+              <span>Google OAuth controlado</span>
+              <span className="guardian-auth-sep">·</span>
+              <span>MFA para contas administrativas</span>
+            </div>
+
+            <div className="guardian-auth-panel-link">
+              Precisa configurar MFA? <Link href="/mfa" className="guardian-auth-link">Abrir configuracao</Link>
             </div>
           </div>
         </div>
       </section>
-    </main>
+    </div>
   )
 }

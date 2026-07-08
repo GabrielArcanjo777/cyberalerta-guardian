@@ -164,7 +164,7 @@ export default function GlobalApplicabilityPage(){
             ))}
           </div>
 
-          <div className="mt-6 border-t border-white/10 pt-5">
+          <div className="mt-6 border-t border-slate-200 pt-5">
             <div className="app-label">Outros padrões</div>
             <div className="mt-3 grid gap-2">
               {otherScenarios.map((scenario)=> (

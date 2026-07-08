@@ -14,7 +14,7 @@ const revealViewport = {once:true, amount:0.28}
 function revealVariants(shouldReduceMotion:boolean, y = 26, scale = 1):Variants{
   return {
     hidden: {
-      opacity: 1,
+      opacity: shouldReduceMotion ? 1 : 0,
       y: shouldReduceMotion ? 0 : y,
       scale: shouldReduceMotion ? 1 : scale,
     },
