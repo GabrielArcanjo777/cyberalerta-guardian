@@ -1,0 +1,3 @@
+# Dependências de desenvolvimento/teste (inclui as de runtime).
+-r requirements.txt
+pytest==8.4.2
