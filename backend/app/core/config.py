@@ -11,10 +11,16 @@ def _ensure_env_loaded() -> None:
     global _env_loaded
     if _env_loaded:
         return
+    # Tests (and any deterministic environment) can opt out of reading the local
+    # .env so behavior does not depend on a developer's machine.
+    if os.getenv("CYBERALERTA_DISABLE_DOTENV", "").strip().lower() in ("1", "true", "yes", "on"):
+        _env_loaded = True
+        return
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     env_path = os.path.join(project_root, ".env")
     if os.path.exists(env_path):
-        load_dotenv(env_path)
+        app_env = os.getenv("APP_ENV", "development").strip().lower()
+        load_dotenv(env_path, override=app_env in ("dev", "development", "local", "test"))
     _env_loaded = True
 
 
@@ -57,6 +63,7 @@ class AppConfig:
         self.api_key_header = os.getenv("API_KEY_HEADER", "X-CyberAlerta-API-Key")
         self.cyberalerta_api_key = os.getenv("CYBERALERTA_API_KEY", "")
         self.allowed_origins = self._safe_allowed_origins(_split_csv(os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")))
+        self.frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000").strip().rstrip("/")
         self.n8n_allowed_origins = self._safe_allowed_origins(_split_csv(os.getenv("N8N_ALLOWED_ORIGINS", "http://localhost:5678")))
         self.n8n_webhook_secret = os.getenv("N8N_WEBHOOK_SECRET", "")
         self.n8n_webhook_header = os.getenv("N8N_WEBHOOK_HEADER", "X-N8N-CyberAlerta-Secret")
@@ -67,24 +74,24 @@ class AppConfig:
         self.rate_limit_enabled = _env_bool("RATE_LIMIT_ENABLED", False)
         self.rate_limit_per_minute = max(1, _env_int("RATE_LIMIT_PER_MINUTE", 60))
         self.evolution_webhook_secret = os.getenv("EVOLUTION_WEBHOOK_SECRET", "")
-        self.channel_provider = os.getenv("CHANNEL_PROVIDER", "twilio_sandbox")
+        self.channel_provider = os.getenv("CHANNEL_PROVIDER", "evolution")
         self.dual_bot_channel_provider = os.getenv("DUAL_BOT_CHANNEL_PROVIDER", "mock_whatsapp")
-        self.twilio_account_sid = os.getenv("TWILIO_ACCOUNT_SID", "")
-        self.twilio_auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
-        self.twilio_whatsapp_from = os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+1XXXXXXXXXX")
-        self.twilio_webhook_secret = os.getenv("TWILIO_WEBHOOK_SECRET", "")
-        self.twilio_validate_signature = _env_bool("TWILIO_VALIDATE_SIGNATURE", False)
-        self.twilio_guardian_to = os.getenv("TWILIO_GUARDIAN_TO", "")
-        self.use_llm = _env_bool("USE_LLM", False)
-        self.llm_provider = os.getenv("LLM_PROVIDER", "mock")
         self.beta_real_send_enabled = _env_bool("BETA_REAL_SEND_ENABLED", False)
         self.beta_allowed_recipients = _split_csv(os.getenv("BETA_ALLOWED_RECIPIENTS", ""))
         self.beta_require_allowed_recipient = _env_bool("BETA_REQUIRE_ALLOWED_RECIPIENT", True)
-        self.auth_secret_key = os.getenv("AUTH_SECRET_KEY") or secrets.token_urlsafe(32)
+        _auth_secret_key = os.getenv("AUTH_SECRET_KEY")
+        if not _auth_secret_key:
+            if self.is_production:
+                raise RuntimeError(
+                    "AUTH_SECRET_KEY must be set in production. Refusing to auto-generate a "
+                    "per-process key (it would invalidate sessions across workers/restarts)."
+                )
+            _auth_secret_key = secrets.token_urlsafe(32)
+        self.auth_secret_key = _auth_secret_key
         self.auth_access_token_expire_minutes = _env_int("AUTH_ACCESS_TOKEN_EXPIRE_MINUTES", 15)
         self.auth_refresh_token_expire_days = _env_int("AUTH_REFRESH_TOKEN_EXPIRE_DAYS", 7)
         self.auth_cookie_name = os.getenv("AUTH_COOKIE_NAME", "cyberalerta_session")
-        self.auth_cookie_secure = _env_bool("AUTH_COOKIE_SECURE", False)
+        self.auth_cookie_secure = _env_bool("AUTH_COOKIE_SECURE", self.is_production)
         self.auth_cookie_samesite = os.getenv("AUTH_COOKIE_SAMESITE", "lax").strip().lower()
         self.auth_rate_limit_enabled = _env_bool("AUTH_RATE_LIMIT_ENABLED", True)
         self.auth_require_sensitive_routes = _env_bool("AUTH_REQUIRE_SENSITIVE_ROUTES", False if self.is_development else True)

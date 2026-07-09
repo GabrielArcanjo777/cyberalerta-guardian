@@ -1,3 +1,6 @@
+from urllib.parse import parse_qs, urlparse
+
+from fastapi import status
 from fastapi.testclient import TestClient
 
 import pytest
@@ -5,7 +8,7 @@ import pytest
 from app.auth.crypto import current_totp_code, generate_totp_secret
 from app.auth.models import AuthEventType, UserRole
 from app.auth.repository import get_auth_repository, reset_auth_repository_for_tests
-from app.auth.service import AuthService, auth_rate_limiter
+from app.auth.service import AuthService, GoogleOAuthFlowError, auth_rate_limiter
 from app.core.config import config
 from main import app
 
@@ -20,6 +23,9 @@ def _reset_auth_state():
         "cyberalerta_api_key": config.cyberalerta_api_key,
         "auth_require_sensitive_routes": config.auth_require_sensitive_routes,
         "google_oauth_enabled": config.google_oauth_enabled,
+        "google_client_id": config.google_client_id,
+        "google_client_secret": config.google_client_secret,
+        "frontend_base_url": config.frontend_base_url,
         "google_auto_create_users": config.google_auto_create_users,
         "google_auth_allowed_emails": list(config.google_auth_allowed_emails),
         "google_auth_allowed_domains": list(config.google_auth_allowed_domains),
@@ -31,6 +37,9 @@ def _reset_auth_state():
     config.api_key_enabled = False
     config.auth_require_sensitive_routes = False
     config.google_oauth_enabled = False
+    config.google_client_id = ""
+    config.google_client_secret = ""
+    config.frontend_base_url = "http://localhost:3000"
     config.google_auto_create_users = False
     config.google_auth_allowed_emails = []
     config.google_auth_allowed_domains = []
@@ -79,6 +88,46 @@ def test_login_with_correct_password_sets_http_only_cookie():
     assert config.auth_cookie_name in response.headers["set-cookie"]
     assert "HttpOnly" in response.headers["set-cookie"]
     assert "SameSite=lax" in response.headers["set-cookie"]
+
+
+def test_register_creates_viewer_user_and_sets_http_only_cookie():
+    client = TestClient(app)
+
+    response = client.post(
+        "/auth/register",
+        json={
+            "email": "new@example.com",
+            "full_name": "New Viewer",
+            "password": PASSWORD,
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["authenticated"] is True
+    assert body["user"]["email"] == "new@example.com"
+    assert body["user"]["role"] == "viewer"
+    assert body["user"]["is_admin"] is False
+    assert config.auth_cookie_name in response.headers["set-cookie"]
+    assert "HttpOnly" in response.headers["set-cookie"]
+
+
+def test_register_rejects_duplicate_email_without_returning_password():
+    _create_user("viewer@example.com")
+    client = TestClient(app)
+
+    response = client.post(
+        "/auth/register",
+        json={
+            "email": "viewer@example.com",
+            "full_name": "Viewer Again",
+            "password": PASSWORD,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Account already exists"
+    assert PASSWORD not in response.text
 
 
 def test_login_with_wrong_password_uses_generic_error():
@@ -236,6 +285,152 @@ def test_google_login_is_blocked_when_disabled():
     response = client.get("/auth/google/login", follow_redirects=False)
 
     assert response.status_code == 403
+
+
+def test_google_login_is_blocked_when_enabled_without_credentials():
+    config.google_oauth_enabled = True
+    config.google_client_id = ""
+    config.google_client_secret = ""
+    client = TestClient(app)
+
+    response = client.get("/auth/google/login", follow_redirects=False)
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Google OAuth not configured"
+
+
+def test_google_status_reports_disabled_by_default():
+    client = TestClient(app)
+
+    response = client.get("/auth/google/status")
+
+    assert response.status_code == 200
+    assert response.json()["enabled"] is False
+    assert response.json()["configured"] is False
+
+
+def test_google_callback_redirects_to_frontend_with_session_cookie(monkeypatch):
+    import app.auth.service as auth_service_module
+
+    config.google_oauth_enabled = True
+    config.google_client_id = "google-client-id"
+    config.google_client_secret = "google-client-secret"
+    config.google_auto_create_users = True
+    config.google_auth_allowed_domains = ["example.com"]
+    config.frontend_base_url = "http://localhost:3000"
+
+    monkeypatch.setattr(AuthService, "_exchange_google_code_for_id_token", lambda self, code: "id-token")
+    monkeypatch.setattr(
+        auth_service_module,
+        "verify_google_id_token",
+        lambda id_token, expected_nonce=None: {
+            "sub": "google-user-1",
+            "email": "new@example.com",
+            "name": "New User",
+            "email_verified": True,
+        },
+    )
+
+    client = TestClient(app)
+    start = client.get("/auth/google/login", headers={"accept": "text/html"}, follow_redirects=False)
+    assert start.status_code == 302
+    state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+
+    callback = client.get(
+        f"/auth/google/callback?code=test-code&state={state}",
+        headers={"accept": "text/html"},
+        follow_redirects=False,
+    )
+
+    assert callback.status_code == 303
+    assert callback.headers["location"] == "http://localhost:3000/family-console?auth=google"
+    assert config.auth_cookie_name in callback.headers["set-cookie"]
+    assert "HttpOnly" in callback.headers["set-cookie"]
+
+
+def test_google_callback_redirects_with_state_reason_when_cookie_is_missing():
+    config.google_oauth_enabled = True
+    config.google_client_id = "google-client-id"
+    config.google_client_secret = "google-client-secret"
+    client = TestClient(app)
+
+    callback = client.get(
+        "/auth/google/callback?code=test-code&state=bad-state",
+        headers={"accept": "text/html"},
+        follow_redirects=False,
+    )
+
+    assert callback.status_code == 303
+    location = callback.headers["location"]
+    assert location.startswith("http://localhost:3000/login?google=failed")
+    assert "reason=state" in location
+
+
+def test_google_callback_redirects_with_token_reason_when_exchange_fails(monkeypatch):
+    config.google_oauth_enabled = True
+    config.google_client_id = "google-client-id"
+    config.google_client_secret = "google-client-secret"
+    client = TestClient(app)
+
+    def fail_exchange(self, code):
+        raise GoogleOAuthFlowError(
+            "token",
+            status.HTTP_401_UNAUTHORIZED,
+            "Google token exchange failed",
+            stage="exchange",
+            provider_error="invalid_client",
+        )
+
+    monkeypatch.setattr(AuthService, "_exchange_google_code_for_id_token", fail_exchange)
+
+    start = client.get("/auth/google/login", headers={"accept": "text/html"}, follow_redirects=False)
+    state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+    callback = client.get(
+        f"/auth/google/callback?code=test-code&state={state}",
+        headers={"accept": "text/html"},
+        follow_redirects=False,
+    )
+
+    assert callback.status_code == 303
+    location = callback.headers["location"]
+    assert location.startswith("http://localhost:3000/login?google=failed")
+    assert "reason=token" in location
+    assert "stage=exchange" in location
+
+
+def test_google_callback_redirects_with_user_reason_when_account_is_not_allowed(monkeypatch):
+    import app.auth.service as auth_service_module
+
+    config.google_oauth_enabled = True
+    config.google_client_id = "google-client-id"
+    config.google_client_secret = "google-client-secret"
+    config.google_auto_create_users = False
+    client = TestClient(app)
+
+    monkeypatch.setattr(AuthService, "_exchange_google_code_for_id_token", lambda self, code: "id-token")
+    monkeypatch.setattr(
+        auth_service_module,
+        "verify_google_id_token",
+        lambda id_token, expected_nonce=None: {
+            "sub": "google-user-1",
+            "email": "new@example.com",
+            "name": "New User",
+            "email_verified": True,
+        },
+    )
+
+    start = client.get("/auth/google/login", headers={"accept": "text/html"}, follow_redirects=False)
+    state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+    callback = client.get(
+        f"/auth/google/callback?code=test-code&state={state}",
+        headers={"accept": "text/html"},
+        follow_redirects=False,
+    )
+
+    assert callback.status_code == 303
+    location = callback.headers["location"]
+    assert location.startswith("http://localhost:3000/login?google=failed")
+    assert "reason=user" in location
 
 
 def test_google_auto_create_is_blocked_by_default():

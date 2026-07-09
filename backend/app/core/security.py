@@ -141,12 +141,13 @@ rate_limiter = InMemoryRateLimiter()
 
 
 def _client_identifier(request: Request) -> str:
+    direct = request.client.host if request.client and request.client.host else None
     forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
+    # Only trust X-Forwarded-For when the direct peer is a configured trusted
+    # proxy; otherwise any client could spoof the header to dodge rate limits.
+    if forwarded_for and direct and direct in config.trusted_webhook_ips:
         return forwarded_for.split(",", 1)[0].strip()
-    if request.client and request.client.host:
-        return request.client.host
-    return "unknown"
+    return direct or "unknown"
 
 
 def check_rate_limit(request: Request, *, bucket: str) -> None:

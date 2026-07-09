@@ -30,7 +30,7 @@ Which pages work:
 - `/before-pix` Before action analyzer (calls POST /analyze or uses mock)
 - `/simulator` Scenario simulator (navigates to analyzer)
 - `/recovery` Recovery Mode (calls POST /recovery or uses mock)
-- `/report` Report placeholder
+- `/whatsapp-setup` Pareamento do WhatsApp (Evolution) via QR
 
 Notes and pendências:
 - You must run `npm install` to install Next/Tailwind. This repo adds the scaffolding but does not install dependencies.

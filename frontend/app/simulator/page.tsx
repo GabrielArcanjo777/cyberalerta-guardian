@@ -23,10 +23,10 @@ const channels = [allLabel, ...Array.from(new Set(globalScenarios.map((scenario)
 const actionTypes = Array.from(new Set(globalScenarios.map((scenario)=>scenario.action_type)))
 
 function riskClass(risk:string){
-  if(risk === 'critical') return 'border-red-400/50 bg-red-500/12 text-red-100'
-  if(risk === 'high') return 'border-amber-300/40 bg-amber-400/10 text-amber-100'
-  if(risk === 'medium') return 'border-cyan-300/35 bg-cyan-400/10 text-cyan-100'
-  return 'border-slate-300/30 bg-slate-400/10 text-slate-100'
+  if(risk === 'critical') return 'border-red-200 bg-red-50 text-red-800'
+  if(risk === 'high') return 'border-amber-200 bg-amber-50 text-amber-800'
+  if(risk === 'medium') return 'border-cyan-200 bg-cyan-50 text-cyan-800'
+  return 'border-slate-200 bg-slate-50 text-slate-700'
 }
 
 function riskLabel(risk:string){
@@ -77,30 +77,30 @@ function ScenarioCard({scenario,featured=false}:{scenario:GlobalScenario,feature
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="guardian-panel-eyebrow">{scenario.region} / {scenario.channel}</div>
-          <h3 className="mt-2 text-xl font-semibold leading-7 text-white">{scenario.title}</h3>
+          <h3 className="mt-2 text-xl font-semibold leading-7 text-slate-800">{scenario.title}</h3>
         </div>
         <span className={`rounded border px-3 py-1 text-xs font-bold uppercase tracking-wide ${riskClass(scenario.expected_risk_level)}`}>
           {riskLabel(scenario.expected_risk_level)}
         </span>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-3 gap-3">
         <div className="guardian-console-mini-card">
           <div className="text-xs font-semibold uppercase text-slate-500">Canal</div>
-          <div className="mt-2 text-sm font-semibold text-white">{scenario.channel}</div>
+          <div className="mt-2 text-sm font-semibold text-slate-700">{scenario.channel}</div>
         </div>
         <div className="guardian-console-mini-card">
           <div className="text-xs font-semibold uppercase text-slate-500">Ação perigosa</div>
-          <div className="mt-2 text-sm font-semibold text-white">{actionLabel(scenario.action_type)}</div>
+          <div className="mt-2 text-sm font-semibold text-slate-700">{actionLabel(scenario.action_type)}</div>
         </div>
         <div className="guardian-console-mini-card">
           <div className="text-xs font-semibold uppercase text-slate-500">Padrão esperado</div>
-          <div className="mt-2 text-sm font-semibold text-white">{scenario.expected_scam_type}</div>
+          <div className="mt-2 text-sm font-semibold text-slate-700">{scenario.expected_scam_type}</div>
         </div>
       </div>
 
-      <div className="mt-5 border-l border-cyan-300/30 bg-slate-950/40 p-4">
-        <p className="text-sm font-semibold leading-6 text-slate-200">{scenarioBrief(scenario)}</p>
+      <div className="mt-5 border-l border-teal-300 bg-teal-50 p-4">
+        <p className="text-sm font-semibold leading-6 text-slate-700">{scenarioBrief(scenario)}</p>
         <p className="mt-3 text-sm leading-6 text-slate-400">{scenario.global_relevance}</p>
       </div>
 
@@ -135,7 +135,7 @@ export default function Simulator(){
   const riskDominant = dominantRisk(scenarios.length ? scenarios : globalScenarios)
 
   return (
-    <PageShell maxWidth="7xl">
+    <PageShell maxWidth="7xl" className="guardian-light-page">
       <PageHeader
         eyebrow="Simulação defensiva"
         title="Laboratório de cenários globais"
@@ -150,7 +150,7 @@ export default function Simulator(){
                 {label:'Risco dominante', value:riskLabel(riskDominant), tone:riskDominant === 'critical' ? 'risk' : 'warn'},
               ]}
             />
-            <p className="text-sm leading-6 text-slate-300">
+            <p className="text-sm leading-6 text-slate-600">
               Simulações defensivas: nenhuma mensagem real é enviada, nenhum pagamento é executado e nenhum dado real é persistido.
             </p>
           </div>
@@ -217,7 +217,7 @@ export default function Simulator(){
               ['Risco', 'Ajuda o avaliador a enxergar quando o Trust Lock deve aparecer.'],
             ].map(([title,body])=> (
               <div key={title} className="guardian-console-mini-card">
-                <div className="text-sm font-semibold text-white">{title}</div>
+                <div className="text-sm font-semibold text-slate-700">{title}</div>
                 <p className="mt-1 text-sm leading-6 text-slate-400">{body}</p>
               </div>
             ))}
@@ -235,7 +235,7 @@ export default function Simulator(){
           {scenarioList.map((scenario)=> <ScenarioCard key={scenario.id} scenario={scenario} />)}
         </div>
         {scenarioList.length === 0 && (
-          <div className="rounded-md border border-slate-500/30 bg-slate-950/50 p-5 text-sm font-semibold text-slate-300">
+          <div className="rounded-md border border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-700">
             Nenhum outro cenário encontrado com esses filtros. Ajuste a superfície de risco para ampliar a simulação.
           </div>
         )}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 import urllib.error
 import urllib.parse
@@ -37,22 +38,88 @@ from app.auth.models import (
     utc_now,
 )
 from app.auth.repository import AuthRepository, get_auth_repository
-from app.auth.schemas import LoginRequest, LoginResponse
+from app.auth.schemas import LoginRequest, LoginResponse, RegisterRequest
 from app.core.config import config
 
 INVALID_CREDENTIALS = "Invalid credentials"
 GOOGLE_PROVIDER = "google"
+logger = logging.getLogger("cyberalerta.auth.google")
+
+
+class GoogleOAuthFlowError(Exception):
+    def __init__(
+        self,
+        reason: str,
+        status_code: int,
+        detail: str = INVALID_CREDENTIALS,
+        *,
+        stage: str | None = None,
+        provider_error: str | None = None,
+    ) -> None:
+        self.reason = reason
+        self.status_code = status_code
+        self.detail = detail
+        self.stage = stage
+        self.provider_error = provider_error
+        super().__init__(reason)
+
+
+def _masked_google_client_id() -> str:
+    client_id = config.google_client_id or ""
+    if not client_id:
+        return "<missing>"
+    if len(client_id) <= 12:
+        return "<present>"
+    return f"{client_id[:6]}...{client_id[-12:]}"
+
+
+def _safe_google_log_context(stage: str, *, error_type: str | None = None, provider_error: str | None = None) -> dict[str, str]:
+    context = {
+        "stage": stage,
+        "redirect_uri": config.google_redirect_uri,
+        "client_id": _masked_google_client_id(),
+    }
+    if error_type:
+        context["error_type"] = error_type
+    if provider_error:
+        context["provider_error"] = provider_error
+    return context
+
+
+def _log_google_oauth_failure(stage: str, *, error_type: str | None = None, provider_error: str | None = None) -> None:
+    context = _safe_google_log_context(stage, error_type=error_type, provider_error=provider_error)
+    logger.warning(
+        "Google OAuth failed stage=%s error_type=%s provider_error=%s redirect_uri=%s client_id=%s",
+        context["stage"],
+        context.get("error_type", "unknown"),
+        context.get("provider_error", "unknown"),
+        context["redirect_uri"],
+        context["client_id"],
+    )
+
+
+def _google_token_error_from_response(exc: urllib.error.HTTPError) -> str:
+    try:
+        body = exc.read().decode("utf-8")
+        payload = json.loads(body)
+    except Exception:
+        return f"http_{exc.code}"
+    error = str(payload.get("error") or "").strip()
+    if error:
+        return error[:80]
+    return f"http_{exc.code}"
 
 
 def _client_ip(request: Request | None) -> str | None:
     if request is None:
         return None
+    direct = request.client.host if request.client and request.client.host else None
     forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
+    # Trust X-Forwarded-For only when the direct peer is a configured trusted
+    # proxy, so login/MFA rate-limit keys cannot be spoofed via the header.
+    if forwarded and direct and direct in config.trusted_webhook_ips:
         return forwarded.split(",", 1)[0].strip()
-    if request.client and request.client.host:
-        return request.client.host
-    return None
+    return direct
 
 
 def _user_agent(request: Request | None) -> str | None:
@@ -140,6 +207,42 @@ class AuthService:
                 mfa_setup_required=user.is_admin and not user.mfa_enabled,
                 user=PublicUser.from_user(user),
             ),
+            session_token=self.create_session_token(user),
+        )
+
+    def register(self, payload: RegisterRequest, request: Request | None = None) -> AuthResult:
+        email = normalize_email(payload.email)
+        if self.repository.get_user_by_email(email):
+            self.audit(
+                AuthEventType.USER_REGISTERED,
+                email=email,
+                success=False,
+                reason="email_already_exists",
+                request=request,
+            )
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists")
+        try:
+            user = self.create_user(
+                email=email,
+                full_name=payload.full_name,
+                password=payload.password,
+                role=UserRole.VIEWER,
+                is_admin=False,
+            )
+        except ValueError as exc:
+            self.audit(
+                AuthEventType.USER_REGISTERED,
+                email=email,
+                success=False,
+                reason="invalid_registration",
+                request=request,
+            )
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+
+        user = self.repository.update_user(user.model_copy(update={"last_login_at": utc_now()}))
+        self.audit(AuthEventType.USER_REGISTERED, user=user, email=user.email, success=True, request=request)
+        return AuthResult(
+            response=LoginResponse(authenticated=True, user=PublicUser.from_user(user)),
             session_token=self.create_session_token(user),
         )
 
@@ -297,6 +400,9 @@ class AuthService:
         if not config.google_oauth_enabled:
             self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason="disabled", request=request)
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Google OAuth disabled")
+        if not config.google_client_id or not config.google_client_secret:
+            self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason="not_configured", request=request)
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google OAuth not configured")
         state = sign_token({"type": "google_state"}, config.auth_secret_key, expires_in_seconds=600)
         query = urllib.parse.urlencode(
             {
@@ -315,20 +421,46 @@ class AuthService:
     def google_callback(self, *, code: str, state: str, cookie_state: str | None, request: Request | None = None) -> AuthResult:
         if not config.google_oauth_enabled:
             self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason="disabled", request=request)
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Google OAuth disabled")
+            raise GoogleOAuthFlowError("config", status.HTTP_403_FORBIDDEN, "Google OAuth disabled")
+        if not code:
+            self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason="missing_code", request=request)
+            raise GoogleOAuthFlowError("token", status.HTTP_400_BAD_REQUEST, "Missing Google authorization code")
         if not cookie_state or not hmac_compare(state, cookie_state):
             self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason="invalid_state", request=request)
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state")
+            raise GoogleOAuthFlowError("state", status.HTTP_400_BAD_REQUEST, "Invalid OAuth state")
         if not verify_token(state, config.auth_secret_key, expected_type="google_state"):
             self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason="expired_state", request=request)
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state")
-        id_token = self._exchange_google_code_for_id_token(code)
+            raise GoogleOAuthFlowError("state", status.HTTP_400_BAD_REQUEST, "Invalid OAuth state")
+        try:
+            id_token = self._exchange_google_code_for_id_token(code)
+        except GoogleOAuthFlowError as exc:
+            self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason="token_exchange_failed", request=request)
+            _log_google_oauth_failure(
+                "exchange",
+                error_type=type(exc.__cause__).__name__ if exc.__cause__ else type(exc).__name__,
+                provider_error=exc.provider_error,
+            )
+            raise exc
         try:
             profile = verify_google_id_token(id_token, expected_nonce=state[-24:])
         except GoogleOidcError as exc:
             self.audit(AuthEventType.GOOGLE_LOGIN_FAILED, success=False, reason=exc.reason, request=request)
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS) from exc
-        user = self._user_from_google_profile(profile, request=request)
+            _log_google_oauth_failure(
+                "verify",
+                error_type=type(exc).__name__,
+                provider_error=exc.reason,
+            )
+            raise GoogleOAuthFlowError(
+                "token",
+                status.HTTP_401_UNAUTHORIZED,
+                "Google ID token validation failed",
+                stage="verify",
+                provider_error=exc.reason,
+            ) from exc
+        try:
+            user = self._user_from_google_profile(profile, request=request)
+        except HTTPException as exc:
+            raise GoogleOAuthFlowError("user", exc.status_code, "Google account not authorized") from exc
         if user.mfa_enabled:
             return AuthResult(
                 response=LoginResponse(
@@ -380,7 +512,13 @@ class AuthService:
 
     def _exchange_google_code_for_id_token(self, code: str) -> str:
         if not config.google_client_id or not config.google_client_secret:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Google OAuth not configured")
+            raise GoogleOAuthFlowError(
+                "config",
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "Google OAuth not configured",
+                stage="exchange",
+                provider_error="not_configured",
+            )
         data = urllib.parse.urlencode(
             {
                 "code": code,
@@ -396,11 +534,40 @@ class AuthService:
                 timeout=10,
             ) as response:
                 token_payload = json.loads(response.read().decode("utf-8"))
-        except (urllib.error.URLError, json.JSONDecodeError) as exc:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS) from exc
+        except urllib.error.HTTPError as exc:
+            provider_error = _google_token_error_from_response(exc)
+            raise GoogleOAuthFlowError(
+                "token",
+                status.HTTP_401_UNAUTHORIZED,
+                "Google token exchange failed",
+                stage="exchange",
+                provider_error=provider_error,
+            ) from exc
+        except urllib.error.URLError as exc:
+            raise GoogleOAuthFlowError(
+                "token",
+                status.HTTP_401_UNAUTHORIZED,
+                "Google token endpoint unavailable",
+                stage="exchange",
+                provider_error=type(exc.reason).__name__ if getattr(exc, "reason", None) else type(exc).__name__,
+            ) from exc
+        except json.JSONDecodeError as exc:
+            raise GoogleOAuthFlowError(
+                "token",
+                status.HTTP_401_UNAUTHORIZED,
+                "Invalid Google token response",
+                stage="exchange",
+                provider_error="invalid_json",
+            ) from exc
         id_token = token_payload.get("id_token")
         if not id_token:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS)
+            raise GoogleOAuthFlowError(
+                "token",
+                status.HTTP_401_UNAUTHORIZED,
+                "Google token response missing ID token",
+                stage="exchange",
+                provider_error="missing_id_token",
+            )
         return id_token
 
     def _user_from_google_profile(self, profile: dict, request: Request | None = None) -> AuthUser:

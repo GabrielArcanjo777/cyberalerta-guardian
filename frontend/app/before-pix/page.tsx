@@ -88,21 +88,23 @@ export default function BeforePix(){
   }
 
   function openFamilyConsole(){
+    // Note: we intentionally do NOT persist the case/alert to localStorage.
+    // The Family Console loads its own data; storing case content in the
+    // browser would leak sensitive data to any script on the origin.
     if(typeof window !== 'undefined'){
-      window.localStorage.setItem('cyberalerta:lastTrustedCircleAlert', JSON.stringify(trustedAlert))
       window.location.assign('/family-console')
     }
   }
 
   return (
-    <PageShell>
+    <PageShell className="guardian-light-page">
       <PageHeader
         eyebrow="Before Pix command flow"
         title="Antes do Pix"
         description="Análise defensiva do texto que você cola aqui — sem leitura invisível de conversas. Pausa protetiva e trilha para o responsável."
         detail={beforePixPrivacyNotice}
         aside={
-          <div className="space-y-5">
+          <div className="space-y-5 bg-white p-6 rounded-lg border border-slate-200">
             <StatusRail
               items={[
                 {label:'Canal', value:'WhatsApp', tone:'neutral'},
@@ -152,7 +154,7 @@ export default function BeforePix(){
               <select
                 value={action}
                 onChange={e=>setAction(e.target.value)}
-                className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-100"
               >
                 {actionOptions.map((option)=> (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -170,18 +172,18 @@ export default function BeforePix(){
           <Card>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Caso</div>
             <div className="mt-4 flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-950 text-lg font-black text-white">DL</div>
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-teal-600 text-lg font-black text-white">DL</div>
               <div>
                 <div className="text-lg font-bold text-slate-950">Dona Lúcia</div>
                 <div className="text-sm font-medium text-slate-500">72 anos, ação financeira iminente</div>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Pessoa de confiança</div>
                 <div className="mt-1 text-sm font-bold text-slate-900">Gabriel, neto</div>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4">
                 <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Estado</div>
                 <div className="mt-1 text-sm font-bold text-slate-900">{result ? 'Análise concluída' : 'Aguardando análise'}</div>
               </div>
@@ -195,13 +197,13 @@ export default function BeforePix(){
       </div>
 
       {error && (
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-amber-100 bg-amber-50/80">
           <p className="text-sm font-semibold text-amber-800">{error}</p>
         </Card>
       )}
 
       {result?.__mock && (
-        <Card className="border-sky-200 bg-sky-50">
+        <Card className="border-sky-100 bg-sky-50/80">
           <p className="text-sm font-semibold text-sky-800">Dados em modo demonstração porque o backend não respondeu.</p>
         </Card>
       )}
@@ -229,11 +231,11 @@ export default function BeforePix(){
               <Card>
                 <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Classificação de ameaça</div>
                 <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                  <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2">
                     <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Tipo de golpe</div>
                     <p className="mt-2 text-lg font-bold leading-6 text-slate-950">{result.scam_type}</p>
                   </div>
-                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                  <div className="rounded-lg border border-red-100 bg-red-50/80 p-4">
                     <div className="text-xs font-bold uppercase tracking-wide text-red-400">Estagio</div>
                     <p className="mt-2 text-sm font-bold leading-5 text-red-700">{result.scam_stage}</p>
                   </div>
@@ -291,7 +293,7 @@ export default function BeforePix(){
           </div>
         </>
       ) : (
-        <Card className="border-dashed border-slate-300 bg-slate-50/70">
+        <Card className="border-dashed border-slate-200 bg-slate-50/50">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Output console</div>

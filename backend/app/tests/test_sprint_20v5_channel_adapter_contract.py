@@ -90,7 +90,6 @@ def _payload(message_id: str = "v5-contract-in-001") -> dict[str, Any]:
 def test_v5_provider_enum_contains_future_adapter_targets():
     assert ChannelProvider.MOCK_WHATSAPP.value == "mock_whatsapp"
     assert ChannelProvider.EVOLUTION_DEMO.value == "evolution_demo"
-    assert ChannelProvider.TWILIO_SANDBOX.value == "twilio_sandbox"
     assert ChannelProvider.META_CLOUD_API.value == "meta_cloud_api"
 
 

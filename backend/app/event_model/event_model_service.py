@@ -25,6 +25,24 @@ class EventModelService:
     def in_memory(cls) -> "EventModelService":
         return cls(create_in_memory_repositories())
 
+    @classmethod
+    def from_config(cls) -> "EventModelService":
+        """Select the persistence backend from app config.
+
+        ``STORAGE_BACKEND=sqlite`` returns a SQLite-backed repository set (the
+        core domain survives restarts); anything else falls back to in-memory.
+        """
+        from app.core.config import config
+
+        if config.storage_backend == "sqlite":
+            from app.event_model.sqlite_repositories import create_sqlite_repositories
+            from app.storage.config import storage_config
+            from app.storage.sqlite import SQLiteConnection
+
+            connection = SQLiteConnection(storage_config.sqlite_path())
+            return cls(create_sqlite_repositories(connection))
+        return cls.in_memory()
+
     def process_suspicious_message(
         self,
         *,

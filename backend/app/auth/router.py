@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, Request, Response
+from urllib.parse import urlencode
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse
 
 from app.auth.dependencies import get_auth_service, get_current_user, require_admin, require_authenticated_user
@@ -10,6 +12,7 @@ from app.auth.schemas import (
     AdminUserItem,
     AdminUsersResponse,
     ChangePasswordRequest,
+    GoogleAuthStatusResponse,
     LoginRequest,
     LoginResponse,
     LogoutResponse,
@@ -19,9 +22,10 @@ from app.auth.schemas import (
     MFAStatusResponse,
     MFAVerifyRequest,
     MeResponse,
+    RegisterRequest,
     RecoveryCodesResponse,
 )
-from app.auth.service import AuthResult, AuthService
+from app.auth.service import AuthResult, AuthService, GoogleOAuthFlowError
 from app.core.config import config
 
 GOOGLE_STATE_COOKIE = "cyberalerta_google_state"
@@ -49,6 +53,17 @@ def _apply_auth_result(response: Response, result: AuthResult) -> LoginResponse:
     return result.response
 
 
+def _frontend_url(path: str, params: dict[str, str] | None = None) -> str:
+    base = config.frontend_base_url or "http://localhost:3000"
+    query = f"?{urlencode(params)}" if params else ""
+    return f"{base}{path}{query}"
+
+
+def _is_browser_navigation(request: Request) -> bool:
+    accept = request.headers.get("accept", "")
+    return "text/html" in accept
+
+
 def create_auth_router() -> APIRouter:
     router = APIRouter(tags=["auth"])
 
@@ -60,6 +75,15 @@ def create_auth_router() -> APIRouter:
         service: AuthService = Depends(get_auth_service),
     ) -> LoginResponse:
         return _apply_auth_result(response, service.login(payload, request=request))
+
+    @router.post("/auth/register", response_model=LoginResponse)
+    def register(
+        payload: RegisterRequest,
+        request: Request,
+        response: Response,
+        service: AuthService = Depends(get_auth_service),
+    ) -> LoginResponse:
+        return _apply_auth_result(response, service.register(payload, request=request))
 
     @router.post("/auth/logout", response_model=LogoutResponse)
     def logout(
@@ -151,7 +175,16 @@ def create_auth_router() -> APIRouter:
         request: Request,
         service: AuthService = Depends(get_auth_service),
     ):
-        url, state = service.google_login_url(request=request)
+        try:
+            url, state = service.google_login_url(request=request)
+        except HTTPException as exc:
+            if _is_browser_navigation(request):
+                reason = "not_configured" if exc.status_code == 503 else "disabled"
+                return RedirectResponse(
+                    url=_frontend_url("/login", {"google": reason}),
+                    status_code=303,
+                )
+            raise exc
         response = RedirectResponse(url=url, status_code=302)
         response.set_cookie(
             GOOGLE_STATE_COOKIE,
@@ -164,23 +197,67 @@ def create_auth_router() -> APIRouter:
         )
         return response
 
-    @router.get("/auth/google/callback", response_model=LoginResponse)
+    @router.get("/auth/google/status", response_model=GoogleAuthStatusResponse)
+    def google_status() -> GoogleAuthStatusResponse:
+        configured = bool(config.google_client_id and config.google_client_secret)
+        return GoogleAuthStatusResponse(
+            enabled=config.google_oauth_enabled,
+            configured=config.google_oauth_enabled and configured,
+            auto_create_users=config.google_auto_create_users,
+            redirect_uri=config.google_redirect_uri,
+        )
+
+    @router.get("/auth/google/callback")
     def google_callback(
         request: Request,
-        response: Response,
         code: str = Query(default=""),
         state: str = Query(default=""),
         service: AuthService = Depends(get_auth_service),
     ):
-        result = service.google_callback(
-            code=code,
-            state=state,
-            cookie_state=request.cookies.get(GOOGLE_STATE_COOKIE),
-            request=request,
+        try:
+            result = service.google_callback(
+                code=code,
+                state=state,
+                cookie_state=request.cookies.get(GOOGLE_STATE_COOKIE),
+                request=request,
+            )
+        except GoogleOAuthFlowError as exc:
+            if _is_browser_navigation(request):
+                params = {"google": "failed", "reason": exc.reason}
+                if exc.stage:
+                    params["stage"] = exc.stage
+                redirect = RedirectResponse(
+                    url=_frontend_url("/login", params),
+                    status_code=303,
+                )
+                redirect.delete_cookie(GOOGLE_STATE_COOKIE, path="/auth/google")
+                return redirect
+            raise HTTPException(status_code=exc.status_code, detail={"code": exc.reason, "message": exc.detail}) from exc
+        except HTTPException as exc:
+            if _is_browser_navigation(request):
+                redirect = RedirectResponse(
+                    url=_frontend_url("/login", {"google": "failed", "reason": "unknown"}),
+                    status_code=303,
+                )
+                redirect.delete_cookie(GOOGLE_STATE_COOKIE, path="/auth/google")
+                return redirect
+            raise exc
+
+        if result.session_token:
+            redirect = RedirectResponse(
+                url=_frontend_url("/family-console", {"auth": "google"}),
+                status_code=303,
+            )
+            _set_session_cookie(redirect, result.session_token)
+            redirect.delete_cookie(GOOGLE_STATE_COOKIE, path="/auth/google")
+            return redirect
+
+        redirect = RedirectResponse(
+            url=_frontend_url("/login", {"google": "mfa_required"}),
+            status_code=303,
         )
-        _apply_auth_result(response, result)
-        response.delete_cookie(GOOGLE_STATE_COOKIE, path="/auth/google")
-        return result.response
+        redirect.delete_cookie(GOOGLE_STATE_COOKIE, path="/auth/google")
+        return redirect
 
     @router.get("/admin/users", response_model=AdminUsersResponse)
     def admin_users(

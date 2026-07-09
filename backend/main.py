@@ -1,7 +1,13 @@
 ﻿import hmac
 import json
 import logging
+import sys
+from pathlib import Path
 from urllib.parse import parse_qsl
+
+BACKEND_DIR = Path(__file__).resolve().parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,7 +69,6 @@ from app.mock_whatsapp import (
     MockWhatsAppSimulatorService,
     MockWhatsAppStateResponse,
 )
-from app.channel_adapters import TwilioSignatureContext
 from app.dual_bot import (
     DualBotCaseContextResponse,
     DualBotFlowResponse,
@@ -84,17 +89,13 @@ from app.schemas.recovery import RecoveryRequest, RecoveryResponse
 from app.schemas.report import ReportRequest, ReportResponse
 from app.services.examples import get_example_scenarios
 from app.services.safety_policy import SafetyPolicyService
-from app.twilio_sandbox import (
-    TwilioSandboxHealthResponse,
-    TwilioSandboxInboundWebhookResponse,
-    TwilioSandboxService,
-    TwilioSandboxStatusCallbackResponse,
-)
+from app.event_model import EventModelService
 from app.core.config import config
 from app.core.middleware import RequestContextHeadersMiddleware, SecurityHeadersMiddleware
 from app.core.security import check_rate_limit, require_api_key, validate_message_text
 from app.auth import create_auth_router, require_sensitive_access
 from app.integrations.n8n import N8nIntegrationService, create_n8n_router
+from app.integrations.evolution import create_evolution_router
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -114,24 +115,18 @@ protected_person_response_service = ProtectedPersonResponseService()
 admin_case_service = AdminCaseService()
 trusted_circle_service = TrustedCircleService()
 assisted_proof_trust_service = AssistedProofTrustService()
-mock_whatsapp_service = MockWhatsAppSimulatorService()
-twilio_sandbox_service = TwilioSandboxService()
-evolution_demo_service = EvolutionDemoService()
-dual_bot_service = DualBotFlowService()
+# Single shared Event Model (SQLite or in-memory per STORAGE_BACKEND) so every
+# channel writes to one persisted store and the Guardian Console sees all cases.
+event_model = EventModelService.from_config()
+mock_whatsapp_service = MockWhatsAppSimulatorService(event_model=event_model)
+evolution_demo_service = EvolutionDemoService(event_model=event_model)
+dual_bot_service = DualBotFlowService(event_model=event_model)
 consent_service = ConsentService(dual_bot_service.event_model.event_bus)
 guardian_console_real_flow_service = GuardianConsoleRealFlowService(dual_bot_service, consent_service)
 n8n_integration_service = N8nIntegrationService(orchestrator=orchestrator)
 app.include_router(create_auth_router())
 app.include_router(create_n8n_router(n8n_integration_service))
-
-
-async def _twilio_payload_from_request(request: Request) -> dict:
-    raw_body = await request.body()
-    content_type = request.headers.get("content-type", "").lower()
-    if "application/json" in content_type and raw_body:
-        parsed = json.loads(raw_body.decode("utf-8"))
-        return dict(parsed)
-    return dict(parse_qsl(raw_body.decode("utf-8"), keep_blank_values=True))
+app.include_router(create_evolution_router(), prefix="/api/channels/evolution")
 
 
 async def _json_payload_from_request(request: Request) -> dict:
@@ -139,16 +134,6 @@ async def _json_payload_from_request(request: Request) -> dict:
     if not raw_body:
         return {}
     return dict(json.loads(raw_body.decode("utf-8")))
-
-
-def _ensure_twilio_signature(request: Request, payload: dict) -> None:
-    context = TwilioSignatureContext(
-        url=str(request.url),
-        params=payload,
-        signature=request.headers.get("X-Twilio-Signature"),
-    )
-    if not twilio_sandbox_service.adapter.verify_signature(context):
-        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
 
 
 def _validate_analysis_payload(payload: AnalysisRequest) -> None:
@@ -333,25 +318,6 @@ def guardian_console_real_feedback(case_id: str, payload: GuardianFeedbackReques
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@app.get("/api/channels/twilio/whatsapp/health", response_model=TwilioSandboxHealthResponse)
-def twilio_whatsapp_health():
-    return twilio_sandbox_service.health()
-
-
-@app.post("/api/channels/twilio/whatsapp/inbound", response_model=TwilioSandboxInboundWebhookResponse)
-async def twilio_whatsapp_inbound(request: Request):
-    payload = await _twilio_payload_from_request(request)
-    _ensure_twilio_signature(request, payload)
-    return twilio_sandbox_service.handle_inbound(payload)
-
-
-@app.post("/api/channels/twilio/whatsapp/status", response_model=TwilioSandboxStatusCallbackResponse)
-async def twilio_whatsapp_status(request: Request):
-    payload = await _twilio_payload_from_request(request)
-    _ensure_twilio_signature(request, payload)
-    return twilio_sandbox_service.handle_status_callback(payload)
-
-
 @app.get("/webhook/evolution/health", response_model=EvolutionDemoHealthResponse)
 def evolution_webhook_health():
     return evolution_demo_service.health()
@@ -359,8 +325,10 @@ def evolution_webhook_health():
 
 @app.post("/webhook/evolution", response_model=EvolutionDemoWebhookResponse)
 async def evolution_webhook(request: Request):
-    payload = await _json_payload_from_request(request)
+    # Reject unauthorized callers before reading/parsing the (untrusted) body.
     _validate_evolution_webhook_secret(request)
+    check_rate_limit(request, bucket="evolution_webhook")
+    payload = await _json_payload_from_request(request)
     try:
         return evolution_demo_service.handle_webhook(payload)
     except EvolutionDemoPayloadError as exc:

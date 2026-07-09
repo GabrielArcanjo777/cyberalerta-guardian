@@ -164,6 +164,8 @@ class TestGoogleOidcValidation:
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from app.auth.router import create_auth_router
+        from app.core.config import config
+        config.google_oauth_enabled = False
         app = FastAPI()
         app.include_router(create_auth_router())
         client = TestClient(app)
@@ -174,11 +176,15 @@ class TestGoogleOidcValidation:
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from app.auth.router import create_auth_router
+        from app.core.config import config
+        config.google_oauth_enabled = True
+        config.google_client_id = "google-client-id"
+        config.google_client_secret = "google-client-secret"
         app = FastAPI()
         app.include_router(create_auth_router())
         client = TestClient(app)
         resp = client.get("/auth/google/callback?code=test&state=badstate")
-        assert resp.status_code == 403
+        assert resp.status_code == 400
 
     def test_verify_google_id_token_disabled_by_default(self):
         with pytest.raises(Exception):

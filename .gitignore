@@ -1,20 +1,38 @@
+# Dependencies
 node_modules/
+.venv/
+venv/
+
+# Build output
 .next/
 dist/
 build/
+frontend/tsconfig.tsbuildinfo
+
+# Python
 __pycache__/
 *.pyc
-.venv/
-venv/
-.env
-.DS_Store
-coverage/
 .pytest_cache/
 
+# Environment / secrets — never commit real values; use .env.example as reference
 .env
-
+.env.*
+!.env.example
 frontend/.env.local
+.n8n_cookie.txt
 
+# Local scratch / debug scripts — never commit
+backend/debug_*.py
+backend/test_send.py
+
+# Local databases
 *.db
 *.sqlite
 *.sqlite3
+
+# Claude Code local config (agent settings, launch config) — do not commit
+.claude/
+
+# Coverage / OS
+coverage/
+.DS_Store

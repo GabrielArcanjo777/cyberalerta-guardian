@@ -21,10 +21,8 @@ def new_channel_id(prefix: str) -> str:
 class ChannelProvider(str, Enum):
     MOCK_WHATSAPP = "mock_whatsapp"
     EVOLUTION_DEMO = "evolution_demo"
-    TWILIO_SANDBOX = "twilio_sandbox"
     META_CLOUD_API = "meta_cloud_api"
     MOCK = "mock"
-    TWILIO_PRODUCTION = "twilio_production"
 
 
 class DeliveryStatus(str, Enum):

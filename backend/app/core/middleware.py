@@ -15,6 +15,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        # Clickjacking + base-uri lockdown. Kept minimal so Swagger UI at /docs
+        # (which loads its own scripts/styles) keeps working.
+        response.headers["Content-Security-Policy"] = "frame-ancestors 'none'; base-uri 'none'"
+        # HSTS only when cookies are already Secure (i.e. HTTPS/production).
+        if config.auth_cookie_secure:
+            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
         return response
 
 
