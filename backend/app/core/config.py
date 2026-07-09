@@ -76,8 +76,6 @@ class AppConfig:
         self.evolution_webhook_secret = os.getenv("EVOLUTION_WEBHOOK_SECRET", "")
         self.channel_provider = os.getenv("CHANNEL_PROVIDER", "evolution")
         self.dual_bot_channel_provider = os.getenv("DUAL_BOT_CHANNEL_PROVIDER", "mock_whatsapp")
-        self.use_llm = _env_bool("USE_LLM", False)
-        self.llm_provider = os.getenv("LLM_PROVIDER", "mock")
         self.beta_real_send_enabled = _env_bool("BETA_REAL_SEND_ENABLED", False)
         self.beta_allowed_recipients = _split_csv(os.getenv("BETA_ALLOWED_RECIPIENTS", ""))
         self.beta_require_allowed_recipient = _env_bool("BETA_REQUIRE_ALLOWED_RECIPIENT", True)

@@ -414,8 +414,6 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | URL do backend usada pelo frontend. |
 | `DRY_RUN` | `true` | Padrão seguro para integrações externas; não enviar ações reais no local/demo. |
-| `USE_LLM` | `false` | Mantém demo sem LLM externo. |
-| `LLM_PROVIDER` | `mock` | Provider lógico para modo demo. |
 | `STORAGE_BACKEND` | `memory` ou `sqlite` | Define storage local. |
 | `SQLITE_DATABASE_URL` | `sqlite:///./cyberalerta_guardian.db` | Caminho SQLite local. |
 | `STORE_FULL_MESSAGE` | `false` | Mantém apenas hash e preview curto em estado operacional novo. |
