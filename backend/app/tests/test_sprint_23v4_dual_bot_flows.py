@@ -7,8 +7,6 @@ from app.dual_bot import (
     DualBotInboundRequest,
     GuardianFeedbackAction,
     GuardianFeedbackRequest,
-    PROTECTED_LOW_RISK_MESSAGES,
-    PROTECTED_RISK_MESSAGES,
 )
 from app.event_model import BotEventType, CaseStatus, EventModelService
 from main import app
@@ -24,7 +22,7 @@ def _suspicious_request(message_id: str = "dual-bot-mock-001") -> DualBotInbound
     )
 
 
-def test_protected_bot_suspicious_message_replies_creates_case_and_alerts_guardian():
+def test_protected_bot_suspicious_message_creates_case_and_alerts_trusted_contact():
     service = DualBotFlowService(event_model=EventModelService.in_memory())
 
     response = service.receive_mock_message(_suspicious_request())
@@ -39,10 +37,7 @@ def test_protected_bot_suspicious_message_replies_creates_case_and_alerts_guardi
         "new_number",
         "do_not_call",
     ]
-    assert response.protected_reply is not None
-    assert response.protected_reply.body == PROTECTED_RISK_MESSAGES["pt"]
-    assert response.protected_reply.kind == "protected_reply"
-    assert response.protected_reply.status == "delivered"
+    # Only the trusted contact is messaged; nothing goes back to the sender.
     assert response.guardian_alert is not None
     assert response.guardian_alert.kind == "guardian_alert"
     assert "Risco: alto" in response.guardian_alert.body
@@ -55,16 +50,15 @@ def test_protected_bot_suspicious_message_replies_creates_case_and_alerts_guardi
         BotEventType.RESPONSIBLE_ALERT_QUEUED.value,
         BotEventType.PATTERN_CANDIDATE_DETECTED.value,
         BotEventType.DELIVERY_STATUS_UPDATED.value,
-        BotEventType.SAFE_REPLY_SENT.value,
-        BotEventType.PROTECTED_PERSON_REPLIED.value,
-        BotEventType.DELIVERY_STATUS_UPDATED.value,
         BotEventType.RESPONSIBLE_NOTIFIED.value,
     ]
     for event_type in expected_events:
         assert event_type in response.events
+    assert BotEventType.SAFE_REPLY_SENT.value not in response.events
+    assert BotEventType.PROTECTED_PERSON_REPLIED.value not in response.events
 
 
-def test_low_risk_message_gets_safe_reply_without_case_or_guardian_alert():
+def test_low_risk_message_produces_no_outbound_and_no_case():
     service = DualBotFlowService(event_model=EventModelService.in_memory())
     response = service.receive_mock_message(
         DualBotInboundRequest(
@@ -79,22 +73,15 @@ def test_low_risk_message_gets_safe_reply_without_case_or_guardian_alert():
     assert response.case_created is False
     assert response.case_id is None
     assert response.risk_score == 0
-    assert response.protected_reply is not None
-    assert response.protected_reply.body == PROTECTED_LOW_RISK_MESSAGES["pt"]
+    # Low risk: analyzed and stored only. Nobody is messaged.
     assert response.guardian_alert is None
-    expected_events = [
-        BotEventType.MESSAGE_RECEIVED.value,
-        BotEventType.SUSPICIOUS_MESSAGE_RECEIVED.value,
-        BotEventType.RISK_ASSESSMENT_CREATED.value,
-        BotEventType.DELIVERY_STATUS_UPDATED.value,
-        BotEventType.SAFE_REPLY_SENT.value,
-        BotEventType.PROTECTED_PERSON_REPLIED.value,
-    ]
-    for event_type in expected_events:
-        assert event_type in response.events
+    assert BotEventType.SAFE_REPLY_SENT.value not in response.events
+    assert BotEventType.RESPONSIBLE_NOTIFIED.value not in response.events
+    assert BotEventType.MESSAGE_RECEIVED.value in response.events
+    assert BotEventType.RISK_ASSESSMENT_CREATED.value in response.events
 
 
-def test_duplicate_provider_message_does_not_send_second_reply_or_alert():
+def test_duplicate_provider_message_does_not_send_second_alert():
     service = DualBotFlowService(event_model=EventModelService.in_memory())
     request = _suspicious_request("dual-bot-duplicate-001")
 
@@ -104,7 +91,6 @@ def test_duplicate_provider_message_does_not_send_second_reply_or_alert():
     assert first.case_created is True
     assert duplicate.duplicate is True
     assert duplicate.case_created is False
-    assert duplicate.protected_reply is None
     assert duplicate.guardian_alert is None
     assert len(service.event_model.repositories.messages.list_all()) == 1
     assert len(service.event_model.repositories.cases.list_all()) == 1
@@ -188,7 +174,6 @@ def test_dual_bot_api_runs_flow_context_and_feedback():
     assert inbound.status_code == 200
     inbound_body = inbound.json()
     assert inbound_body["case_created"] is True
-    assert inbound_body["protected_reply"]["body"] == PROTECTED_RISK_MESSAGES["pt"]
     assert inbound_body["guardian_alert"]["kind"] == "guardian_alert"
 
     context = client.get(f"/dual-bot/cases/{inbound_body['case_id']}/context")

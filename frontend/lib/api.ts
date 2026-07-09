@@ -316,21 +316,6 @@ function createMockSimpleChannelSubmit(payload: SimpleChannelSubmitPayload): Sim
   }
 }
 
-export async function postProtectedResponseGenerate(payload: ProtectedResponseGeneratePayload){
-  try{
-    const res = await fetch(`${API}/protected-response/generate`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload),
-    })
-    if(!res.ok) throw new Error('api-error')
-    const data = await res.json()
-    return {...data, __mock: false} as ProtectedResponseGenerateResponse
-  }catch{
-    return createMockProtectedResponse(payload)
-  }
-}
-
 const mockSimpleChannelStatus: SimpleChannelStatusResponse = {
   service: 'simple-channel-intake',
   mode: 'whatsapp_mock',
@@ -390,7 +375,6 @@ const mockGuardianCases: AdminCase[] = [
     proof_of_trust_status: 'not_started',
     recovery_status: 'not_needed',
     recommended_action: 'Confirmar com contato salvo antes de qualquer Pix.',
-    protected_person_short_reply: 'Não faça Pix agora. Essa mensagem tem sinais de golpe e estou avisando Gabriel.',
     status: 'open',
     created_at: '2026-01-01T10:00:00Z',
     updated_at: '2026-01-01T10:00:00Z',

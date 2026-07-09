@@ -54,7 +54,6 @@ class DualBotFlowResponse(BaseModel):
     risk_signals: List[str] = Field(default_factory=list)
     case_id: Optional[str]
     case_created: bool
-    protected_reply: Optional[DualBotOutboundMessage]
     guardian_alert: Optional[DualBotOutboundMessage]
     pattern_detection: Optional[PatternDetectionResult] = None
     events: List[str] = Field(default_factory=list)

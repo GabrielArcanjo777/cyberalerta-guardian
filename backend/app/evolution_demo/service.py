@@ -18,7 +18,7 @@ from app.channel_adapters.evolution_demo_adapter import (
     EvolutionDemoIgnoredEvent,
     EvolutionDemoPayloadError,
 )
-from app.dual_bot.messages import protected_reply_for, responsible_alert_for
+from app.dual_bot.messages import responsible_alert_for
 from app.event_model import BotEventType, EventModelService
 from app.evolution_demo.models import (
     EvolutionDemoHealthResponse,
@@ -105,21 +105,10 @@ class EvolutionDemoService:
         if ingress_result.case_id:
             case = self.event_model.repositories.cases.get(ingress_result.case_id)
 
-        if not ingress_result.duplicate and assessment is not None:
-            outbound_messages.append(
-                self._send_protected_reply(
-                    to_address=inbound.from_address,
-                    body=protected_reply_for(
-                        assessment,
-                        case_created=ingress_result.case_id is not None,
-                        language="pt",
-                    ),
-                    message_id=ingress_result.message_id,
-                    case_id=ingress_result.case_id,
-                    protected_person_id=case.protected_person_id if case else None,
-                )
-            )
-
+        # By design the bot NEVER messages the person who sent the inbound text
+        # (that would spam every contact of a paired number). The analysis result
+        # only goes to (1) the single configured trusted contact and (2) the
+        # backend event model / Guardian Console. This holds in production too.
         if not ingress_result.duplicate and case is not None and assessment is not None:
             destination = guardian_address or self.guardian_address
             alert_body = responsible_alert_for(
@@ -161,11 +150,6 @@ class EvolutionDemoService:
             risk_level=risk_level,
             case_id=ingress_result.case_id,
             case_created=ingress_result.case_id is not None,
-            protected_reply_sent=any(
-                message.kind == OutboundMessageKind.PROTECTED_REPLY.value
-                and message.status != DeliveryStatus.FAILED.value
-                for message in outbound_messages
-            ),
             guardian_notified=any(
                 message.kind == OutboundMessageKind.GUARDIAN_ALERT.value
                 and message.status != DeliveryStatus.FAILED.value
@@ -182,74 +166,10 @@ class EvolutionDemoService:
             ignored=True,
             duplicate=False,
             case_created=False,
-            protected_reply_sent=False,
             guardian_notified=False,
             events=[],
             demo_notice=f"{message} Evolution is an unofficial WhatsApp Web channel (portfolio, not production).",
         )
-
-    def _send_protected_reply(
-        self,
-        *,
-        to_address: str,
-        body: str,
-        message_id: str | None,
-        case_id: str | None,
-        protected_person_id: str | None,
-    ) -> EvolutionDemoOutboundRecord:
-        result = self.adapter.sendMessage(
-            OutboundMessage(
-                provider=self.adapter.provider,
-                to=to_address,
-                body=body,
-                templateName="protected_reply",
-                metadata={
-                    "kind": OutboundMessageKind.PROTECTED_REPLY.value,
-                    "related_message_id": message_id,
-                    "demo": True,
-                },
-                caseId=case_id,
-                protectedPersonId=protected_person_id,
-            )
-        )
-        record = self._record_outbound(
-            result,
-            kind=OutboundMessageKind.PROTECTED_REPLY.value,
-            case_id=case_id,
-        )
-        self.event_model.event_bus.publish_type(
-            BotEventType.SAFE_REPLY_SENT,
-            aggregate_type="message",
-            aggregate_id=message_id or result.provider_message_id,
-            source="channel_adapter",
-            case_id=case_id,
-            protected_person_id=protected_person_id,
-            payload={
-                "provider": result.provider.value,
-                "provider_message_id": result.provider_message_id,
-                "status": result.status.value,
-                "related_case_id": case_id,
-                "demo": True,
-                "simulated": result.simulated,
-            },
-        )
-        self.event_model.event_bus.publish_type(
-            BotEventType.PROTECTED_PERSON_REPLIED,
-            aggregate_type="message",
-            aggregate_id=message_id or result.provider_message_id,
-            source="channel_adapter",
-            case_id=case_id,
-            protected_person_id=protected_person_id,
-            payload={
-                "provider": result.provider.value,
-                "provider_message_id": result.provider_message_id,
-                "status": result.status.value,
-                "related_case_id": case_id,
-                "demo": True,
-                "simulated": result.simulated,
-            },
-        )
-        return record
 
     def _send_guardian_alert(
         self,

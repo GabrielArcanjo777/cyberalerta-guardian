@@ -141,7 +141,6 @@ export type AdminCase = {
   proof_of_trust_status: string
   recovery_status: string
   recommended_action: string
-  protected_person_short_reply?: string
   status: AdminCaseStatus
   created_at: string
   updated_at: string
@@ -193,7 +192,6 @@ export type GuardianConsoleTimelineEvent = {
 }
 
 export type GuardianConsoleDeliveryView = {
-  protected_reply_status?: string | null
   guardian_alert_status?: string | null
   guardian_notified: boolean
   latest_provider_message_id?: string | null
@@ -283,7 +281,6 @@ export type GuardianConsoleChannelStatusView = {
   backend_state: string
   protected_bot_active: boolean
   responsible_bot_active: boolean
-  protected_reply_status?: string | null
   guardian_alert_status?: string | null
   guardian_notified: boolean
   latest_provider_message_id?: string | null
@@ -362,7 +359,6 @@ export type GuardianConsoleRealCaseDetail = GuardianConsoleRealCaseSummary & {
   source_message: string
   activation: GuardianConsoleActivationState
   delivery: GuardianConsoleDeliveryView
-  protected_reply: GuardianConsoleOutboundView
   guardian_alert: GuardianConsoleOutboundView
   protected_person: GuardianConsoleProtectedPersonView
   responsible_contact: GuardianConsoleResponsibleContactView
@@ -445,7 +441,6 @@ export type DualBotFlowResponse = {
   risk_signals: string[]
   case_id?: string | null
   case_created: boolean
-  protected_reply?: GuardianConsoleOutboundView | null
   guardian_alert?: GuardianConsoleOutboundView | null
   events: string[]
 }

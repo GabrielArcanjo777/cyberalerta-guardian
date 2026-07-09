@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import unicodedata
 from uuid import uuid4
 
@@ -14,7 +13,6 @@ from app.controlled_agents.models import (
     ControlledAgentName,
     PatternReviewDecision,
     ResponsibleAlertDecision,
-    SafeReplyDecision,
     TriageDecision,
 )
 
@@ -41,11 +39,6 @@ FORBIDDEN_PHRASES = (
     "mande o codigo",
     "informe o codigo",
     "dados bancarios",
-)
-
-SAFE_REPLY_FALLBACK = (
-    "Recebi sua mensagem. Ela tem sinais de risco. Nao faca pagamento nem clique em links "
-    "por enquanto. Confirme por um canal confiavel."
 )
 
 RESPONSIBLE_ALERT_FALLBACK = (
@@ -168,49 +161,6 @@ class TriageAgent:
         return "Monitorar e orientar verificacao se houver dinheiro, codigo ou pressa."
 
 
-class SafeReplyAgent:
-    name = ControlledAgentName.SAFE_REPLY
-
-    def __init__(self, guardrails: AgentGuardrails | None = None) -> None:
-        self.guardrails = guardrails or AgentGuardrails()
-
-    def generate(
-        self,
-        *,
-        assessment: RiskAssessment,
-        case_id: str | None,
-        language: str | None = "pt",
-        candidate_body: str | None = None,
-    ) -> SafeReplyDecision:
-        body = candidate_body or self._body_for(assessment)
-        body, guardrail_result = self.guardrails.enforce(
-            candidate_text=body,
-            fallback_text=SAFE_REPLY_FALLBACK,
-        )
-        return SafeReplyDecision(
-            agent=self.name,
-            decision_id=_decision_id("safe-reply"),
-            case_id=case_id,
-            message_id=assessment.message_id,
-            summary="Resposta segura curta gerada para a pessoa protegida.",
-            recommended_action="Pausar, nao pagar, nao clicar e confirmar por canal confiavel.",
-            guardrails=guardrail_result,
-            metadata={"language": language or "pt", "risk_level": assessment.risk_level.value},
-            body=body,
-        )
-
-    def _body_for(self, assessment: RiskAssessment) -> str:
-        if assessment.case_threshold_reached:
-            return (
-                "Recebi sua mensagem. Ela tem sinais de risco. Nao faca pagamento nem clique em links "
-                "por enquanto. Vou avisar seu contato de confianca."
-            )
-        return (
-            "Recebi sua mensagem. Se houver pedido de dinheiro, codigo ou pressa, confirme por outro "
-            "canal antes de agir."
-        )
-
-
 class ResponsibleAlertAgent:
     name = ControlledAgentName.RESPONSIBLE_ALERT
 
@@ -331,7 +281,6 @@ class ControlledAgentOrchestrator:
         self.event_bus = event_bus
         guardrails = AgentGuardrails()
         self.triage_agent = TriageAgent()
-        self.safe_reply_agent = SafeReplyAgent(guardrails)
         self.responsible_alert_agent = ResponsibleAlertAgent(guardrails)
         self.case_summary_agent = CaseSummaryAgent()
         self.pattern_review_agent = PatternReviewAgent()

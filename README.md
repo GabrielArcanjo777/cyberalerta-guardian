@@ -455,7 +455,7 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | `N8N_DRY_RUN` | `true` | Impede execução real de resposta/alerta no n8n durante demo. |
 | `CHANNEL_PROVIDER` | `twilio_sandbox` | Provider técnico de canal. |
 | `DUAL_BOT_CHANNEL_PROVIDER` | `mock_whatsapp` | Provider ativo do Dual Bot. |
-| `DUAL_BOT_GUARDIAN_TO` | vazio | Destino simulado/controlado do responsável. |
+| `TRUSTED_CONTACT` | vazio | **Único** número que o bot pode contatar (o alerta vai só para ele; nunca para o remetente). Vazio => alerta simulado. Aliases legados: `EVOLUTION_GUARDIAN_TO`, `DUAL_BOT_GUARDIAN_TO`. |
 | `TWILIO_ACCOUNT_SID` | vazio | Somente sandbox/POC. |
 | `TWILIO_AUTH_TOKEN` | vazio | Somente sandbox/POC. |
 | `TWILIO_WHATSAPP_FROM` | `whatsapp:+1XXXXXXXXXX` | Número fictício/sandbox. |
@@ -484,8 +484,8 @@ DUAL_BOT_CHANNEL_PROVIDER=evolution
 EVOLUTION_API_URL=http://localhost:8080
 EVOLUTION_API_KEY=sua-chave-local
 EVOLUTION_INSTANCE_NAME=guardian-demo
-EVOLUTION_GUARDIAN_TO=            # número do responsável (opcional)
 EVOLUTION_WEBHOOK_SECRET=         # segredo do webhook (obrigatório em produção)
+TRUSTED_CONTACT=                 # único número que o bot pode contatar (o alerta vai só para ele)
 ```
 
 #### Pareamento (QR code) e endpoints

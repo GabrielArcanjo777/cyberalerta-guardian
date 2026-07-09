@@ -18,7 +18,6 @@ from app.channel_adapters.models import (
     InboundMessage,
     NormalizedMedia,
     OutboundMessage,
-    OutboundMessageKind,
     OutboundMessageRequest,
     OutboundMessageResult,
 )
@@ -26,6 +25,18 @@ from app.channel_adapters.models import (
 
 EVOLUTION_DEMO_PROVIDER = ChannelProvider.EVOLUTION_DEMO
 EVOLUTION_DEMO_TIMEOUT_SECONDS = 10
+
+
+def _env_flag(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _env_csv(name: str) -> tuple[str, ...]:
+    value = os.getenv(name) or ""
+    return tuple(item.strip() for item in value.split(",") if item.strip())
 
 
 class EvolutionDemoPayloadError(ValueError):
@@ -134,6 +145,13 @@ class EvolutionDemoConfig:
     api_key: str | None = None
     instance_name: str | None = None
     guardian_address: str | None = None
+    # Safety gate for REAL WhatsApp sends. Defaults are fail-safe: unless real
+    # sending is explicitly turned on AND the recipient is allow-listed, nothing
+    # leaves the process. This mirrors the guard the n8n channel already applies.
+    dry_run: bool = True
+    real_send_enabled: bool = False
+    require_allowed_recipient: bool = True
+    allowed_recipients: tuple[str, ...] = ()
 
     @classmethod
     def from_env(cls) -> "EvolutionDemoConfig":
@@ -141,12 +159,37 @@ class EvolutionDemoConfig:
             api_url=os.getenv("EVOLUTION_API_URL") or None,
             api_key=os.getenv("EVOLUTION_API_KEY") or None,
             instance_name=os.getenv("EVOLUTION_INSTANCE_NAME") or None,
-            guardian_address=os.getenv("EVOLUTION_GUARDIAN_TO") or None,
+            # Single trusted contact (TRUSTED_CONTACT), with legacy vars as fallback.
+            guardian_address=(
+                os.getenv("TRUSTED_CONTACT")
+                or os.getenv("EVOLUTION_GUARDIAN_TO")
+                or os.getenv("DUAL_BOT_GUARDIAN_TO")
+            )
+            or None,
+            dry_run=_env_flag("DRY_RUN", True),
+            real_send_enabled=_env_flag("BETA_REAL_SEND_ENABLED", False),
+            require_allowed_recipient=_env_flag("BETA_REQUIRE_ALLOWED_RECIPIENT", True),
+            allowed_recipients=_env_csv("BETA_ALLOWED_RECIPIENTS"),
         )
 
     @property
     def can_send(self) -> bool:
         return bool(self.api_url and self.api_key and self.instance_name)
+
+    def real_send_blocked_reason(self, to_address: str) -> str | None:
+        """Why a real network send to ``to_address`` must be suppressed, or None.
+
+        Any non-None reason means: do NOT hit the WhatsApp network — simulate.
+        """
+        if self.dry_run:
+            return "dry_run"
+        if not self.real_send_enabled:
+            return "real_send_disabled"
+        if self.require_allowed_recipient:
+            allowed = {_digits(item) for item in self.allowed_recipients if _digits(item)}
+            if _digits(to_address) not in allowed:
+                return "recipient_not_allowed"
+        return None
 
     @property
     def send_text_url(self) -> str | None:
@@ -293,6 +336,20 @@ class EvolutionDemoAdapter:
                 simulated=True,
                 retryable=True,
                 raw={"reason": "evolution_demo_not_configured"},
+            )
+        # SAFETY GATE: never touch the WhatsApp network unless real sending is
+        # explicitly enabled AND the recipient is allow-listed. Suppressed sends
+        # are simulated (no retry) so no real message ever reaches a contact.
+        blocked_reason = self.config.real_send_blocked_reason(message.to_address)
+        if blocked_reason:
+            return OutboundMessageResult(
+                provider=self.provider,
+                providerMessageId=f"evolution-demo-suppressed-{blocked_reason}-{uuid4().hex}",
+                to=message.to_address,
+                status=DeliveryStatus.SENT,
+                simulated=True,
+                retryable=False,
+                raw={"reason": f"send_suppressed_{blocked_reason}"},
             )
         try:
             response = self._transport.send_text(

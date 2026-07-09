@@ -20,6 +20,7 @@ from app.channel_adapters import (
     WhatsAppChannelAdapter,
 )
 from app.controlled_agents import ControlledAgentOrchestrator
+from app.core.config import config
 from app.dual_bot.models import (
     DualBotCaseContextResponse,
     DualBotEventSummary,
@@ -50,7 +51,6 @@ FEEDBACK_STATUS_MAP = {
 }
 
 DUAL_BOT_PROVIDER_ENV = "DUAL_BOT_CHANNEL_PROVIDER"
-DUAL_BOT_GUARDIAN_ENV = "DUAL_BOT_GUARDIAN_TO"
 
 PROVIDER_ALIASES = {
     "mock": ChannelProvider.MOCK,
@@ -375,7 +375,6 @@ class ProtectedBotService(OutboundAuditMixin):
             protected_person_alias=protected_person_alias,
             guardian_alias=guardian_alias,
         )
-        protected_reply = None
         guardian_alert = None
         assessment = None
         case = None
@@ -422,13 +421,9 @@ class ProtectedBotService(OutboundAuditMixin):
                         pattern_detection=pattern_detection
                     )
                     self.agent_orchestrator.publish(BotEventType.PATTERN_REVIEW_GENERATED, pattern_review)
-            protected_reply = self._send_protected_reply(
-                to_address=ingress_result.inbound.from_address,
-                assessment=assessment,
-                case_id=ingress_result.case_id,
-                message_id=ingress_result.message_id,
-                language=language,
-            )
+            # The bot never replies to the person who sent the message. The only
+            # outbound recipient is the single configured trusted contact
+            # (guardian); the analysis itself lives in the backend/console.
             if case is not None:
                 guardian_alert = self.responsible_bot.send_alert(
                     guardian_address=guardian_address,
@@ -447,7 +442,7 @@ class ProtectedBotService(OutboundAuditMixin):
                         protected_person_alias=resolved_protected_alias,
                         assessment=assessment,
                         pattern_detection=pattern_detection,
-                        safe_reply=protected_reply.body if protected_reply else None,
+                        safe_reply=None,
                         responsible_alert=guardian_alert.body if guardian_alert else None,
                     )
                     self.agent_orchestrator.publish(BotEventType.CASE_SUMMARY_GENERATED, case_summary)
@@ -464,95 +459,10 @@ class ProtectedBotService(OutboundAuditMixin):
             risk_signals=assessment.signals if assessment else [],
             case_id=ingress_result.case_id,
             case_created=ingress_result.case_id is not None,
-            protected_reply=protected_reply,
             guardian_alert=guardian_alert,
             pattern_detection=pattern_detection,
             events=[event.event_type.value for event in events],
         )
-
-    def _send_protected_reply(
-        self,
-        *,
-        to_address: str,
-        assessment: RiskAssessment,
-        case_id: str | None,
-        message_id: str | None,
-        language: str,
-    ) -> DualBotOutboundMessage:
-        if self.agent_orchestrator is not None:
-            safe_reply_decision = self.agent_orchestrator.safe_reply_agent.generate(
-                assessment=assessment,
-                case_id=case_id,
-                language=language,
-            )
-            self.agent_orchestrator.publish(BotEventType.SAFE_REPLY_GENERATED, safe_reply_decision)
-            body = safe_reply_decision.body
-        else:
-            if case_id is not None or assessment.case_threshold_reached:
-                body = (
-                    "Recebi sua mensagem. Ela tem sinais de risco. Nao faca pagamento nem clique em links "
-                    "por enquanto. Vou avisar seu contato de confianca."
-                )
-            else:
-                body = (
-                    "Recebi sua mensagem. Se houver pedido de dinheiro, codigo ou pressa, confirme por outro "
-                    "canal antes de agir."
-                )
-        result = self.adapter.send_protected_reply(
-            OutboundMessageRequest(
-                provider=self.adapter.provider,
-                to=to_address,
-                body=body,
-                kind=OutboundMessageKind.PROTECTED_REPLY,
-                relatedCaseId=case_id,
-                relatedMessageId=message_id,
-                metadata={
-                    "risk_level": assessment.risk_level.value,
-                    "risk_score": assessment.score,
-                    "signals": assessment.signals,
-                },
-            )
-        )
-        outbound, delivery = self._record_outbound(
-            result=result,
-            body=body,
-            kind=OutboundMessageKind.PROTECTED_REPLY,
-            related_case_id=case_id,
-        )
-        self.event_model.event_bus.publish_type(
-            BotEventType.SAFE_REPLY_SENT,
-            aggregate_type="message",
-            aggregate_id=message_id or result.provider_message_id,
-            source="channel_adapter",
-            case_id=case_id,
-            payload={
-                "provider": result.provider.value,
-                "provider_message_id": result.provider_message_id,
-                "status": delivery.status.value,
-                "risk_level": assessment.risk_level.value,
-                "risk_score": assessment.score,
-                "related_case_id": case_id,
-                "simulated": result.simulated,
-            },
-        )
-        self.event_model.event_bus.publish_type(
-            BotEventType.PROTECTED_PERSON_REPLIED,
-            aggregate_type="message",
-            aggregate_id=message_id or result.provider_message_id,
-            source="channel_adapter",
-            case_id=case_id,
-            payload={
-                "provider": result.provider.value,
-                "provider_message_id": result.provider_message_id,
-                "status": delivery.status.value,
-                "risk_level": assessment.risk_level.value,
-                "risk_score": assessment.score,
-                "related_case_id": case_id,
-                "simulated": result.simulated,
-            },
-        )
-        return outbound
-
 
 class DualBotFlowService:
     def __init__(
@@ -565,8 +475,10 @@ class DualBotFlowService:
     ) -> None:
         self.event_model = event_model or EventModelService.in_memory()
         self.adapter = adapter or create_dual_bot_adapter()
+        # Single trusted contact resolved from config (TRUSTED_CONTACT + legacy
+        # fallbacks). The placeholder is a last resort for the local mock demo.
         self.default_guardian_address = (
-            default_guardian_address or os.getenv(DUAL_BOT_GUARDIAN_ENV) or "+5511888880001"
+            default_guardian_address or config.trusted_contact or "+5511888880001"
         )
         self.pattern_intelligence = pattern_intelligence or PatternIntelligenceService(
             event_bus=self.event_model.event_bus
@@ -595,7 +507,7 @@ class DualBotFlowService:
     def from_env(cls) -> "DualBotFlowService":
         return cls(
             adapter=create_dual_bot_adapter(),
-            default_guardian_address=os.getenv(DUAL_BOT_GUARDIAN_ENV),
+            default_guardian_address=config.trusted_contact or None,
         )
 
     def status(self) -> DualBotProviderStatusResponse:

@@ -3,7 +3,6 @@ import json
 import logging
 import sys
 from pathlib import Path
-from urllib.parse import parse_qsl
 
 BACKEND_DIR = Path(__file__).resolve().parent
 if str(BACKEND_DIR) not in sys.path:
@@ -21,10 +20,6 @@ from app.channels.simple_channel_models import (
     SimpleChannelSubmitResponse,
 )
 from app.channels.simple_channel_service import SimpleChannelService
-from app.protected_response.response_schemas import (
-    ProtectedResponseGenerateRequest,
-    ProtectedResponseGenerateResponse,
-)
 from app.guardian_console.admin_case_models import (
     AdminCase,
     AdminCaseFromChannelRequest,
@@ -48,7 +43,6 @@ from app.consent import (
     ConsentService,
     ConsentStatusResponse,
 )
-from app.protected_response.response_service import ProtectedPersonResponseService
 from app.trusted_circle.trusted_circle_models import (
     TrustedCircleEscalateRequest,
     TrustedCircleEscalateResponse,
@@ -111,7 +105,6 @@ app.add_middleware(
 )
 orchestrator = GuardianOrchestrator()
 simple_channel_service = SimpleChannelService()
-protected_person_response_service = ProtectedPersonResponseService()
 admin_case_service = AdminCaseService()
 trusted_circle_service = TrustedCircleService()
 assisted_proof_trust_service = AssistedProofTrustService()
@@ -342,11 +335,6 @@ async def evolution_webhook(request: Request):
         return evolution_demo_service.handle_webhook(payload)
     except EvolutionDemoPayloadError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-
-@app.post("/protected-response/generate", response_model=ProtectedResponseGenerateResponse)
-def protected_response_generate(payload: ProtectedResponseGenerateRequest, access: None = Depends(require_sensitive_access)):
-    return protected_person_response_service.generate(payload)
 
 
 @app.get("/guardian-console/status", response_model=GuardianConsoleStatusResponse)

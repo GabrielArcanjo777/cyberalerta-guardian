@@ -53,7 +53,6 @@ def test_real_console_lists_case_created_by_dual_bot_flow():
     assert listed.cases[0].risk_level == "high"
     assert listed.cases[0].alert_delivered is True
     assert detail.source_message.startswith("Mae, troquei de numero")
-    assert detail.protected_reply.status == "delivered"
     assert detail.guardian_alert.status == "delivered"
     assert detail.delivery.guardian_notified is True
     assert detail.pattern is not None

@@ -5,7 +5,6 @@ from app.controlled_agents.models import (
     ControlledAgentName,
     PatternReviewDecision,
     ResponsibleAlertDecision,
-    SafeReplyDecision,
     TriageDecision,
 )
 from app.controlled_agents.service import (
@@ -14,7 +13,6 @@ from app.controlled_agents.service import (
     ControlledAgentOrchestrator,
     PatternReviewAgent,
     ResponsibleAlertAgent,
-    SafeReplyAgent,
     TriageAgent,
 )
 
@@ -30,8 +28,6 @@ __all__ = [
     "PatternReviewDecision",
     "ResponsibleAlertAgent",
     "ResponsibleAlertDecision",
-    "SafeReplyAgent",
-    "SafeReplyDecision",
     "TriageAgent",
     "TriageDecision",
 ]
