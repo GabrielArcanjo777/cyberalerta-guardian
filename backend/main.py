@@ -142,7 +142,15 @@ def _validate_analysis_payload(payload: AnalysisRequest) -> None:
 
 def _validate_evolution_webhook_secret(request: Request) -> None:
     if not config.evolution_webhook_secret:
-        return None
+        # Same policy as the n8n webhook: tolerated only in development; in
+        # production an unset secret must never leave the endpoint open.
+        if config.is_development:
+            logger.warning("Evolution webhook accepted without secret (development only).")
+            return None
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server configuration error",
+        )
 
     header = request.headers.get("X-Evolution-Webhook-Secret")
     if not header or not hmac.compare_digest(header, config.evolution_webhook_secret):
@@ -191,7 +199,8 @@ def recovery(request: Request, payload: RecoveryRequest):
     return orchestrator.run_recovery(payload)
 
 @app.post("/report", response_model=ReportResponse)
-def report(payload: ReportRequest):
+def report(request: Request, payload: ReportRequest):
+    check_rate_limit(request, bucket="report")
     if payload.analysis is not None:
         SafetyPolicyService().check_text(payload.analysis.user_message)
     return orchestrator.generate_report(payload)

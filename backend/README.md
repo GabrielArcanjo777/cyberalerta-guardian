@@ -65,5 +65,6 @@ curl -X POST http://localhost:8000/analyze -H "Content-Type: application/json" -
 ## Testes
 
 ```bash
-pytest
+python -m pip install -r requirements-dev.txt
+python -m pytest app/tests -q
 ```
