@@ -1,6 +1,7 @@
 ﻿import hmac
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -85,6 +86,7 @@ from app.services.examples import get_example_scenarios
 from app.services.safety_policy import SafetyPolicyService
 from app.event_model import EventModelService
 from app.core.config import config
+from app.storage import settings_store
 from app.core.middleware import RequestContextHeadersMiddleware, SecurityHeadersMiddleware
 from app.core.security import check_rate_limit, require_api_key, validate_message_text
 from app.auth import create_auth_router, require_sensitive_access
@@ -117,6 +119,13 @@ dual_bot_service = DualBotFlowService(event_model=event_model)
 consent_service = ConsentService(dual_bot_service.event_model.event_bus)
 guardian_console_real_flow_service = GuardianConsoleRealFlowService(dual_bot_service, consent_service)
 n8n_integration_service = N8nIntegrationService(orchestrator=orchestrator)
+
+_persisted_tc = settings_store.get("trusted_contact")
+if _persisted_tc is not None and not config.trusted_contact:
+    config.trusted_contact = _persisted_tc
+    evolution_demo_service.guardian_address = _persisted_tc or None
+    dual_bot_service.default_guardian_address = _persisted_tc or "+5511888880001"
+
 app.include_router(create_auth_router())
 app.include_router(create_n8n_router(n8n_integration_service))
 app.include_router(create_evolution_router(), prefix="/api/channels/evolution")
@@ -335,6 +344,34 @@ async def evolution_webhook(request: Request):
         return evolution_demo_service.handle_webhook(payload)
     except EvolutionDemoPayloadError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+_PHONE_DIGITS_RE = re.compile(r"^\+?\d{10,15}$")
+
+
+@app.get("/settings/trusted-contact")
+def settings_get_trusted_contact(access: None = Depends(require_sensitive_access)):
+    return {
+        "trusted_contact": config.trusted_contact,
+        "dry_run": config.dry_run,
+        "beta_real_send_enabled": config.beta_real_send_enabled,
+    }
+
+
+@app.put("/settings/trusted-contact")
+def settings_set_trusted_contact(request: Request, payload: dict, access: None = Depends(require_sensitive_access)):
+    number = (payload.get("trusted_contact") or "").strip()
+    if number and not _PHONE_DIGITS_RE.match(number):
+        raise HTTPException(status_code=422, detail="Formato invalido. Use +DDI seguido de 10-15 digitos.")
+    config.trusted_contact = number
+    evolution_demo_service.guardian_address = number or None
+    dual_bot_service.default_guardian_address = number or config.trusted_contact or "+5511888880001"
+    settings_store.put("trusted_contact", number)
+    return {
+        "trusted_contact": config.trusted_contact,
+        "dry_run": config.dry_run,
+        "beta_real_send_enabled": config.beta_real_send_enabled,
+    }
 
 
 @app.get("/guardian-console/status", response_model=GuardianConsoleStatusResponse)

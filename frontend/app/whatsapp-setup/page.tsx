@@ -5,7 +5,7 @@ import Link from 'next/link'
 import React, {useCallback, useEffect, useRef, useState} from 'react'
 import Button from '@/components/Button'
 import ProtectedRoute from '@/components/ProtectedRoute'
-import {getEvolutionStatus, getEvolutionQr, postEvolutionReconnect} from '@/lib/api'
+import {getEvolutionStatus, getEvolutionQr, postEvolutionReconnect, getTrustedContactSettings, putTrustedContactSettings, type TrustedContactSettings} from '@/lib/api'
 import {EvolutionConnectionState} from '@/lib/types'
 
 const STATE_LABEL: Record<string, string> = {
@@ -26,6 +26,102 @@ const STATE_COLOR: Record<string, string> = {
   unknown: '#9aa0a6',
 }
 
+function TrustedContactSection(){
+  const [settings, setSettings] = useState<TrustedContactSettings | null>(null)
+  const [input, setInput] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState<{text:string, ok:boolean} | null>(null)
+
+  useEffect(()=>{
+    getTrustedContactSettings()
+      .then(s => { setSettings(s); setInput(s.trusted_contact) })
+      .catch(()=>{})
+  },[])
+
+  async function save(){
+    setSaving(true)
+    setMsg(null)
+    try{
+      const next = await putTrustedContactSettings(input.trim())
+      setSettings(next)
+      setInput(next.trusted_contact)
+      setMsg({text: next.trusted_contact ? 'Contato salvo.' : 'Contato removido. Alertas serão apenas simulados.', ok: true})
+    }catch(e){
+      setMsg({text: e instanceof Error ? e.message : 'Erro ao salvar.', ok: false})
+    }finally{
+      setSaving(false)
+    }
+  }
+
+  const hasContact = !!(settings?.trusted_contact)
+  const isDryRun = settings?.dry_run ?? true
+  const isRealSendEnabled = settings?.beta_real_send_enabled ?? false
+  const changed = input.trim() !== (settings?.trusted_contact ?? '')
+
+  return (
+    <section style={{marginTop:32, borderTop:'1px solid #d2d6cf', paddingTop:24}}>
+      <p style={{fontSize:12, letterSpacing:'0.08em', textTransform:'uppercase', color:'#8b96a3', margin:'0 0 8px'}}>
+        Contato de confiança
+      </p>
+      <h2 style={{fontSize:22, margin:'0 0 4px'}}>Quem o bot deve alertar?</h2>
+      <p style={{color:'#8b96a3', maxWidth:560, margin:'0 0 16px'}}>
+        O bot nunca responde ao remetente. Quando detectar um golpe explícito, envia um alerta apenas para este número.
+        Deixe vazio para manter os alertas apenas simulados (sem envio real).
+      </p>
+
+      <div style={{display:'flex', gap:10, alignItems:'flex-start'}}>
+        <div style={{flex:1}}>
+          <input
+            type="tel"
+            placeholder="+5511999990001"
+            value={input}
+            onChange={e => { setInput(e.target.value); setMsg(null) }}
+            style={{
+              width:'100%', height:42, borderRadius:8,
+              border:'1px solid #d2d6cf', padding:'0 12px',
+              fontSize:15, fontFamily:'monospace',
+            }}
+          />
+          <p style={{fontSize:12, color:'#8b96a3', margin:'4px 0 0'}}>
+            Formato: +DDI + número (10-15 dígitos). Ex: +5511999990001
+          </p>
+        </div>
+        <Button onClick={save} disabled={saving || !changed}>
+          {saving ? 'Salvando…' : 'Salvar'}
+        </Button>
+      </div>
+
+      {msg && (
+        <p style={{
+          margin:'10px 0 0', padding:'8px 12px', borderRadius:8, fontSize:14,
+          background: msg.ok ? '#eef7f1' : '#fbe9e7',
+          color: msg.ok ? '#2e7d4f' : '#c23b34',
+        }}>{msg.text}</p>
+      )}
+
+      <div style={{
+        marginTop:16, padding:14, borderRadius:10,
+        border: `1px solid ${hasContact ? '#cfe8d8' : '#e8dcc9'}`,
+        background: hasContact ? '#f5faf7' : '#fdf8f0',
+      }}>
+        <p style={{margin:0, fontSize:14}}>
+          <strong>Status do envio:</strong>{' '}
+          {!hasContact && 'Nenhum contato configurado — alertas simulados.'}
+          {hasContact && isDryRun && 'Contato configurado, mas DRY_RUN está ativo — alertas simulados.'}
+          {hasContact && !isDryRun && !isRealSendEnabled && 'Contato configurado, mas BETA_REAL_SEND_ENABLED está desligado — alertas simulados.'}
+          {hasContact && !isDryRun && isRealSendEnabled && 'Envio real ativo. Alertas serão enviados via WhatsApp.'}
+        </p>
+        {hasContact && isDryRun && (
+          <p style={{margin:'6px 0 0', fontSize:13, color:'#8b96a3'}}>
+            Para ativar envio real: defina <code>DRY_RUN=false</code> e <code>BETA_REAL_SEND_ENABLED=true</code> no <code>.env</code> do backend.
+            Adicione o número em <code>BETA_ALLOWED_RECIPIENTS</code> se <code>BETA_REQUIRE_ALLOWED_RECIPIENT=true</code>.
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
 export default function WhatsAppSetupPage(){
   const [status,setStatus] = useState<EvolutionConnectionState | null>(null)
   const [loading,setLoading] = useState(false)
@@ -44,7 +140,6 @@ export default function WhatsAppSetupPage(){
     }
   },[])
 
-  // Poll while not connected so the QR / status stays fresh during pairing.
   useEffect(()=>{
     let active = true
     const tick = async ()=>{
@@ -142,8 +237,10 @@ export default function WhatsAppSetupPage(){
           </Button>
         </div>
 
+        <TrustedContactSection />
+
         <p style={{marginTop:24, fontSize:13, color:'#8b96a3', borderTop:'1px dashed #d2d6cf', paddingTop:16}}>
-          ⚠️ {status?.limitation_notice ?? 'Canal não-oficial (WhatsApp Web/Baileys): risco de bloqueio do número e de queda de sessão. Uso de portfólio/demo, não produção.'}
+          Canal não-oficial (WhatsApp Web/Baileys): risco de bloqueio do número e de queda de sessão. Uso de portfólio/demo, não produção.
         </p>
 
         <p style={{marginTop:8}}>
