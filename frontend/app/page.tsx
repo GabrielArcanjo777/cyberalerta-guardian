@@ -7,14 +7,21 @@ import TerminalLogPanel from '@/components/TerminalLogPanel'
 import DecisionPreview from '@/components/DecisionPreview'
 import {RevealGroup, RevealItem} from '@/components/Reveal'
 import {Locale, useGuardianLocale} from '@/lib/i18n'
-import {Inbox, Filter, ShieldAlert, Fingerprint, Workflow, Send, CheckCircle} from 'lucide-react'
+import {
+  Inbox, Filter, ShieldAlert, Fingerprint, Workflow, Send, CheckCircle,
+  Banknote, Link2, Landmark, Users, KeyRound, AlarmClock,
+} from 'lucide-react'
 
 const PIPELINE_ICONS = [Inbox, Filter, ShieldAlert, Fingerprint, Workflow, Send, CheckCircle]
+const DETECT_ICONS = [Banknote, Link2, Landmark, Users, KeyRound, AlarmClock]
 
 const homeCopy:Record<Locale, {
   terminalEyebrow:string
   terminalTitle:string
   terminalNote:string
+  detectEyebrow:string
+  detectTitle:string
+  detectItems:string[]
   pipelineEyebrow:string
   pipelineTitle:string
   pipelineSteps:string[]
@@ -26,48 +33,68 @@ const homeCopy:Record<Locale, {
   statusNote:string
 }> = {
   'pt-BR': {
-    terminalEyebrow:'AUDIT TRAIL',
-    terminalTitle:'Atividade do sistema em demonstração',
-    terminalNote:'Dados demonstrativos — ambiente local',
-    pipelineEyebrow:'RISK ENGINE',
-    pipelineTitle:'Fluxo operacional rastreável',
-    pipelineSteps:[
-      'Evento recebido',
-      'Normalização',
-      'Classificação',
-      'Idempotência',
-      'n8n',
-      'WhatsApp via Evolution',
-      'Auditoria',
+    terminalEyebrow:'EM TEMPO REAL',
+    terminalTitle:'Veja os alertas suspeitos chegando no painel',
+    terminalNote:'Dados de demonstração — ambiente local',
+    detectEyebrow:'O QUE DETECTAMOS',
+    detectTitle:'Os golpes mais comuns no WhatsApp',
+    detectItems:[
+      'Golpe do Pix',
+      'Link falso',
+      'Falso banco',
+      'Parente pedindo dinheiro',
+      'Código de verificação',
+      'Urgência e manipulação',
     ],
-    closingEyebrow:'TRUST LAYER',
-    closingTitle:'Uma camada entre a mensagem suspeita e o prejuízo.',
-    closingBody:'O CyberAlerta Guardian foi desenhado para apoiar pessoas vulneráveis, famílias e instituições antes que a engenharia social vire perda financeira.',
-    closingPrimary:'Entrar no painel',
-    closingSecondary:'Ver fluxo de risco',
-    statusNote:'Beta Técnico Local · n8n validado localmente · WhatsApp real via Evolution (não-oficial)',
+    pipelineEyebrow:'COMO FUNCIONA',
+    pipelineTitle:'Do WhatsApp ao alerta, em segundos',
+    pipelineSteps:[
+      'Mensagem recebida',
+      'Conversa normal descartada',
+      'Risco classificado',
+      'Motivo identificado',
+      'Só o suspeito é salvo',
+      'Alerta enviado',
+      'Você decide',
+    ],
+    closingEyebrow:'PROTEÇÃO CONTÍNUA',
+    closingTitle:'Um alerta antes de alguém cair no golpe.',
+    closingBody:'O CyberAlerta analisa as mensagens recebidas, ignora as conversas normais e avisa você quando aparece um sinal de golpe — Pix urgente, link falso, falso banco ou pressão emocional. Com privacidade por padrão e uso só com autorização.',
+    closingPrimary:'Ver demonstração',
+    closingSecondary:'Conectar WhatsApp',
+    statusNote:'Demonstração local · WhatsApp via Evolution (não-oficial) · privacidade por padrão',
   },
   'en-US': {
-    terminalEyebrow:'AUDIT TRAIL',
-    terminalTitle:'System activity demonstration',
-    terminalNote:'Demonstrative data — local environment',
-    pipelineEyebrow:'RISK ENGINE',
-    pipelineTitle:'Traceable operational flow',
-    pipelineSteps:[
-      'Event received',
-      'Normalization',
-      'Classification',
-      'Idempotency',
-      'n8n',
-      'WhatsApp via Evolution',
-      'Audit',
+    terminalEyebrow:'REAL TIME',
+    terminalTitle:'Watch suspicious alerts arrive on the panel',
+    terminalNote:'Demonstration data — local environment',
+    detectEyebrow:'WHAT WE DETECT',
+    detectTitle:'The most common WhatsApp scams',
+    detectItems:[
+      'Pix scam',
+      'Fake link',
+      'Fake bank',
+      'Relative asking for money',
+      'Verification code',
+      'Urgency & manipulation',
     ],
-    closingEyebrow:'TRUST LAYER',
-    closingTitle:'A layer between the suspicious message and the loss.',
-    closingBody:'CyberAlerta Guardian was designed to support vulnerable people, families, and institutions before social engineering becomes financial loss.',
-    closingPrimary:'Sign in to panel',
-    closingSecondary:'View risk flow',
-    statusNote:'Local Technical Beta · n8n validated locally · real WhatsApp via Evolution (unofficial)',
+    pipelineEyebrow:'HOW IT WORKS',
+    pipelineTitle:'From WhatsApp to alert, in seconds',
+    pipelineSteps:[
+      'Message received',
+      'Normal chat discarded',
+      'Risk classified',
+      'Reason identified',
+      'Only the suspicious is saved',
+      'Alert sent',
+      'You decide',
+    ],
+    closingEyebrow:'CONTINUOUS PROTECTION',
+    closingTitle:'An alert before someone falls for a scam.',
+    closingBody:'CyberAlerta analyzes incoming messages, ignores normal conversations, and warns you when a scam signal appears — urgent Pix, fake link, fake bank or emotional pressure. Privacy by default and authorized use only.',
+    closingPrimary:'See demo',
+    closingSecondary:'Connect WhatsApp',
+    statusNote:'Local demo · WhatsApp via Evolution (unofficial) · privacy by default',
   },
 }
 
@@ -79,7 +106,7 @@ export default function Home(){
     <div className="home-hermes-page">
       <HeroSection />
 
-      {/* Terminal — audit trail */}
+      {/* Terminal — alertas em tempo real */}
       <section id="recursos" className="home-section home-terminal-section">
         <RevealGroup amount={0.28} delayChildren={0.04} staggerChildren={0.09}>
           <RevealItem className="home-section-label">
@@ -93,10 +120,33 @@ export default function Home(){
         </RevealGroup>
       </section>
 
-      {/* Decision preview — 2 cards + trail */}
+      {/* Decisão — 2 cards + trilha */}
       <DecisionPreview />
 
-      {/* Pipeline — operational flow */}
+      {/* O que detectamos */}
+      <section id="solucoes" className="home-section home-pipeline-section">
+        <RevealGroup amount={0.24} delayChildren={0.04} staggerChildren={0.08}>
+          <RevealItem className="home-section-label">
+            <span className="home-label">{copy.detectEyebrow}</span>
+            <h2>{copy.detectTitle}</h2>
+          </RevealItem>
+          <RevealGroup className="home-pipeline" amount={0.28}>
+            {copy.detectItems.map((item, i)=> {
+              const Icon = DETECT_ICONS[i % DETECT_ICONS.length]
+              return (
+                <RevealItem key={item} className="home-pipeline-step">
+                  <span className="home-pipeline-icon-wrap">
+                    <Icon className="home-pipeline-icon" />
+                  </span>
+                  <span className="home-pipeline-label">{item}</span>
+                </RevealItem>
+              )
+            })}
+          </RevealGroup>
+        </RevealGroup>
+      </section>
+
+      {/* Como funciona */}
       <section id="empresa" className="home-section home-pipeline-section">
         <RevealGroup amount={0.24} delayChildren={0.04} staggerChildren={0.08}>
           <RevealItem className="home-section-label">
@@ -119,7 +169,7 @@ export default function Home(){
         </RevealGroup>
       </section>
 
-      {/* Closing CTA */}
+      {/* Fechamento */}
       <section id="contato" className="home-section home-closing">
         <RevealGroup className="home-final-content" amount={0.24} delayChildren={0.04} staggerChildren={0.08}>
           <RevealItem className="home-section-label">
@@ -128,8 +178,8 @@ export default function Home(){
           <RevealItem><h2>{copy.closingTitle}</h2></RevealItem>
           <RevealItem><p>{copy.closingBody}</p></RevealItem>
           <RevealItem className="home-closing-actions">
-            <Link href="/login" className="home-primary-cta">{copy.closingPrimary}</Link>
-            <Link href="/assisted-demo" className="home-secondary-cta">{copy.closingSecondary}</Link>
+            <Link href="/assisted-demo" className="home-primary-cta">{copy.closingPrimary}</Link>
+            <Link href="/login" className="home-secondary-cta">{copy.closingSecondary}</Link>
           </RevealItem>
           <RevealItem className="home-status-note">{copy.statusNote}</RevealItem>
         </RevealGroup>

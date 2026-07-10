@@ -1,6 +1,7 @@
 "use client"
 
 import Link from 'next/link'
+import {useEffect, useState} from 'react'
 import {usePrefersReducedMotion} from '@/components/usePrefersReducedMotion'
 import {useGuardianLocale, type Locale} from '@/lib/i18n'
 import styles from './HeroSection.module.css'
@@ -13,37 +14,58 @@ type HeroCopy = {
   primaryCta:string
   secondaryCta:string
   trustItems:string[]
+  phonePaused:string
+  phoneSubtitle:string
 }
 
 const heroCopy:Record<Locale, HeroCopy> = {
   'pt-BR': {
-    aria:'CyberAlerta Guardian',
-    badge:'BETA TÉCNICO LOCAL',
-    titleLines:['CYBERALERTA', 'GUARDIAN'],
-    subtitle:'Monitoramento inteligente de risco com classificação explicável, automação via n8n e alertas operacionais em tempo real.',
-    primaryCta:'Entrar no painel',
-    secondaryCta:'Ver fluxo de risco',
+    aria:'CyberAlerta — proteção contra golpes no WhatsApp',
+    badge:'PROTEÇÃO ANTI-GOLPE · WHATSAPP',
+    titleLines:['Proteja sua', 'família de golpes', 'no WhatsApp'],
+    subtitle:'O sistema analisa as mensagens automaticamente, descarta as conversas normais e mostra no painel só os alertas de risco: Pix suspeito, link falso, falso banco e pedidos urgentes de dinheiro.',
+    primaryCta:'Ver demonstração',
+    secondaryCta:'Conectar WhatsApp',
     trustItems:[
-      'n8n validado localmente',
-      'WhatsApp via Evolution (não-oficial)',
-      'Privacidade por design',
-      'Decisão rastreável',
+      'Análise em tempo real',
+      'Mensagens normais descartadas',
+      'Só alertas suspeitos no painel',
+      'Uso só com autorização',
     ],
+    phonePaused:'Proteção ativa · resposta pausada',
+    phoneSubtitle:'Análise de risco',
   },
   'en-US': {
-    aria:'CyberAlerta Guardian',
-    badge:'LOCAL TECHNICAL BETA',
-    titleLines:['CYBERALERTA', 'GUARDIAN'],
-    subtitle:'Intelligent risk monitoring with explainable classification, n8n automation, and real-time operational alerts.',
-    primaryCta:'Sign in to panel',
-    secondaryCta:'View risk flow',
+    aria:'CyberAlerta — protection against WhatsApp scams',
+    badge:'ANTI-SCAM PROTECTION · WHATSAPP',
+    titleLines:['Protect your', 'family from scams', 'on WhatsApp'],
+    subtitle:'The system analyzes messages automatically, discards normal conversations, and shows only risk alerts on the panel: suspicious Pix, fake links, fake bank and urgent money requests.',
+    primaryCta:'See demo',
+    secondaryCta:'Connect WhatsApp',
     trustItems:[
-      'n8n validated locally',
-      'WhatsApp via Evolution (unofficial)',
-      'Privacy by design',
-      'Traceable decisions',
+      'Real-time analysis',
+      'Normal messages discarded',
+      'Only suspicious alerts on the panel',
+      'Authorized use only',
     ],
+    phonePaused:'Protection active · reply paused',
+    phoneSubtitle:'Risk analysis',
   },
+}
+
+type Scenario = {tag:string; tone:'high'|'medium'; sent:string; verdict:string}
+
+const scenariosByLocale:Record<Locale, Scenario[]> = {
+  'pt-BR': [
+    {tag:'Golpe do Pix', tone:'high', sent:'Mãe, troquei de número. Preciso fazer um Pix urgente.', verdict:'Risco alto. Não transfira. Confirme com o contato salvo por ligação antes de qualquer Pix.'},
+    {tag:'Falso banco', tone:'high', sent:'Banco XYZ: seu cartão foi bloqueado. Envie o código do SMS para desbloquear.', verdict:'Risco alto. Banco não pede código por mensagem. Não compartilhe o código.'},
+    {tag:'Link falso', tone:'medium', sent:'Você ganhou um prêmio! Resgate aqui: bit.ly/xz9-premio', verdict:'Risco médio. Link suspeito. Não clique — verifique no app oficial.'},
+  ],
+  'en-US': [
+    {tag:'Pix scam', tone:'high', sent:'Mom, I changed my number. I need to make an urgent Pix.', verdict:'High risk. Do not transfer. Confirm with a saved contact by phone before any transfer.'},
+    {tag:'Fake bank', tone:'high', sent:'Bank XYZ: your card was blocked. Send the SMS code to unblock it.', verdict:'High risk. Banks never ask for codes by message. Do not share the code.'},
+    {tag:'Fake link', tone:'medium', sent:'You won a prize! Claim here: bit.ly/xz9-prize', verdict:'Medium risk. Suspicious link. Do not click — check the official app.'},
+  ],
 }
 
 /* ── Radar Backdrop ── */
@@ -66,16 +88,13 @@ function RadarBackdrop({reduceMotion}:{reduceMotion:boolean}){
   )
 }
 
-/* ── Sentinel Mockup — Realistic Phone ── */
-function SentinelMockup({reduceMotion}:{reduceMotion:boolean}){
+/* ── Sentinel Mockup — phone that cycles through real scam examples ── */
+function SentinelMockup({reduceMotion, scenario, cycleKey, copy}:{reduceMotion:boolean; scenario:Scenario; cycleKey:number; copy:HeroCopy}){
+  const toneColor = scenario.tone === 'high' ? '#ff5c64' : '#f59e0b'
   return (
-    <div
-      className={styles.mockupContainer}
-      aria-hidden="true"
-    >
+    <div className={styles.mockupContainer} aria-hidden="true">
       <RadarBackdrop reduceMotion={reduceMotion} />
 
-      {/* Phone Mockup */}
       <div className={styles.phoneFrame}>
         <div className={styles.phoneNotch} />
         <div className={styles.phoneScreen}>
@@ -86,27 +105,30 @@ function SentinelMockup({reduceMotion}:{reduceMotion:boolean}){
           <div className={styles.chatHeader}>
             <div className={styles.chatAvatar} />
             <div className={styles.chatHeaderInfo}>
-              <div className={styles.chatName}>CyberAlerta Guardian</div>
-              <div className={styles.chatSubtitle}>Análise de risco</div>
+              <div className={styles.chatName}>CyberAlerta</div>
+              <div className={styles.chatSubtitle}>{copy.phoneSubtitle}</div>
             </div>
             <div className={styles.trustBadge}>⏸</div>
           </div>
-          <div className={styles.chatBody}>
+          <div key={cycleKey} className={`${styles.chatBody} ${styles.chatCycle}`}>
+            <span className={styles.chatRiskTag} style={{color: toneColor, borderColor: toneColor}}>
+              {scenario.tag}
+            </span>
             <div className={styles.chatBubbleSent}>
-              <span className={styles.chatBubbleSentText}>Recebi isso: &quot;Mãe, troquei de número. Preciso fazer um Pix urgente.&quot;</span>
+              <span className={styles.chatBubbleSentText}>{scenario.sent}</span>
               <span className={styles.chatTime}>14:22  ✓✓</span>
             </div>
             <div className={styles.chatBubbleRecv}>
-              <span className={styles.chatBubbleRecvText}>Risco alto detectado. Não responda ainda. Confirme com o contato salvo antes de qualquer transferência.</span>
+              <span className={styles.chatBubbleRecvText}>{scenario.verdict}</span>
               <span className={styles.chatTime}>14:22  ✓</span>
             </div>
-            <div className={styles.systemIntervention}>
-              <div className={styles.interventionIcon}>⏸</div>
-              <div className={styles.interventionText}>Trust Lock ativo · ação pausada</div>
+            <div className={styles.systemIntervention} style={{borderLeftColor: toneColor}}>
+              <div className={styles.interventionIcon} style={{background: toneColor}}>⏸</div>
+              <div className={styles.interventionText}>{copy.phonePaused}</div>
             </div>
           </div>
           <div className={styles.phoneKeyboard}>
-            <span className={styles.phoneKeyboardHint}>Demo local · WhatsApp via Evolution (não-oficial)</span>
+            <span className={styles.phoneKeyboardHint}>Demo · WhatsApp via Evolution (não-oficial)</span>
           </div>
         </div>
       </div>
@@ -118,12 +140,22 @@ export default function HeroSection(){
   const reduceMotion = usePrefersReducedMotion()
   const [locale] = useGuardianLocale()
   const copy = heroCopy[locale]
+  const scenarios = scenariosByLocale[locale]
+  const [index, setIndex] = useState(0)
+
+  useEffect(()=>{
+    if(reduceMotion) return
+    const id = setInterval(()=>setIndex(i=>(i + 1) % scenarios.length), 4200)
+    return ()=>clearInterval(id)
+  },[reduceMotion, scenarios.length])
+
+  const scenario = scenarios[index % scenarios.length]
 
   return (
     <section id="plataforma" className={styles.hero} aria-label={copy.aria}>
       <div className={styles.gridBg} aria-hidden="true" />
       <div className={styles.glowBg} aria-hidden="true" />
-      <div className={styles.watermark} aria-hidden="true">GUARDIAN</div>
+      <div className={styles.watermark} aria-hidden="true">CYBERALERTA</div>
 
       <div className={styles.inner}>
         <div className={styles.copy}>
@@ -133,8 +165,8 @@ export default function HeroSection(){
           </h1>
           <p className={styles.subtitle}>{copy.subtitle}</p>
           <div className={styles.actions}>
-            <Link href="/login" className={styles.primaryCta}>{copy.primaryCta}</Link>
-            <Link href="/assisted-demo" className={styles.secondaryCta}>{copy.secondaryCta}</Link>
+            <Link href="/assisted-demo" className={styles.primaryCta}>{copy.primaryCta}</Link>
+            <Link href="/login" className={styles.secondaryCta}>{copy.secondaryCta}</Link>
           </div>
           <div className={styles.trustStrip}>
             {copy.trustItems.map(label=><span key={label}>{label}</span>)}
@@ -142,7 +174,7 @@ export default function HeroSection(){
         </div>
 
         <div className={styles.visual}>
-          <SentinelMockup reduceMotion={reduceMotion} />
+          <SentinelMockup reduceMotion={reduceMotion} scenario={scenario} cycleKey={index} copy={copy} />
         </div>
       </div>
     </section>
