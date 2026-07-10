@@ -14,6 +14,7 @@ from app.channel_adapters import (
     OutboundMessageRequest,
 )
 from app.event_model import BotEventType, EventModelService
+from app.event_model.models import RiskLevel
 from app.mock_whatsapp.fixtures import MOCK_WHATSAPP_FIXTURES, get_fixture
 from app.mock_whatsapp.models import (
     MockOutboundRecord,
@@ -55,8 +56,17 @@ class MockWhatsAppSimulatorService:
             guardian_alias=request.guardian_alias,
         )
         outbound_messages: List[MockOutboundRecord] = []
+        assessment = (
+            self.event_model.repositories.risk_assessments.get(ingress_result.risk_assessment_id)
+            if ingress_result.risk_assessment_id else None
+        )
 
-        if ingress_result.case_id and not ingress_result.duplicate:
+        if (
+            ingress_result.case_id
+            and not ingress_result.duplicate
+            and assessment is not None
+            and assessment.risk_level == RiskLevel.HIGH
+        ):
             outbound_messages.append(
                 self._send_guardian_alert(
                     request=request,
@@ -66,13 +76,8 @@ class MockWhatsAppSimulatorService:
             )
 
         events = self.event_model.repositories.events.list_all()[before_events:]
-        risk_score = None
-        risk_level = None
-        if ingress_result.risk_assessment_id:
-            assessment = self.event_model.repositories.risk_assessments.get(ingress_result.risk_assessment_id)
-            if assessment:
-                risk_score = assessment.score
-                risk_level = assessment.risk_level.value
+        risk_score = assessment.score if assessment else None
+        risk_level = assessment.risk_level.value if assessment else None
 
         response = MockWhatsAppSimulationResponse(
             simulation_id=simulation_id,

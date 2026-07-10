@@ -118,10 +118,10 @@ def test_link_and_code_fixtures_create_cases_with_mock_alerts():
 
     assert link.case_created is True
     assert link.risk_level == "medium"
-    assert link.guardian_notified is True
+    assert link.guardian_notified is False  # MEDIUM: case stays in console, no WhatsApp alert
     assert code.case_created is True
     assert code.risk_level == "high"
-    assert code.guardian_notified is True
+    assert code.guardian_notified is True  # HIGH: explicit scam triggers alert
 
 
 def test_mock_whatsapp_api_exposes_fixtures_simulation_and_state():

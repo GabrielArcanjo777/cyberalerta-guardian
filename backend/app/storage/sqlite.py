@@ -4,7 +4,7 @@ import json
 import sqlite3
 import threading
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 if TYPE_CHECKING:
     from app.consent.models import ConsentEvent, ConsentRecord
@@ -265,6 +265,39 @@ class SQLiteTrustedCircleStore:
         return TrustedCircleEscalationRecord.model_validate(json.loads(row["payload"])) if row else None
 
 
+class SQLiteSettingsStore:
+    def __init__(self, connection: SQLiteConnection) -> None:
+        self._conn = connection
+        self._ensure_schema()
+
+    def _ensure_schema(self) -> None:
+        self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS app_settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+
+    def get(self, key: str) -> Optional[str]:
+        row = self._conn.execute(
+            "SELECT value FROM app_settings WHERE key = ?", (key,)
+        ).fetchone()
+        return row["value"] if row else None
+
+    def put(self, key: str, value: str) -> None:
+        self._conn.execute(
+            """
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+            """,
+            (key, value, _now_iso()),
+        )
+
+
 class SQLiteStorage:
     def __init__(self, path: str | None = None) -> None:
         self._path = path or storage_config.sqlite_path()
@@ -273,6 +306,7 @@ class SQLiteStorage:
         self.consent_store = SQLiteConsentStore(self._connection)
         self.proof_trust_store = SQLiteProofTrustStore(self._connection)
         self.trusted_circle_store = SQLiteTrustedCircleStore(self._connection)
+        self.settings_store = SQLiteSettingsStore(self._connection)
 
     def close(self) -> None:
         self._connection.close()

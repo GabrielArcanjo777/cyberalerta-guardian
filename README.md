@@ -1,18 +1,16 @@
 # CyberAlerta Guardian
 
-**Antes do Pix. Antes do clique. Antes do prejuízo.**
+**Proteção contra golpes no WhatsApp — um alerta antes do prejuízo.**
 
-CyberAlerta Guardian é um MVP técnico de intervenção pré-dano contra golpes digitais. O projeto demonstra como uma pessoa protegida pode encaminhar voluntariamente uma mensagem suspeita, receber uma orientação curta e segura, e envolver um responsável antes de realizar uma ação de risco como Pix, clique em link, envio de código ou instalação de app.
+CyberAlerta Guardian analisa as mensagens recebidas em um número de WhatsApp **autorizado**, descarta as conversas normais e mostra no painel apenas os **alertas de risco**: Pix suspeito, link falso, falso banco, parente pedindo dinheiro, código de verificação e mensagens de urgência/manipulação. O responsável (familiar, cuidador ou instituição) revisa cada alerta com risco, motivo e ação recomendada.
 
-O projeto está em estágio **MVP/demo técnica**. Ele não é produção, não monitora conversas automaticamente, não substitui banco, polícia, advogado ou canais oficiais, e não deve ser vendido como detecção infalível de fraude.
+O projeto está em estágio **MVP / demonstração técnica**. Não é produção, **não é ferramenta de espionagem** e só deve ser usado em contas próprias ou com **autorização expressa do titular**. Não substitui banco, polícia, advogado ou canais oficiais, e não promete detecção infalível.
 
 ## Status atual
 
-O CyberAlerta Guardian está em **Beta Técnico Local**.
+**Beta Técnico Local.** Backend FastAPI + frontend Next.js, autenticação com Google OIDC, MFA/TOTP, recovery codes (Argon2id), RBAC, auditoria, rate limit, persistência SQLite e painel operacional.
 
-O sistema já possui backend FastAPI, frontend Next.js, autenticação segura com Google OIDC, MFA/TOTP, recovery codes com Argon2id, RBAC, auditoria, rate limit, painel admin e integração n8n validada em ambiente local.
-
-A integração com WhatsApp Business Cloud está preparada em nível de workflow, mas a ativação real depende da liberação/provisionamento da Meta. No momento, o envio real pelo WhatsApp ainda não deve ser declarado como ativo.
+O canal de WhatsApp usa a **Evolution API** (WhatsApp Web / Baileys) — não-oficial, gratuita, pareada por QR code em `/whatsapp-setup`. Adequada para portfólio/demo: o número pode ser bloqueado pela Meta e a sessão pode cair exigindo novo pareamento. A antiga integração paga com a Meta (WhatsApp Business Cloud) foi removida.
 
 ## Problema
 
@@ -28,15 +26,15 @@ O CyberAlerta Guardian foca no momento anterior ao dano:
 
 ## Solução
 
-O Guardian organiza uma proteção assistida:
+O Guardian organiza uma proteção assistida e contínua:
 
-1. a pessoa protegida compartilha um trecho suspeito;
-2. o backend analisa sinais de risco;
-3. o sistema gera uma resposta curta e calma;
-4. um caso aparece no Guardian Console;
-5. o responsável revisa evidências, risco e histórico;
-6. o fluxo recomenda pausa, verificação por canal confiável e Proof of Trust;
-7. feedback humano atualiza o caso e melhora a base futura.
+1. conecta-se um número de WhatsApp autorizado por QR code (`/whatsapp-setup`);
+2. as mensagens recebidas são analisadas em tempo real;
+3. conversas normais são descartadas — não ficam no painel;
+4. mensagens suspeitas viram um caso com risco, motivo e ação recomendada;
+5. o responsável revisa e decide (confirmar golpe, falso positivo, resolver);
+6. o fluxo recomenda pausa e verificação por um canal confiável;
+7. tudo com consentimento/opt-in, retenção limitada e trilha auditável.
 
 ## Status Real
 

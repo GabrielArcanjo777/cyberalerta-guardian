@@ -39,6 +39,7 @@ from app.event_model import (
     CaseStatus,
     EventModelService,
     RiskAssessment,
+    RiskLevel,
 )
 from app.pattern_intelligence import PatternDetectionResult, PatternIntelligenceService
 
@@ -424,7 +425,9 @@ class ProtectedBotService(OutboundAuditMixin):
             # The bot never replies to the person who sent the message. The only
             # outbound recipient is the single configured trusted contact
             # (guardian); the analysis itself lives in the backend/console.
-            if case is not None:
+            # Only alert for explicit scams (HIGH risk) — MEDIUM cases stay in
+            # the console for review without sending a WhatsApp message.
+            if case is not None and assessment.risk_level == RiskLevel.HIGH:
                 guardian_alert = self.responsible_bot.send_alert(
                     guardian_address=guardian_address,
                     protected_person_alias=resolved_protected_alias,

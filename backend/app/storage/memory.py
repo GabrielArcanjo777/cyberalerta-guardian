@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, TYPE_CHECKING
-from uuid import uuid4
 
 if TYPE_CHECKING:
     from app.consent.models import ConsentEvent, ConsentRecord
-    from app.guardian_console.admin_case_models import AdminCase, AdminCaseTraceStep
+    from app.guardian_console.admin_case_models import AdminCase
     from app.trusted_circle.trusted_circle_models import TrustedCircleEscalationRecord
 
 
@@ -215,3 +214,14 @@ class TrustedCircleMemoryStore:
         if not matches:
             return None
         return max(matches, key=lambda item: item.created_at)
+
+
+class SettingsMemoryStore:
+    def __init__(self) -> None:
+        self._data: Dict[str, str] = {}
+
+    def get(self, key: str) -> Optional[str]:
+        return self._data.get(key)
+
+    def put(self, key: str, value: str) -> None:
+        self._data[key] = value

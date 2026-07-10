@@ -847,6 +847,25 @@ export async function postEvolutionReconnect(){
   return await res.json() as EvolutionConnectionState
 }
 
+export interface TrustedContactSettings {
+  trusted_contact: string
+  dry_run: boolean
+  beta_real_send_enabled: boolean
+}
+
+export async function getTrustedContactSettings(): Promise<TrustedContactSettings> {
+  const res = await authFetch('/settings/trusted-contact')
+  return await res.json() as TrustedContactSettings
+}
+
+export async function putTrustedContactSettings(trusted_contact: string): Promise<TrustedContactSettings> {
+  const res = await authFetch('/settings/trusted-contact', {
+    method: 'PUT',
+    body: JSON.stringify({ trusted_contact }),
+  })
+  return await res.json() as TrustedContactSettings
+}
+
 export async function postOCRPreview(source:string, content:string){
   try{
     const res = await fetch(`${API}/connectors/ocr-preview`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source, content})})

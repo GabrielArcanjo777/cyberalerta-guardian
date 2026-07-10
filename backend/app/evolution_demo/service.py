@@ -20,6 +20,7 @@ from app.channel_adapters.evolution_demo_adapter import (
 )
 from app.dual_bot.messages import responsible_alert_for
 from app.event_model import BotEventType, EventModelService
+from app.event_model.models import RiskLevel
 from app.evolution_demo.models import (
     EvolutionDemoHealthResponse,
     EvolutionDemoOutboundRecord,
@@ -109,7 +110,12 @@ class EvolutionDemoService:
         # (that would spam every contact of a paired number). The analysis result
         # only goes to (1) the single configured trusted contact and (2) the
         # backend event model / Guardian Console. This holds in production too.
-        if not ingress_result.duplicate and case is not None and assessment is not None:
+        if (
+            not ingress_result.duplicate
+            and case is not None
+            and assessment is not None
+            and assessment.risk_level == RiskLevel.HIGH
+        ):
             destination = guardian_address or self.guardian_address
             alert_body = responsible_alert_for(
                 protected_person_alias=protected_person_alias,
