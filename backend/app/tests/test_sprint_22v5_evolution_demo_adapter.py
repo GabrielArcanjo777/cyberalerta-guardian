@@ -155,8 +155,8 @@ def _outbound_message(to_address: str = "5511999990001"):
         provider=ChannelProvider.EVOLUTION_DEMO,
         to=to_address,
         body="mensagem de teste",
-        templateName="protected_reply",
-        metadata={"kind": OutboundMessageKind.PROTECTED_REPLY.value},
+        templateName="guardian_alert",
+        metadata={"kind": OutboundMessageKind.GUARDIAN_ALERT.value},
     )
 
 

@@ -404,9 +404,6 @@ class EvolutionDemoAdapter:
     def normalize_inbound(self, payload: Mapping[str, Any]) -> InboundMessage:
         return self.parseProviderPayload(payload)
 
-    def send_protected_reply(self, payload: OutboundMessageRequest) -> OutboundMessageResult:
-        return self.sendMessage(payload)
-
     def send_guardian_alert(self, payload: OutboundMessageRequest) -> OutboundMessageResult:
         return self.sendMessage(payload)
 

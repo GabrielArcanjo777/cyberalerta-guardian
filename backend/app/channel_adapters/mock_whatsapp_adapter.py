@@ -59,9 +59,6 @@ class MockWhatsAppAdapter:
             raw=dict(payload),
         )
 
-    def send_protected_reply(self, payload: OutboundMessageRequest) -> OutboundMessageResult:
-        return self._send(payload, prefix="mock-protected")
-
     def send_guardian_alert(self, payload: OutboundMessageRequest) -> OutboundMessageResult:
         return self._send(payload, prefix="mock-guardian")
 
