@@ -8,6 +8,7 @@ from typing import Optional, Protocol
 from app.auth.crypto import normalize_email
 from app.auth.models import AuthAuditLog, AuthUser, MfaRecoveryCode, OAuthAccount, utc_now
 from app.core.config import config
+from app.storage.config import _resolve_sqlite_url
 
 
 class AuthRepository(Protocol):
@@ -122,25 +123,13 @@ class InMemoryAuthRepository:
 
 class SQLiteAuthRepository:
     def __init__(self, sqlite_url: str | None = None) -> None:
-        self._path = self._sqlite_path(sqlite_url or config.sqlite_database_url)
+        self._path = _resolve_sqlite_url(sqlite_url or config.sqlite_database_url)
         if self._path != ":memory:":
             Path(self._path).parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(self._path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._lock = threading.RLock()
         self._ensure_schema()
-
-    def _sqlite_path(self, sqlite_url: str) -> str:
-        prefix = "sqlite:///"
-        if sqlite_url == "sqlite:///:memory:":
-            return ":memory:"
-        if sqlite_url.startswith(prefix):
-            path = sqlite_url[len(prefix) :]
-        elif sqlite_url.startswith("sqlite:"):
-            path = sqlite_url.split(":", 1)[1].lstrip("/")
-        else:
-            path = sqlite_url
-        return path or "cyberalerta_guardian.db"
 
     def _execute(self, sql: str, params: tuple = ()) -> sqlite3.Cursor:
         with self._lock:
