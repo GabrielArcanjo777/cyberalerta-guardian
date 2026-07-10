@@ -164,7 +164,7 @@ class AuthService:
 
     @property
     def session_seconds(self) -> int:
-        return max(1, int(config.auth_access_token_expire_minutes)) * 60
+        return max(1, int(config.auth_session_expire_seconds))
 
     def login(self, payload: LoginRequest, request: Request | None = None) -> AuthResult:
         email = normalize_email(payload.email)

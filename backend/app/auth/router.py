@@ -38,7 +38,7 @@ def _set_session_cookie(response: Response, token: str) -> None:
         httponly=True,
         secure=config.auth_cookie_secure,
         samesite=config.auth_cookie_samesite,
-        max_age=config.auth_access_token_expire_minutes * 60,
+        max_age=config.auth_session_expire_seconds,
         path="/",
     )
 
