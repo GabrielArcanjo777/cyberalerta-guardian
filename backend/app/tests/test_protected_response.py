@@ -87,24 +87,6 @@ def test_never_suggests_confrontation():
         assert count_sentences(response.short_reply) <= 2
 
 
-def test_protected_response_endpoint():
-    response = client.post(
-        "/protected-response/generate",
-        json={
-            "risk_level": "alto",
-            "category": "golpe_pix",
-            "signals": ["urgencia", "numero_novo", "pedido_pix"],
-            "trusted_contact_alias": "Gabriel",
-        },
-    )
-    assert response.status_code == 200
-    body = response.json()
-    assert body["tone"] == "calm_clear"
-    assert body["short_reply"]
-    assert len(body["do_not_do"]) >= 1
-    assert body["next_step"]
-
-
 def test_simple_channel_uses_protected_response_agent():
     response = client.post(
         "/simple-channel/submit",

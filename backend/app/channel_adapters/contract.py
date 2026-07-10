@@ -41,8 +41,6 @@ class WhatsAppChannelAdapter(Protocol):
 
     def normalize_inbound(self, payload: Mapping[str, Any]) -> NormalizedInboundMessage: ...
 
-    def send_protected_reply(self, payload: OutboundMessageRequest) -> OutboundMessageResult: ...
-
     def send_guardian_alert(self, payload: OutboundMessageRequest) -> OutboundMessageResult: ...
 
     def parse_status_callback(self, payload: Mapping[str, Any]) -> DeliveryStatusEvent: ...
@@ -116,8 +114,6 @@ def send_via_channel(
             metadata=message.metadata,
         )
     )
-    if request.kind.value == "protected_reply":
-        return adapter.send_protected_reply(request)
     return adapter.send_guardian_alert(request)
 
 

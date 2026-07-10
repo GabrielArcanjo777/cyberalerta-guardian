@@ -51,8 +51,8 @@ def test_v5_console_detail_exposes_operational_entities():
     assert BotEventType.MESSAGE_RECEIVED.value in event_types
     assert BotEventType.RISK_ASSESSMENT_CREATED.value in event_types
     assert BotEventType.CASE_CREATED.value in event_types
-    assert BotEventType.SAFE_REPLY_SENT.value in event_types
     assert BotEventType.RESPONSIBLE_NOTIFIED.value in event_types
+    assert BotEventType.SAFE_REPLY_SENT.value not in event_types
 
     audit_actions = [entry.action for entry in detail.audit_log]
     assert BotEventType.MESSAGE_RECEIVED.value in audit_actions

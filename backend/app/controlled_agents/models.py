@@ -11,7 +11,6 @@ from app.event_model.models import utc_now
 
 class ControlledAgentName(str, Enum):
     TRIAGE = "TriageAgent"
-    SAFE_REPLY = "SafeReplyAgent"
     RESPONSIBLE_ALERT = "ResponsibleAlertAgent"
     CASE_SUMMARY = "CaseSummaryAgent"
     PATTERN_REVIEW = "PatternReviewAgent"
@@ -43,11 +42,6 @@ class TriageDecision(ControlledAgentDecision):
     pattern_signals: List[str] = Field(default_factory=list)
     should_create_case: bool
     should_notify_responsible: bool
-
-
-class SafeReplyDecision(ControlledAgentDecision):
-    body: str
-    tone: str = "calm_safe"
 
 
 class ResponsibleAlertDecision(ControlledAgentDecision):

@@ -35,7 +35,6 @@ class GuardianConsoleTimelineEvent(BaseModel):
 
 
 class GuardianConsoleDeliveryView(BaseModel):
-    protected_reply_status: Optional[str] = None
     guardian_alert_status: Optional[str] = None
     guardian_notified: bool = False
     latest_provider_message_id: Optional[str] = None
@@ -125,7 +124,6 @@ class GuardianConsoleChannelStatusView(BaseModel):
     backend_state: str
     protected_bot_active: bool
     responsible_bot_active: bool
-    protected_reply_status: Optional[str] = None
     guardian_alert_status: Optional[str] = None
     guardian_notified: bool = False
     latest_provider_message_id: Optional[str] = None
@@ -204,7 +202,6 @@ class GuardianConsoleRealCaseDetail(GuardianConsoleRealCaseSummary):
     source_message: str
     activation: GuardianConsoleActivationState
     delivery: GuardianConsoleDeliveryView
-    protected_reply: GuardianConsoleOutboundView
     guardian_alert: GuardianConsoleOutboundView
     protected_person: GuardianConsoleProtectedPersonView
     responsible_contact: GuardianConsoleResponsibleContactView

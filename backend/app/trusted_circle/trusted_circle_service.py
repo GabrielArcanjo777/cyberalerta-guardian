@@ -85,7 +85,6 @@ class TrustedCircleService:
             contacts = _sanitize_aliases([case.guardian_alias])
 
         status = recommendation["status_if_requested"]
-        proof_recommended = status in {"simulated_notified", "review_suggested"}
 
         if status == "not_escalated":
             response = TrustedCircleEscalateResponse(

@@ -37,7 +37,8 @@ const DEMO_CASES: DemoCase[] = [
       '[TRUST_LOCK] resposta pausada',
       '[ACTION] confirmar com contato salvo',
       '[AUDIT] decisão registrada localmente',
-      '[LIVE] WhatsApp via Evolution (não-oficial)',
+      '[ALERT] contato de confiança notificado',
+      '[CONSOLE] caso registrado para revisão',
     ],
   },
   {
@@ -59,7 +60,8 @@ const DEMO_CASES: DemoCase[] = [
       '[TRUST_LOCK] resposta pausada',
       '[ACTION] não compartilhar códigos',
       '[AUDIT] decisão registrada localmente',
-      '[LIVE] WhatsApp via Evolution (não-oficial)',
+      '[ALERT] contato de confiança notificado',
+      '[CONSOLE] caso registrado para revisão',
     ],
   },
   {
@@ -81,7 +83,8 @@ const DEMO_CASES: DemoCase[] = [
       '[TRUST_LINK] modo standby',
       '[ACTION] não clicar no link',
       '[AUDIT] decisão registrada localmente',
-      '[LIVE] WhatsApp via Evolution (não-oficial)',
+      '[ALERT] contato de confiança notificado',
+      '[CONSOLE] caso registrado para revisão',
     ],
   },
 ]
@@ -114,7 +117,7 @@ export default function AssistedProtectionDemo(){
           </span>
           <h1 className="guardian-demo-title">Veja como uma mensagem suspeita vira uma decisão rastreável antes do dano.</h1>
           <p className="guardian-demo-subtitle">
-            Simulação local com dados demonstrativos. Sem envio real via WhatsApp.
+            Simulação local com dados demonstrativos. O bot analisa a mensagem, alerta o contato de confiança e registra o caso no console — nunca responde ao remetente. Sem envio real via WhatsApp.
           </p>
         </div>
 
@@ -222,15 +225,15 @@ export default function AssistedProtectionDemo(){
         <div className="guardian-demo-steps">
           <div className="guardian-demo-step-header">
             <span className="guardian-demo-step-number">03</span>
-            <h2 className="guardian-demo-step-title">Ação segura</h2>
+            <h2 className="guardian-demo-step-title">Alerta ao contato de confiança</h2>
           </div>
           <div className="guardian-demo-action">
             <div className="guardian-demo-action-main">
-              <div className="guardian-demo-action-label">Ação recomendada</div>
+              <div className="guardian-demo-action-label">Enviado ao contato de confiança + registrado no console</div>
               <p className="guardian-demo-action-text">{current.recommendation}</p>
               <div className="guardian-demo-action-status">
                 <span className="guardian-demo-action-status-dot" />
-                <span>{current.audit}</span>
+                <span>{current.audit} O bot não responde ao remetente.</span>
               </div>
             </div>
 

@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
-from app.event_model import ChannelConnection
+from app.event_model import ChannelConnection  # noqa: F401 — re-exported
 
 
 def utc_now() -> datetime:
@@ -33,7 +33,6 @@ class DeliveryStatus(str, Enum):
 
 
 class OutboundMessageKind(str, Enum):
-    PROTECTED_REPLY = "protected_reply"
     GUARDIAN_ALERT = "guardian_alert"
 
 

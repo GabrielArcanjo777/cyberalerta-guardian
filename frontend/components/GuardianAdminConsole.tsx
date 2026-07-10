@@ -464,23 +464,17 @@ export default function GuardianAdminConsole(){
                 </div>
               </Card>
 
-              {/* O que os bots fizeram */}
-              <div className="grid gap-4 lg:grid-cols-2">
-                <Card className="card-muted">
-                  <div className="app-label">Resposta à pessoa protegida</div>
-                  <p className="app-body-text mt-2 text-sm leading-6">{selected.protected_reply.body}</p>
-                  <p className="app-muted-text mt-2 text-xs">
-                    {deliveryLabel(selected.channel_status?.protected_reply_status ?? selected.protected_reply.status)}
-                  </p>
-                </Card>
-                <Card className="card-muted">
-                  <div className="app-label">Alerta ao responsável</div>
-                  <p className="app-body-text mt-2 text-sm leading-6">{selected.guardian_alert.body}</p>
-                  <p className="app-muted-text mt-2 text-xs">
-                    {selected.responsible_contact?.alias || selected.guardian_alias || 'não vinculado'} · {deliveryLabel(selected.channel_status?.guardian_alert_status ?? selected.guardian_alert.status)}
-                  </p>
-                </Card>
-              </div>
+              {/* Único envio: alerta ao contato de confiança. Nada é enviado ao remetente. */}
+              <Card className="card-muted">
+                <div className="app-label">Alerta ao contato de confiança</div>
+                <p className="app-body-text mt-2 text-sm leading-6">{selected.guardian_alert.body}</p>
+                <p className="app-muted-text mt-2 text-xs">
+                  {selected.responsible_contact?.alias || selected.guardian_alias || 'não vinculado'} · {deliveryLabel(selected.channel_status?.guardian_alert_status ?? selected.guardian_alert.status)}
+                </p>
+                <p className="app-muted-text mt-2 text-xs">
+                  O bot nunca responde ao remetente. A análise fica registrada aqui no console para sua revisão.
+                </p>
+              </Card>
 
               {/* Ações do responsável */}
               <Card className="card-action">

@@ -10,7 +10,6 @@ from app.dual_bot import (
     DualBotInboundRequest,
     GuardianFeedbackAction,
     GuardianFeedbackRequest,
-    PROTECTED_RISK_MESSAGES,
 )
 from app.dual_bot.messages import responsible_alert_for
 from app.dual_bot.services import create_dual_bot_adapter
@@ -78,8 +77,7 @@ def test_v5_mock_dual_bot_flow_generates_required_events_and_messages():
     response = service.receive_mock_message(_suspicious_request())
 
     assert response.case_created is True
-    assert response.protected_reply is not None
-    assert response.protected_reply.body == PROTECTED_RISK_MESSAGES["pt"]
+    # The bot never replies to the sender; only the trusted contact is alerted.
     assert response.guardian_alert is not None
     assert "Alerta Guardian: Maria" in response.guardian_alert.body
     assert "Risco: alto" in response.guardian_alert.body
@@ -88,11 +86,13 @@ def test_v5_mock_dual_bot_flow_generates_required_events_and_messages():
         BotEventType.MESSAGE_RECEIVED.value,
         BotEventType.RISK_ASSESSMENT_CREATED.value,
         BotEventType.CASE_CREATED.value,
-        BotEventType.SAFE_REPLY_SENT.value,
         BotEventType.RESPONSIBLE_ALERT_QUEUED.value,
         BotEventType.RESPONSIBLE_NOTIFIED.value,
     }:
         assert event_type in response.events
+    # No message is ever generated toward the protected person / sender.
+    assert BotEventType.SAFE_REPLY_SENT.value not in response.events
+    assert BotEventType.PROTECTED_PERSON_REPLIED.value not in response.events
 
 
 def test_v5_responsible_feedback_records_false_positive_and_resolved_events():
@@ -134,7 +134,7 @@ def test_v5_case_context_is_history_for_responsible_bot():
     assert context.guardian_alias == "Gabriel"
     assert context.risk_level == "high"
     assert "Pix urgente" in context.message_summary
-    assert BotEventType.SAFE_REPLY_SENT.value in [event.event_type for event in context.history]
+    assert BotEventType.CASE_CREATED.value in [event.event_type for event in context.history]
 
 
 def test_v5_dual_bot_prepares_evolution_demo_provider_through_contract():
@@ -145,6 +145,9 @@ def test_v5_dual_bot_prepares_evolution_demo_provider_through_contract():
             api_key="local-demo-key",
             instance_name="guardian-demo",
             guardian_address="5511888880001",
+            dry_run=False,
+            real_send_enabled=True,
+            require_allowed_recipient=False,
         ),
         transport=transport,
     )
@@ -158,10 +161,11 @@ def test_v5_dual_bot_prepares_evolution_demo_provider_through_contract():
 
     assert response.provider == ChannelProvider.EVOLUTION_DEMO.value
     assert response.case_created is True
-    assert response.protected_reply is not None
     assert response.guardian_alert is not None
-    assert len(transport.calls) == 2
-    assert BotEventType.SAFE_REPLY_SENT.value in response.events
+    # Exactly ONE outbound send: the alert to the trusted contact, never the sender.
+    assert len(transport.calls) == 1
+    assert transport.calls[0]["to_address"] == "5511888880001"
+    assert BotEventType.SAFE_REPLY_SENT.value not in response.events
     assert BotEventType.RESPONSIBLE_NOTIFIED.value in response.events
 
 
@@ -194,7 +198,8 @@ def test_v5_provider_endpoint_runs_active_mock_flow():
     assert response.status_code == 200
     body = response.json()
     assert body["case_created"] is True
-    assert "SafeReplySent" in body["events"]
+    assert "ResponsibleNotified" in body["events"]
+    assert "SafeReplySent" not in body["events"]
 
 
 def test_v5_responsible_alert_template_uses_readable_context():

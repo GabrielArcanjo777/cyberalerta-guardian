@@ -37,9 +37,6 @@ class ContractTestAdapter:
             raw=dict(payload),
         )
 
-    def send_protected_reply(self, payload: OutboundMessageRequest) -> OutboundMessageResult:
-        return self._send(payload)
-
     def send_guardian_alert(self, payload: OutboundMessageRequest) -> OutboundMessageResult:
         return self._send(payload)
 
@@ -99,12 +96,12 @@ def test_inbound_payload_is_normalized_to_provider_neutral_message():
 
 def test_outbound_contract_returns_provider_neutral_result():
     adapter = ContractTestAdapter()
-    result = adapter.send_protected_reply(
+    result = adapter.send_guardian_alert(
         OutboundMessageRequest(
             provider=ChannelProvider.MOCK,
             to="+5511999990001",
-            body="Nao faca Pix agora.",
-            kind=OutboundMessageKind.PROTECTED_REPLY,
+            body="Alerta Guardian: revise o caso.",
+            kind=OutboundMessageKind.GUARDIAN_ALERT,
             relatedCaseId="case-1",
         )
     )

@@ -1,6 +1,5 @@
 import os
 import secrets
-from typing import List
 
 from dotenv import load_dotenv
 
@@ -74,6 +73,15 @@ class AppConfig:
         self.rate_limit_enabled = _env_bool("RATE_LIMIT_ENABLED", False)
         self.rate_limit_per_minute = max(1, _env_int("RATE_LIMIT_PER_MINUTE", 60))
         self.evolution_webhook_secret = os.getenv("EVOLUTION_WEBHOOK_SECRET", "")
+        # Single trusted contact the bot may ever message. Canonical env is
+        # TRUSTED_CONTACT; the two legacy per-channel vars are accepted as
+        # fallbacks so existing .env files keep working.
+        self.trusted_contact = (
+            os.getenv("TRUSTED_CONTACT")
+            or os.getenv("EVOLUTION_GUARDIAN_TO")
+            or os.getenv("DUAL_BOT_GUARDIAN_TO")
+            or ""
+        ).strip()
         self.channel_provider = os.getenv("CHANNEL_PROVIDER", "evolution")
         self.dual_bot_channel_provider = os.getenv("DUAL_BOT_CHANNEL_PROVIDER", "mock_whatsapp")
         self.beta_real_send_enabled = _env_bool("BETA_REAL_SEND_ENABLED", False)

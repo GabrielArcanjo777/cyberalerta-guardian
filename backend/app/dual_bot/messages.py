@@ -1,32 +1,8 @@
 from __future__ import annotations
 
-from app.event_model import RiskAssessment
-
 
 SUPPORTED_LANGUAGES = {"pt", "en"}
 
-
-PROTECTED_RISK_MESSAGES = {
-    "pt": (
-        "Recebi sua mensagem. Ela tem sinais de risco. Nao faca pagamento nem clique em links "
-        "por enquanto. Vou avisar seu contato de confianca."
-    ),
-    "en": (
-        "I received your message. It has risk signals. Do not pay or click links for now. "
-        "I will notify your trusted contact."
-    ),
-}
-
-PROTECTED_LOW_RISK_MESSAGES = {
-    "pt": (
-        "Recebi sua mensagem. Se houver pedido de dinheiro, codigo ou pressa, confirme por outro "
-        "canal antes de agir."
-    ),
-    "en": (
-        "I received your message. If someone asks for money, a code, or urgency, verify through "
-        "another channel first."
-    ),
-}
 
 RESPONSIBLE_ALERT_TEMPLATES = {
     "pt": (
@@ -61,13 +37,6 @@ SIGNAL_LABELS = {
 def normalize_language(language: str | None) -> str:
     value = (language or "pt").strip().lower()
     return value if value in SUPPORTED_LANGUAGES else "pt"
-
-
-def protected_reply_for(assessment: RiskAssessment, *, case_created: bool, language: str | None = None) -> str:
-    selected_language = normalize_language(language)
-    if case_created or assessment.case_threshold_reached:
-        return PROTECTED_RISK_MESSAGES[selected_language]
-    return PROTECTED_LOW_RISK_MESSAGES[selected_language]
 
 
 def responsible_alert_for(

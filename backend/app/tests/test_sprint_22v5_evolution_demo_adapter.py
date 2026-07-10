@@ -40,11 +40,16 @@ class FakeEvolutionTransport:
 
 
 def _config() -> EvolutionDemoConfig:
+    # Unit tests inject a fake transport to verify the send path, so real sending
+    # is explicitly enabled here (no real network is ever hit — see FakeTransport).
     return EvolutionDemoConfig(
         api_url="http://evolution.local",
         api_key="local-demo-key",
         instance_name="guardian-demo",
         guardian_address="5511888880001",
+        dry_run=False,
+        real_send_enabled=True,
+        require_allowed_recipient=False,
     )
 
 
@@ -97,20 +102,16 @@ def test_evolution_demo_service_creates_case_and_sends_demo_messages():
     assert response.duplicate is False
     assert response.case_created is True
     assert response.risk_level == "high"
-    assert response.protected_reply_sent is True
     assert response.guardian_notified is True
-    assert len(transport.calls) == 2
-    assert transport.calls[0]["to_address"] == "5511999990001"
-    assert transport.calls[1]["to_address"] == "5511888880001"
+    # Exactly ONE send: the alert to the trusted contact. The sender is never messaged.
+    assert len(transport.calls) == 1
+    assert transport.calls[0]["to_address"] == "5511888880001"
     assert response.events == [
         BotEventType.MESSAGE_RECEIVED.value,
         BotEventType.SUSPICIOUS_MESSAGE_RECEIVED.value,
         BotEventType.RISK_ASSESSMENT_CREATED.value,
         BotEventType.CASE_CREATED.value,
         BotEventType.RESPONSIBLE_ALERT_QUEUED.value,
-        BotEventType.DELIVERY_STATUS_UPDATED.value,
-        BotEventType.SAFE_REPLY_SENT.value,
-        BotEventType.PROTECTED_PERSON_REPLIED.value,
         BotEventType.DELIVERY_STATUS_UPDATED.value,
         BotEventType.RESPONSIBLE_NOTIFIED.value,
     ]
@@ -145,6 +146,91 @@ def test_evolution_demo_without_guardian_env_simulates_responsible_notification(
     assert response.outbound_messages[-1].simulated is True
     assert response.outbound_messages[-1].status == DeliveryStatus.DELIVERED.value
     assert BotEventType.RESPONSIBLE_NOTIFIED.value in response.events
+
+
+def _outbound_message(to_address: str = "5511999990001"):
+    from app.channel_adapters import OutboundMessage, OutboundMessageKind
+
+    return OutboundMessage(
+        provider=ChannelProvider.EVOLUTION_DEMO,
+        to=to_address,
+        body="mensagem de teste",
+        templateName="guardian_alert",
+        metadata={"kind": OutboundMessageKind.GUARDIAN_ALERT.value},
+    )
+
+
+def test_dry_run_suppresses_real_send():
+    """DRY_RUN (default) must never hit the network — nothing sent to anyone."""
+    transport = FakeEvolutionTransport()
+    config = EvolutionDemoConfig(
+        api_url="http://evolution.local",
+        api_key="k",
+        instance_name="guardian-demo",
+        dry_run=True,
+    )
+    adapter = EvolutionDemoAdapter(config=config, transport=transport)
+
+    result = adapter.sendMessage(_outbound_message())
+
+    assert transport.calls == []
+    assert result.simulated is True
+    assert result.raw["reason"] == "send_suppressed_dry_run"
+
+
+def test_real_send_disabled_suppresses_send():
+    transport = FakeEvolutionTransport()
+    config = EvolutionDemoConfig(
+        api_url="http://evolution.local",
+        api_key="k",
+        instance_name="guardian-demo",
+        dry_run=False,
+        real_send_enabled=False,
+    )
+    adapter = EvolutionDemoAdapter(config=config, transport=transport)
+
+    result = adapter.sendMessage(_outbound_message())
+
+    assert transport.calls == []
+    assert result.raw["reason"] == "send_suppressed_real_send_disabled"
+
+
+def test_recipient_not_in_allowlist_is_suppressed():
+    transport = FakeEvolutionTransport()
+    config = EvolutionDemoConfig(
+        api_url="http://evolution.local",
+        api_key="k",
+        instance_name="guardian-demo",
+        dry_run=False,
+        real_send_enabled=True,
+        require_allowed_recipient=True,
+        allowed_recipients=("5511777770000",),
+    )
+    adapter = EvolutionDemoAdapter(config=config, transport=transport)
+
+    result = adapter.sendMessage(_outbound_message("5511999990001"))
+
+    assert transport.calls == []
+    assert result.raw["reason"] == "send_suppressed_recipient_not_allowed"
+
+
+def test_allowlisted_recipient_sends_when_real_send_enabled():
+    transport = FakeEvolutionTransport()
+    config = EvolutionDemoConfig(
+        api_url="http://evolution.local",
+        api_key="k",
+        instance_name="guardian-demo",
+        dry_run=False,
+        real_send_enabled=True,
+        require_allowed_recipient=True,
+        allowed_recipients=("5511999990001",),
+    )
+    adapter = EvolutionDemoAdapter(config=config, transport=transport)
+
+    result = adapter.sendMessage(_outbound_message("5511999990001"))
+
+    assert len(transport.calls) == 1
+    assert result.simulated is False
 
 
 def test_evolution_demo_maps_delivery_status():

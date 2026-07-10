@@ -1,5 +1,4 @@
 import re
-from typing import List
 
 FORBIDDEN_PATTERNS = [
     r"\bconfront",

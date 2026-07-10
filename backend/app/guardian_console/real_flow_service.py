@@ -7,7 +7,6 @@ from app.core.config import config
 from app.dual_bot import (
     DualBotFlowService,
     GuardianFeedbackRequest,
-    protected_reply_for,
     responsible_alert_for,
 )
 from app.event_model import BotEvent, BotEventType, Case, CaseStatus, Message, RiskAssessment
@@ -181,7 +180,6 @@ class GuardianConsoleRealFlowService:
         assessment = self._assessment_for(case)
         delivery = self._delivery_for(case.case_id)
         pattern = self._pattern_for(case.case_id)
-        protected_reply = self._protected_reply_view(case, message, assessment, delivery)
         guardian_alert = self._guardian_alert_view(case, assessment, context.protected_person_alias, delivery)
         timeline = self._timeline_for(case)
         summary = self._case_summary(case)
@@ -191,7 +189,6 @@ class GuardianConsoleRealFlowService:
             source_message=message.body,
             activation=self._activation_state(case.protected_person_id),
             delivery=delivery,
-            protected_reply=protected_reply,
             guardian_alert=guardian_alert,
             protected_person=self._protected_person_view(case),
             responsible_contact=self._responsible_contact_view(case, delivery),
@@ -351,7 +348,6 @@ class GuardianConsoleRealFlowService:
             backend_state=activation.backend_state,
             protected_bot_active=activation.protected_bot.active,
             responsible_bot_active=activation.responsible_bot.active,
-            protected_reply_status=delivery.protected_reply_status,
             guardian_alert_status=delivery.guardian_alert_status,
             guardian_notified=delivery.guardian_notified,
             latest_provider_message_id=delivery.latest_provider_message_id,
@@ -437,7 +433,6 @@ class GuardianConsoleRealFlowService:
     def _agent_decisions_for(self, case: Case) -> list[GuardianConsoleAgentDecisionView]:
         agent_event_types = {
             BotEventType.TRIAGE_DECISION_CREATED,
-            BotEventType.SAFE_REPLY_GENERATED,
             BotEventType.RESPONSIBLE_ALERT_GENERATED,
             BotEventType.CASE_SUMMARY_GENERATED,
             BotEventType.PATTERN_REVIEW_GENERATED,
@@ -554,7 +549,6 @@ class GuardianConsoleRealFlowService:
         )
 
     def _delivery_for(self, case_id: str) -> GuardianConsoleDeliveryView:
-        protected_status: Optional[str] = None
         guardian_status: Optional[str] = None
         latest_provider_message_id: Optional[str] = None
         guardian_notified = False
@@ -566,36 +560,15 @@ class GuardianConsoleRealFlowService:
             if provider_message_id:
                 latest_provider_message_id = provider_message_id
             if event.event_type == BotEventType.DELIVERY_STATUS_UPDATED:
-                if payload.get("kind") == "protected_reply":
-                    protected_status = payload.get("status")
                 if payload.get("kind") == "guardian_alert":
                     guardian_status = payload.get("status")
             if event.event_type in {BotEventType.RESPONSIBLE_NOTIFIED, BotEventType.GUARDIAN_NOTIFIED}:
                 guardian_notified = True
                 guardian_status = payload.get("status") or guardian_status
         return GuardianConsoleDeliveryView(
-            protected_reply_status=protected_status,
             guardian_alert_status=guardian_status,
             guardian_notified=guardian_notified,
             latest_provider_message_id=latest_provider_message_id,
-        )
-
-    def _protected_reply_view(
-        self,
-        case: Case,
-        message: Message,
-        assessment: RiskAssessment,
-        delivery: GuardianConsoleDeliveryView,
-    ) -> GuardianConsoleOutboundView:
-        event = self._latest_event_for(case.case_id, BotEventType.PROTECTED_PERSON_REPLIED)
-        generated_body = self._latest_agent_body(case.case_id, BotEventType.SAFE_REPLY_GENERATED)
-        return GuardianConsoleOutboundView(
-            provider_message_id=event.payload.get("provider_message_id") if event else None,
-            kind="protected_reply",
-            to_label="Pessoa protegida",
-            body=generated_body or protected_reply_for(assessment, case_created=True, language="pt"),
-            status=delivery.protected_reply_status,
-            simulated=message.simulated,
         )
 
     def _guardian_alert_view(

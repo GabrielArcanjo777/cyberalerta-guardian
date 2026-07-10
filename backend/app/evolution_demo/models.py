@@ -27,7 +27,6 @@ class EvolutionDemoWebhookResponse(BaseModel):
     risk_level: Optional[str] = None
     case_id: Optional[str] = None
     case_created: bool
-    protected_reply_sent: bool
     guardian_notified: bool
     outbound_messages: List[EvolutionDemoOutboundRecord] = Field(default_factory=list)
     events: List[str] = Field(default_factory=list)
