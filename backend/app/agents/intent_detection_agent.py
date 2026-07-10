@@ -1,6 +1,3 @@
-from typing import Optional
-
-
 class IntentDetectionAgent:
     def analyze(self, action_type: str, message: str) -> str:
         normalized = action_type.lower().strip()

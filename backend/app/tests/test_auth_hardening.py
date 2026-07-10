@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import time
-from unittest.mock import patch, MagicMock
-
 import pytest
 
 from app.auth.crypto import (
@@ -13,15 +10,15 @@ from app.auth.crypto import (
     verify_password,
     current_totp_code,
 )
-from app.auth.google_oidc import GoogleOidcError, verify_google_id_token
-from app.auth.models import AuthEventType, MfaRecoveryCode, UserRole, utc_now
-from app.auth.repository import get_auth_repository, reset_auth_repository_for_tests, InMemoryAuthRepository
+from app.auth.google_oidc import verify_google_id_token
+from app.auth.models import AuthEventType, UserRole
+from app.auth.repository import reset_auth_repository_for_tests, InMemoryAuthRepository
 from app.auth.service import AuthService
 
 
 @pytest.fixture(autouse=True)
 def _reset_repo():
-    repo = reset_auth_repository_for_tests(InMemoryAuthRepository())
+    reset_auth_repository_for_tests(InMemoryAuthRepository())
     yield
     reset_auth_repository_for_tests()
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from typing import List, Literal, TypedDict
 
 StepStatus = Literal["pending", "completed", "skipped"]

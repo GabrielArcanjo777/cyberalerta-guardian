@@ -1,5 +1,5 @@
 from app.schemas.analysis import AnalysisResponse, ReportModel
-from app.schemas.report import ReportRequest, ReportResponse
+from app.schemas.report import ReportResponse
 
 
 class ReportAgent:
