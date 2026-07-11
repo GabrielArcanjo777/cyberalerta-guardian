@@ -123,7 +123,7 @@ export default function Header(){
             </Link>
           ))}
           {isAdmin && (
-            <Link href="/admin" className="guardian-nav-link" onClick={()=>setMenuOpen(false)}>
+            <Link href="/admin" className="guardian-nav-link guardian-nav-mobile-only" onClick={()=>setMenuOpen(false)}>
               {copy.admin}
             </Link>
           )}

@@ -4186,6 +4186,11 @@ body:has(.home-hermes-page) #conteudo-principal {
   color: #ffffff;
 }
 
+/* Item que só existe no menu mobile (no desktop o mesmo destino vive nas ações) */
+.guardian-nav-mobile-only {
+  display: none;
+}
+
 .guardian-mobile-console {
   display: none;
   width: 100%;
@@ -4288,6 +4293,10 @@ body:has(.home-hermes-page) #conteudo-principal {
 
   .guardian-nav-link:hover {
     background: rgba(255, 255, 255, 0.05);
+  }
+
+  .guardian-nav-mobile-only {
+    display: inline-flex;
   }
 
   .guardian-mobile-console {

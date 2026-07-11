@@ -193,7 +193,16 @@ export default function HeroSection(){
         <div className={styles.copy}>
           <div className={styles.badge}>{copy.badge}</div>
           <h1 className={styles.title}>
-            {copy.titleLines.map(line=><span key={line}>{line}</span>)}
+            {copy.titleLines.map((line, i)=>(
+              <span key={line} className={styles.titleLine}>
+                <span
+                  className={styles.titleLineInner}
+                  style={{animationDelay: `${120 + i * 110}ms`}}
+                >
+                  {line}
+                </span>
+              </span>
+            ))}
           </h1>
           <p className={styles.subtitle}>{copy.subtitle}</p>
           <div className={styles.actions}>
