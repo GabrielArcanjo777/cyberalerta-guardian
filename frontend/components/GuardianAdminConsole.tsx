@@ -346,6 +346,12 @@ export default function GuardianAdminConsole(){
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
+          <a
+            href="/whatsapp-setup"
+            className="inline-flex h-10 items-center rounded-md border border-teal-300/45 bg-slate-950/60 px-4 text-sm font-semibold text-teal-200 transition hover:border-teal-300/70"
+          >
+            Conectar WhatsApp (QR)
+          </a>
           <button
             onClick={()=>loadConsole(selectedId)}
             disabled={loading || simulating}

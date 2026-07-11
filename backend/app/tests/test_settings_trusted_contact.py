@@ -23,16 +23,24 @@ def restore_state():
     before = {
         "trusted_contact": config.trusted_contact,
         "protected_number": config.protected_number,
+        "dry_run": config.dry_run,
+        "real_send": config.beta_real_send_enabled,
         "guardian_address": main.evolution_demo_service.guardian_address,
         "default_guardian_address": main.dual_bot_service.default_guardian_address,
+        "adapter_config": main.evolution_demo_service.adapter.config,
+        "service_config": main.evolution_demo_service.config,
         "stored": settings_store.get("trusted_contact"),
         "stored_protected": settings_store.get("protected_number"),
     }
     yield
     config.trusted_contact = before["trusted_contact"]
     config.protected_number = before["protected_number"]
+    config.dry_run = before["dry_run"]
+    config.beta_real_send_enabled = before["real_send"]
     main.evolution_demo_service.guardian_address = before["guardian_address"]
     main.dual_bot_service.default_guardian_address = before["default_guardian_address"]
+    main.evolution_demo_service.adapter.config = before["adapter_config"]
+    main.evolution_demo_service.config = before["service_config"]
     if before["stored"] is not None:
         settings_store.put("trusted_contact", before["stored"])
     if before["stored_protected"] is not None:
@@ -78,6 +86,39 @@ def test_put_only_trusted_leaves_protected_untouched(client: TestClient):
     client.put(ENDPOINT, json={"protected_number": "+5511977776666"})
     client.put(ENDPOINT, json={"trusted_contact": "+5511999990001"})
     assert config.protected_number == "+5511977776666"
+
+
+def test_toggle_dry_run_updates_runtime_and_persists(client: TestClient):
+    response = client.put(ENDPOINT, json={"dry_run": False})
+    assert response.status_code == 200
+    assert response.json()["dry_run"] is False
+    assert config.dry_run is False
+    assert main.evolution_demo_service.adapter.config.dry_run is False
+    assert settings_store.get("dry_run") == "false"
+
+    response = client.put(ENDPOINT, json={"dry_run": True})
+    assert response.json()["dry_run"] is True
+    assert main.evolution_demo_service.adapter.config.dry_run is True
+
+
+def test_toggle_real_send_pins_allowlist_to_trusted_contact(client: TestClient):
+    client.put(ENDPOINT, json={"trusted_contact": "+5511999990001"})
+    response = client.put(ENDPOINT, json={"dry_run": False, "beta_real_send_enabled": True})
+    assert response.status_code == 200
+
+    adapter_cfg = main.evolution_demo_service.adapter.config
+    assert adapter_cfg.real_send_enabled is True
+    # Invariante inviolável: a allowlist fica cravada no contato de confiança.
+    assert adapter_cfg.allowed_recipients == ("+5511999990001",)
+    # O gate libera SOMENTE o contato de confiança; qualquer outro número
+    # (por ex. o remetente) continua bloqueado.
+    assert adapter_cfg.real_send_blocked_reason("+5511999990001") is None
+    assert adapter_cfg.real_send_blocked_reason("+5511977776666") == "recipient_not_allowed"
+
+
+def test_toggle_rejects_non_boolean(client: TestClient):
+    assert client.put(ENDPOINT, json={"dry_run": "sim"}).status_code == 422
+    assert client.put(ENDPOINT, json={"beta_real_send_enabled": 1}).status_code == 422
 
 
 def test_put_valid_number_updates_and_propagates(client: TestClient):
