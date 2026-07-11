@@ -87,6 +87,7 @@ from app.services.safety_policy import SafetyPolicyService
 from app.event_model import EventModelService
 from app.core.config import config
 from app.storage import settings_store
+from app.hybrid.query import get_hybrid_decision_for_case
 from app.core.middleware import RequestContextHeadersMiddleware, SecurityHeadersMiddleware
 from app.core.security import check_rate_limit, require_api_key, validate_message_text
 from app.auth import create_auth_router, require_sensitive_access
@@ -323,6 +324,16 @@ def guardian_console_real_case_detail(case_id: str, access: None = Depends(requi
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/guardian-console/real/cases/{case_id}/hybrid-decision")
+def guardian_console_hybrid_decision(case_id: str, access: None = Depends(require_sensitive_access)):
+    """Latest hybrid decision (deterministic + LLM + Policy) for a case, or
+    {available: false} when the pipeline produced none for it."""
+    decision = get_hybrid_decision_for_case(event_model, case_id)
+    if decision is None:
+        return {"available": False}
+    return {"available": True, "decision": decision}
 
 
 @app.post("/guardian-console/real/cases/{case_id}/feedback", response_model=GuardianFeedbackResponse)

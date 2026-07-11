@@ -484,6 +484,35 @@ export async function getGuardianConsoleRealCase(caseId:string){
   return await res.json() as GuardianConsoleRealCaseDetail
 }
 
+export interface HybridDecisionView {
+  action?: string
+  final_score?: number
+  deterministic_score?: number
+  llm_score?: number | null
+  confidence?: number
+  classification?: string | null
+  policy_version?: string
+  llm_model?: string | null
+  llm_status?: string
+  shadow_decision?: boolean
+  conflict?: boolean
+  requires_human_review?: boolean
+  rule_codes?: string[]
+  scam_types?: string[]
+  reasons?: string[]
+  event_type?: string
+}
+
+export interface HybridDecisionResponse {
+  available: boolean
+  decision?: HybridDecisionView
+}
+
+export async function getHybridDecision(caseId:string): Promise<HybridDecisionResponse> {
+  const res = await authFetch(`/guardian-console/real/cases/${caseId}/hybrid-decision`)
+  return await res.json() as HybridDecisionResponse
+}
+
 export async function postGuardianConsoleRealFeedback(caseId:string, payload:GuardianFeedbackPayload){
   const res = await fetch(`${API}/guardian-console/real/cases/${caseId}/feedback`, {
     method: 'POST',
