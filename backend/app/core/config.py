@@ -82,6 +82,10 @@ class AppConfig:
             or os.getenv("DUAL_BOT_GUARDIAN_TO")
             or ""
         ).strip()
+        # Number of the protected person (the "victim") whose WhatsApp is
+        # monitored. Identification/labeling only — the bot still only ever
+        # messages TRUSTED_CONTACT, never this number.
+        self.protected_number = os.getenv("PROTECTED_PERSON_NUMBER", "").strip()
         self.channel_provider = os.getenv("CHANNEL_PROVIDER", "evolution")
         self.dual_bot_channel_provider = os.getenv("DUAL_BOT_CHANNEL_PROVIDER", "mock_whatsapp")
         self.beta_real_send_enabled = _env_bool("BETA_REAL_SEND_ENABLED", False)
