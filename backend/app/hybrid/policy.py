@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional
 
 from app.hybrid.models import (
@@ -32,8 +32,6 @@ class PolicyThresholds:
     llm_weight: float = 0.40
     # Controlled, explicit bonuses (never hidden formulas).
     combo_bonus: int = 8
-    # A strong conflict caps the outcome at REVIEW.
-    conflict_score_gap: int = 40
 
 
 # Scam types that mean "impersonating a bank / company / support / account".

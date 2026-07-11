@@ -159,6 +159,22 @@ def test_safety_gate_blocks_real_send_in_dry_run(monkeypatch):
     assert BotEventType.AUTO_ALERT_AUTHORIZED.value in response.events
 
 
+def test_hybrid_decision_is_queryable_for_case():
+    from app.hybrid.query import get_hybrid_decision_for_case
+
+    transport = FakeEvolutionTransport()
+    service = _service(_hybrid(llm_result=_scam_llm(), enabled=True, shadow=False), transport)
+    response = service.handle_webhook(_upsert("EVOIN020"))
+
+    decision = get_hybrid_decision_for_case(service.event_model, response.case_id)
+    assert decision is not None
+    assert decision["action"] == "AUTO_ALERT"
+    assert decision["policy_version"] == "v1"
+    assert "content_hash" in decision
+    # never leaks raw content or secrets
+    assert "api_key" not in decision and "prompt" not in decision
+
+
 def test_shadow_mode_keeps_legacy_behavior():
     # Shadow + enabled: records the decision but alerting stays on the legacy
     # deterministic HIGH rule (still notifies for this HIGH message).

@@ -6,12 +6,14 @@ import {
   getGuardianConsoleRealCase,
   getGuardianConsoleRealCases,
   getGuardianConsoleRealStatus,
+  getHybridDecision,
   postConsentAccept,
   postConsentBotActivate,
   postConsentBotDeactivate,
   postConsentRevoke,
   postDualBotMockProtectedMessage,
   postGuardianConsoleRealFeedback,
+  type HybridDecisionView,
 } from '@/lib/api'
 import type {
   GuardianConsoleAuditLogView,
@@ -162,6 +164,7 @@ export default function GuardianAdminConsole(){
   const [cases,setCases]=useState<GuardianConsoleRealCaseSummary[]>([])
   const [selectedId,setSelectedId]=useState<string | null>(null)
   const [selected,setSelected]=useState<GuardianConsoleRealCaseDetail | null>(null)
+  const [hybrid,setHybrid]=useState<HybridDecisionView | null>(null)
   const [loading,setLoading]=useState(true)
   const [detailLoading,setDetailLoading]=useState(false)
   const [updating,setUpdating]=useState(false)
@@ -193,6 +196,15 @@ export default function GuardianAdminConsole(){
       setLoading(false)
     }
   },[])
+
+  useEffect(()=>{
+    let active = true
+    if(!selectedId){ setHybrid(null); return }
+    getHybridDecision(selectedId)
+      .then(r => { if(active) setHybrid(r.available ? (r.decision ?? null) : null) })
+      .catch(()=>{ if(active) setHybrid(null) })
+    return ()=>{ active = false }
+  },[selectedId])
 
   const selectCase = useCallback(async (caseId:string)=>{
     setSelectedId(caseId)
@@ -551,6 +563,65 @@ export default function GuardianAdminConsole(){
                       </div>
                     </section>
                   )}
+
+                  {/* Decisão híbrida (regras + LLM + Policy Engine) */}
+                  {hybrid ? (
+                    <section>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="app-label">Decisão híbrida · policy {hybrid.policy_version ?? 'v1'}</div>
+                        <div className="flex items-center gap-2">
+                          {hybrid.shadow_decision ? <AppBadgeText>shadow</AppBadgeText> : null}
+                          <span className={`rounded-md border px-2 py-1 text-xs font-bold ${
+                            hybrid.action === 'AUTO_ALERT' ? 'border-red-400/40 text-red-200'
+                            : hybrid.action === 'REVIEW' ? 'border-amber-300/40 text-amber-100'
+                            : 'border-slate-400/30 text-slate-300'
+                          }`}>{hybrid.action ?? '—'}</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-md border border-white/10 bg-slate-950/30 p-3">
+                          <div className="app-muted-text text-xs">Score final</div>
+                          <p className="mt-1 text-lg font-bold text-white">{hybrid.final_score ?? '—'}</p>
+                          <p className="app-muted-text mt-1 text-xs">
+                            det {hybrid.deterministic_score ?? '—'} · LLM {hybrid.llm_score ?? '—'}
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-white/10 bg-slate-950/30 p-3">
+                          <div className="app-muted-text text-xs">LLM</div>
+                          <p className="mt-1 text-sm font-semibold text-white">{hybrid.classification ?? 'indisponível'}</p>
+                          <p className="app-muted-text mt-1 text-xs">
+                            conf {hybrid.confidence != null ? hybrid.confidence.toFixed(2) : '—'} · {hybrid.llm_model ?? hybrid.llm_status ?? '—'}
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-white/10 bg-slate-950/30 p-3">
+                          <div className="app-muted-text text-xs">Estado</div>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {hybrid.conflict ? 'conflito regras×LLM' : 'sem conflito'}
+                          </p>
+                          <p className="app-muted-text mt-1 text-xs">
+                            {hybrid.requires_human_review ? 'requer revisão humana' : 'automatizável'}
+                          </p>
+                        </div>
+                      </div>
+                      {hybrid.rule_codes?.length ? (
+                        <div className="mt-3">
+                          <div className="app-muted-text text-xs">Regras acionadas</div>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            {hybrid.rule_codes.map(code => (
+                              <span key={code} className="rounded border border-white/10 bg-slate-900/50 px-2 py-0.5 text-xs text-slate-300">{code}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                      {hybrid.reasons?.length ? (
+                        <ul className="mt-3 grid gap-1">
+                          {hybrid.reasons.map((reason,i) => (
+                            <li key={i} className="text-xs text-slate-400">· {reason}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </section>
+                  ) : null}
 
                   {/* Decisões dos agentes */}
                   {selected.agent_decisions?.length ? (

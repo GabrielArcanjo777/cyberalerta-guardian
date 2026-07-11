@@ -75,7 +75,7 @@ class OpenAICompatibleProvider(LLMProvider):
         try:
             with httpx.Client(timeout=self._timeout) as client:
                 response = client.post(url, json=payload, headers=headers)
-        except httpx.TimeoutException as exc:
+        except httpx.TimeoutException:
             raise LLMProviderTimeout("LLM request timed out") from None
         except httpx.HTTPError:
             # Do NOT chain the original exception: httpx errors can embed the
