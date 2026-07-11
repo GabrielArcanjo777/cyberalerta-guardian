@@ -126,6 +126,10 @@ if _persisted_tc is not None and not config.trusted_contact:
     evolution_demo_service.guardian_address = _persisted_tc or None
     dual_bot_service.default_guardian_address = _persisted_tc or "+5511888880001"
 
+_persisted_protected = settings_store.get("protected_number")
+if _persisted_protected is not None and not config.protected_number:
+    config.protected_number = _persisted_protected
+
 app.include_router(create_auth_router())
 app.include_router(create_n8n_router(n8n_integration_service))
 app.include_router(create_evolution_router(), prefix="/api/channels/evolution")
@@ -349,29 +353,41 @@ async def evolution_webhook(request: Request):
 _PHONE_DIGITS_RE = re.compile(r"^\+?\d{10,15}$")
 
 
-@app.get("/settings/trusted-contact")
-def settings_get_trusted_contact(access: None = Depends(require_sensitive_access)):
+def _protection_settings() -> dict:
     return {
+        "protected_number": config.protected_number,
         "trusted_contact": config.trusted_contact,
         "dry_run": config.dry_run,
         "beta_real_send_enabled": config.beta_real_send_enabled,
     }
+
+
+@app.get("/settings/trusted-contact")
+def settings_get_trusted_contact(access: None = Depends(require_sensitive_access)):
+    return _protection_settings()
 
 
 @app.put("/settings/trusted-contact")
 def settings_set_trusted_contact(request: Request, payload: dict, access: None = Depends(require_sensitive_access)):
-    number = (payload.get("trusted_contact") or "").strip()
-    if number and not _PHONE_DIGITS_RE.match(number):
-        raise HTTPException(status_code=422, detail="Formato invalido. Use +DDI seguido de 10-15 digitos.")
-    config.trusted_contact = number
-    evolution_demo_service.guardian_address = number or None
-    dual_bot_service.default_guardian_address = number or config.trusted_contact or "+5511888880001"
-    settings_store.put("trusted_contact", number)
-    return {
-        "trusted_contact": config.trusted_contact,
-        "dry_run": config.dry_run,
-        "beta_real_send_enabled": config.beta_real_send_enabled,
-    }
+    # Both fields are optional per request; only validate the ones present. The
+    # bot never messages the protected number — it is stored for identification.
+    if "trusted_contact" in payload:
+        number = (payload.get("trusted_contact") or "").strip()
+        if number and not _PHONE_DIGITS_RE.match(number):
+            raise HTTPException(status_code=422, detail="Contato de confianca invalido. Use +DDI seguido de 10-15 digitos.")
+        config.trusted_contact = number
+        evolution_demo_service.guardian_address = number or None
+        dual_bot_service.default_guardian_address = number or "+5511888880001"
+        settings_store.put("trusted_contact", number)
+
+    if "protected_number" in payload:
+        protected = (payload.get("protected_number") or "").strip()
+        if protected and not _PHONE_DIGITS_RE.match(protected):
+            raise HTTPException(status_code=422, detail="Numero da pessoa protegida invalido. Use +DDI seguido de 10-15 digitos.")
+        config.protected_number = protected
+        settings_store.put("protected_number", protected)
+
+    return _protection_settings()
 
 
 @app.get("/guardian-console/status", response_model=GuardianConsoleStatusResponse)

@@ -22,26 +22,62 @@ def restore_state():
     tests stay isolated from each other and from the rest of the suite."""
     before = {
         "trusted_contact": config.trusted_contact,
+        "protected_number": config.protected_number,
         "guardian_address": main.evolution_demo_service.guardian_address,
         "default_guardian_address": main.dual_bot_service.default_guardian_address,
         "stored": settings_store.get("trusted_contact"),
+        "stored_protected": settings_store.get("protected_number"),
     }
     yield
     config.trusted_contact = before["trusted_contact"]
+    config.protected_number = before["protected_number"]
     main.evolution_demo_service.guardian_address = before["guardian_address"]
     main.dual_bot_service.default_guardian_address = before["default_guardian_address"]
     if before["stored"] is not None:
         settings_store.put("trusted_contact", before["stored"])
+    if before["stored_protected"] is not None:
+        settings_store.put("protected_number", before["stored_protected"])
 
 
 def test_get_returns_current_settings(client: TestClient):
     response = client.get(ENDPOINT)
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == {"trusted_contact", "dry_run", "beta_real_send_enabled"}
+    assert set(body) == {"protected_number", "trusted_contact", "dry_run", "beta_real_send_enabled"}
     assert body["trusted_contact"] == config.trusted_contact
+    assert body["protected_number"] == config.protected_number
     assert isinstance(body["dry_run"], bool)
     assert isinstance(body["beta_real_send_enabled"], bool)
+
+
+def test_put_protected_number_updates_and_persists(client: TestClient):
+    response = client.put(ENDPOINT, json={"protected_number": "+5511977776666"})
+    assert response.status_code == 200
+    assert response.json()["protected_number"] == "+5511977776666"
+    assert config.protected_number == "+5511977776666"
+    assert settings_store.get("protected_number") == "+5511977776666"
+
+
+def test_put_rejects_malformed_protected_number(client: TestClient):
+    response = client.put(ENDPOINT, json={"protected_number": "abc"})
+    assert response.status_code == 422
+
+
+def test_put_both_numbers_together(client: TestClient):
+    response = client.put(ENDPOINT, json={
+        "protected_number": "+5511977776666",
+        "trusted_contact": "+5511999990001",
+    })
+    assert response.status_code == 200
+    body = response.json()
+    assert body["protected_number"] == "+5511977776666"
+    assert body["trusted_contact"] == "+5511999990001"
+
+
+def test_put_only_trusted_leaves_protected_untouched(client: TestClient):
+    client.put(ENDPOINT, json={"protected_number": "+5511977776666"})
+    client.put(ENDPOINT, json={"trusted_contact": "+5511999990001"})
+    assert config.protected_number == "+5511977776666"
 
 
 def test_put_valid_number_updates_and_propagates(client: TestClient):

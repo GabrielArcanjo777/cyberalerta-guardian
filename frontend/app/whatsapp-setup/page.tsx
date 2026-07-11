@@ -25,26 +25,64 @@ const STATE_COLOR: Record<string, string> = {
   unknown: '#9aa0a6',
 }
 
+const PHONE_RE = /^\+?\d{10,15}$/
+
+function PhoneField({label, hint, placeholder, value, onChange}:{
+  label:string, hint:string, placeholder:string, value:string, onChange:(v:string)=>void,
+}){
+  return (
+    <div style={{flex:1, minWidth:220}}>
+      <label style={{display:'block', fontSize:13, fontWeight:600, margin:'0 0 4px'}}>{label}</label>
+      <input
+        type="tel"
+        placeholder={placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          width:'100%', height:42, borderRadius:8,
+          border:'1px solid #d2d6cf', padding:'0 12px',
+          fontSize:15, fontFamily:'monospace',
+        }}
+      />
+      <p style={{fontSize:12, color:'#8b96a3', margin:'4px 0 0'}}>{hint}</p>
+    </div>
+  )
+}
+
 function TrustedContactSection(){
   const [settings, setSettings] = useState<TrustedContactSettings | null>(null)
-  const [input, setInput] = useState('')
+  const [protectedInput, setProtectedInput] = useState('')
+  const [trustedInput, setTrustedInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{text:string, ok:boolean} | null>(null)
 
   useEffect(()=>{
     getTrustedContactSettings()
-      .then(s => { setSettings(s); setInput(s.trusted_contact) })
+      .then(s => {
+        setSettings(s)
+        setProtectedInput(s.protected_number)
+        setTrustedInput(s.trusted_contact)
+      })
       .catch(()=>{})
   },[])
 
   async function save(){
+    const p = protectedInput.trim()
+    const t = trustedInput.trim()
+    if(p && !PHONE_RE.test(p)){
+      setMsg({text:'Número da pessoa protegida inválido. Use +DDI + 10-15 dígitos.', ok:false}); return
+    }
+    if(t && !PHONE_RE.test(t)){
+      setMsg({text:'Contato de confiança inválido. Use +DDI + 10-15 dígitos.', ok:false}); return
+    }
     setSaving(true)
     setMsg(null)
     try{
-      const next = await putTrustedContactSettings(input.trim())
+      const next = await putTrustedContactSettings({protected_number: p, trusted_contact: t})
       setSettings(next)
-      setInput(next.trusted_contact)
-      setMsg({text: next.trusted_contact ? 'Contato salvo.' : 'Contato removido. Alertas serão apenas simulados.', ok: true})
+      setProtectedInput(next.protected_number)
+      setTrustedInput(next.trusted_contact)
+      setMsg({text:'Configuração salva.', ok:true})
     }catch(e){
       setMsg({text: e instanceof Error ? e.message : 'Erro ao salvar.', ok: false})
     }finally{
@@ -55,36 +93,37 @@ function TrustedContactSection(){
   const hasContact = !!(settings?.trusted_contact)
   const isDryRun = settings?.dry_run ?? true
   const isRealSendEnabled = settings?.beta_real_send_enabled ?? false
-  const changed = input.trim() !== (settings?.trusted_contact ?? '')
+  const changed =
+    protectedInput.trim() !== (settings?.protected_number ?? '') ||
+    trustedInput.trim() !== (settings?.trusted_contact ?? '')
 
   return (
     <section style={{marginTop:32, borderTop:'1px solid #d2d6cf', paddingTop:24}}>
       <p style={{fontSize:12, letterSpacing:'0.08em', textTransform:'uppercase', color:'#8b96a3', margin:'0 0 8px'}}>
-        Contato de confiança
+        Pessoa protegida e contato de confiança
       </p>
-      <h2 style={{fontSize:22, margin:'0 0 4px'}}>Quem o bot deve alertar?</h2>
+      <h2 style={{fontSize:22, margin:'0 0 4px'}}>Quem é protegido e quem o bot deve alertar?</h2>
       <p style={{color:'#8b96a3', maxWidth:560, margin:'0 0 16px'}}>
-        O bot nunca responde ao remetente. Quando detectar um golpe explícito, envia um alerta apenas para este número.
-        Deixe vazio para manter os alertas apenas simulados (sem envio real).
+        Cadastre o número da pessoa protegida (cujas mensagens são analisadas) e o número do contato
+        de confiança que recebe o alerta. O bot nunca responde ao remetente e nunca escreve para a
+        pessoa protegida — só envia o alerta para o contato de confiança, e apenas em golpe explícito.
       </p>
 
-      <div style={{display:'flex', gap:10, alignItems:'flex-start'}}>
-        <div style={{flex:1}}>
-          <input
-            type="tel"
-            placeholder="+5511999990001"
-            value={input}
-            onChange={e => { setInput(e.target.value); setMsg(null) }}
-            style={{
-              width:'100%', height:42, borderRadius:8,
-              border:'1px solid #d2d6cf', padding:'0 12px',
-              fontSize:15, fontFamily:'monospace',
-            }}
-          />
-          <p style={{fontSize:12, color:'#8b96a3', margin:'4px 0 0'}}>
-            Formato: +DDI + número (10-15 dígitos). Ex: +5511999990001
-          </p>
-        </div>
+      <div style={{display:'flex', gap:12, flexWrap:'wrap', alignItems:'flex-end'}}>
+        <PhoneField
+          label="Número da pessoa protegida (vítima)"
+          hint="Número monitorado. Ex: +5511977776666"
+          placeholder="+5511977776666"
+          value={protectedInput}
+          onChange={v => { setProtectedInput(v); setMsg(null) }}
+        />
+        <PhoneField
+          label="Contato de confiança (recebe o alerta)"
+          hint="Único destino dos alertas. Ex: +5511999990001"
+          placeholder="+5511999990001"
+          value={trustedInput}
+          onChange={v => { setTrustedInput(v); setMsg(null) }}
+        />
         <Button onClick={save} disabled={saving || !changed}>
           {saving ? 'Salvando…' : 'Salvar'}
         </Button>
@@ -105,7 +144,7 @@ function TrustedContactSection(){
       }}>
         <p style={{margin:0, fontSize:14}}>
           <strong>Status do envio:</strong>{' '}
-          {!hasContact && 'Nenhum contato configurado — alertas simulados.'}
+          {!hasContact && 'Nenhum contato de confiança configurado — alertas simulados.'}
           {hasContact && isDryRun && 'Contato configurado, mas DRY_RUN está ativo — alertas simulados.'}
           {hasContact && !isDryRun && !isRealSendEnabled && 'Contato configurado, mas BETA_REAL_SEND_ENABLED está desligado — alertas simulados.'}
           {hasContact && !isDryRun && isRealSendEnabled && 'Envio real ativo. Alertas serão enviados via WhatsApp.'}
