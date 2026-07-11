@@ -1,6 +1,5 @@
 "use client"
 
-import Image from 'next/image'
 import Link from 'next/link'
 import React, {useCallback, useEffect, useRef, useState} from 'react'
 import Button from '@/components/Button'
@@ -214,7 +213,8 @@ export default function WhatsAppSetupPage(){
 
         {status && !status.connected && status.qr_base64 && (
           <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:12, border:'1px solid #d2d6cf', borderRadius:12, padding:20}}>
-            <Image src={status.qr_base64} alt="QR code para parear o WhatsApp" width={260} height={260} unoptimized />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={status.qr_base64} alt="QR code para parear o WhatsApp" width={260} height={260} style={{display:'block'}} />
             <p style={{margin:0, textAlign:'center', color:'#3a4450'}}>
               {status.detail ?? 'Abra o WhatsApp > Aparelhos conectados > Conectar aparelho e escaneie.'}
             </p>

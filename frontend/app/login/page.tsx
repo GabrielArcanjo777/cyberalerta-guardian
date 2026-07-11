@@ -5,6 +5,7 @@ import {useRouter} from 'next/navigation'
 import React, {FormEvent, useEffect, useState} from 'react'
 import Button from '@/components/Button'
 import {
+  getAuthMe,
   getGoogleLoginUrl,
   postLogin,
   postMfaVerify,
@@ -70,6 +71,20 @@ export default function LoginPage(){
       setError('Esta conta Google exige MFA local. Entre com email e senha para concluir a verificacao.')
     }
   },[])
+
+  // If a session is already active, don't show the login form again — send the
+  // user straight to their console. This makes the header's "Acessar console"
+  // link land on the app instead of looking like it logged them out.
+  useEffect(()=>{
+    let active = true
+    getAuthMe()
+      .then((session)=>{
+        if(!active || !session.user) return
+        router.replace(session.user.role === 'admin' ? '/admin' : '/family-console')
+      })
+      .catch(()=>{})
+    return ()=>{ active = false }
+  },[router])
 
   async function onSubmit(event:FormEvent<HTMLFormElement>){
     event.preventDefault()

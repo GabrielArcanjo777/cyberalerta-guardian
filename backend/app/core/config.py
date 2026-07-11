@@ -98,6 +98,10 @@ class AppConfig:
         self.auth_secret_key = _auth_secret_key
         self.auth_access_token_expire_minutes = _env_int("AUTH_ACCESS_TOKEN_EXPIRE_MINUTES", 15)
         self.auth_refresh_token_expire_days = _env_int("AUTH_REFRESH_TOKEN_EXPIRE_DAYS", 7)
+        # There is no separate refresh-token flow: the session cookie carries a
+        # single JWT. Use the (longer) refresh window as its lifetime so a login
+        # actually persists instead of expiring after the 15-min access window.
+        self.auth_session_expire_seconds = max(1, self.auth_refresh_token_expire_days) * 24 * 60 * 60
         self.auth_cookie_name = os.getenv("AUTH_COOKIE_NAME", "cyberalerta_session")
         self.auth_cookie_secure = _env_bool("AUTH_COOKIE_SECURE", self.is_production)
         self.auth_cookie_samesite = os.getenv("AUTH_COOKIE_SAMESITE", "lax").strip().lower()

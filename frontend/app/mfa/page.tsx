@@ -1,7 +1,6 @@
 "use client"
 
 import Link from 'next/link'
-import Image from 'next/image'
 import {useRouter} from 'next/navigation'
 import React, {FormEvent, useState} from 'react'
 import Button from '@/components/Button'
@@ -161,12 +160,12 @@ export default function MFAPage(){
                 {setup && (
                   <form className="guardian-mfa-form" onSubmit={enableMfa}>
                     <div className="guardian-mfa-qr-block">
-                      <Image
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={`data:image/svg+xml;base64,${setup.qr_code_base64}`}
                         alt="QR Code MFA"
                         width={160}
                         height={160}
-                        unoptimized
                         className="guardian-mfa-qr"
                       />
                       <div className="guardian-mfa-manual">

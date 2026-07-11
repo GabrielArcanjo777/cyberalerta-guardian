@@ -147,7 +147,7 @@ function AdminPanel({user}: {user: AuthUser}){
 
 export default function AdminPage(){
   return (
-    <div className="min-h-screen bg-white">
+    <div className="guardian-product-page min-h-screen">
       <section className="mx-auto w-full max-w-6xl px-4 py-10">
         <AdminRoute>
           {(user)=><AdminPanel user={user} />}
