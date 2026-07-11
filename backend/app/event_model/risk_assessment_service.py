@@ -15,7 +15,11 @@ from app.event_model.models import (
 from app.event_model.repositories import RiskAssessmentRepository
 
 CASE_CREATION_THRESHOLD = 40
-HIGH_RISK_THRESHOLD = 70
+# Calibrated against dataset v1 (docs/metrics_v1.md): the canonical family-scam
+# combo (new_number + pix + urgency) scores exactly 65, and the hybrid Policy
+# Engine already uses 65 as its auto-alert floor. At 70 the alert recall was 4%
+# with 0 false positives; at 65 recall rises with FP still 0 on the dataset.
+HIGH_RISK_THRESHOLD = 65
 
 
 def _normalize(text: str) -> str:
