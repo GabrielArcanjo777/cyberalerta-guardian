@@ -803,6 +803,46 @@ Se estiver usando a venv já criada no Windows:
 .\backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q
 ```
 
+## Dataset e Métricas Medidas (v1)
+
+Dataset rotulado: **305 mensagens** PT-BR (150 golpe / 155 legítimas, incluindo
+hard negatives que citam pix/senha/banco/urgência legitimamente). Sintético,
+escrito à mão, sem duplicatas — provenance em `backend/scripts/dataset_v1.py`,
+materializado em `backend/data/scam_dataset_v1.jsonl`.
+
+Avaliação roda o **código de produção real** (sem reimplementação):
+
+```bash
+backend/venv/Scripts/python.exe backend/scripts/evaluate_dataset.py
+# relatório completo: docs/metrics_v1.md
+```
+
+Resultados medidos (regras determinísticas, sem LLM — postura padrão):
+
+| Camada | Precisão | Recall | FPR |
+| --- | --- | --- | --- |
+| Alerta ao contato (HIGH, score ≥ 65) | **100%** | 10% | **0%** |
+| Criação de caso no console (score ≥ 40) | 96,7% | 58% | 1,9% |
+| Policy Engine sem LLM → fila de revisão | — | 82,7% dos golpes | 37% das legítimas |
+
+Leitura honesta: o alerta automático é **conservador por design** — nunca
+incomodou a família com falso alarme no dataset, mas captura só 10% dos golpes
+sozinho (calibrado de 70→65 após a 1ª medição, que dava 4%). A rede de segurança
+é a fila de revisão: a Policy Engine encaminha 82,7% dos golpes para o console.
+A lacuna de recall está nos golpes com vocabulário fora das regras (falso banco,
+prêmio, emprego, investimento) — exatamente o que a análise LLM em **shadow mode**
+deve cobrir no piloto. Regressão travada em `backend/app/tests/test_dataset_metrics.py`.
+
+### Piloto com famílias (protocolo curto)
+
+1. Parear um número de teste em `/whatsapp-setup` e cadastrar pessoa protegida +
+   contato de confiança.
+2. Rodar 1–2 semanas com `DRY_RUN=true` + `HYBRID_LLM_ENABLED=true` +
+   `HYBRID_LLM_SHADOW_MODE=true`: nada é enviado; decisões ficam gravadas.
+3. Revisar semanalmente no Guardian Console: falsos positivos da fila, decisões
+   híbridas gravadas, golpes perdidos relatados pela família.
+4. Só depois de FPR real aceitável: `DRY_RUN=false` + allowlist com o contato.
+
 ## Estrutura de Pastas
 
 ```text
