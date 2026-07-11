@@ -157,6 +157,62 @@ Exemplo de narrativa:
 - Deploy controlado para piloto.
 - Dataset/ground truth para ML futuro, sem treinar modelo agora.
 
+## Pipeline Híbrido de Detecção (regras + LLM + Policy Engine)
+
+Combina três camadas para decidir se um alerta ao contato de confiança deve ser
+enviado. **A LLM é apenas um insumo estruturado** — só a Policy Engine (determinística
+e versionada) e o safety gate decidem envios. A LLM nunca chama o adapter de WhatsApp
+nem decide sozinha.
+
+```
+Mensagem → Regras determinísticas ─┐
+                                    ├→ Policy Engine → DISCARD | REVIEW | AUTO_ALERT
+           Análise LLM ────────────┘                                       │
+                                                              Contato de confiança
+                                                            (via safety gate existente)
+```
+
+- **DISCARD**: score baixo, sem sinais fortes, LLM benigna concordante.
+- **REVIEW**: LLM indisponível, conflito regras×LLM, faixa intermediária, injeção
+  suspeita, saída inválida ou evidência insuficiente. **Default seguro.**
+- **AUTO_ALERT**: só com `classification=SCAM`, `confidence>=0.85`, score determinístico
+  `>=65`, ≥2 sinais objetivos, concordância e uma combinação de risco (A/B/C/D).
+  A LLM sozinha **nunca** autoriza; regras sozinhas **nunca** autorizam.
+
+### Config padrão segura
+
+| Variável | Padrão | Efeito |
+| --- | --- | --- |
+| `HYBRID_LLM_ENABLED` | `false` | LLM não é chamada; roda só determinístico. |
+| `HYBRID_LLM_SHADOW_MODE` | `true` | Grava a decisão que seria tomada; **nunca envia** por causa do híbrido. |
+| `HYBRID_REQUIRE_LLM_FOR_AUTO_ALERT` | `true` | LLM indisponível ⇒ máximo `REVIEW`. |
+| `HYBRID_REDACT_PII` | `true` | Redige cartão/CPF/telefone/código antes da LLM. |
+
+### Ativar shadow mode (observar sem risco)
+
+```
+HYBRID_LLM_ENABLED=true
+HYBRID_LLM_SHADOW_MODE=true      # roda a LLM e grava a decisão, sem enviar
+HYBRID_LLM_BASE_URL=https://openrouter.ai/api/v1   # ou OpenAI/endpoint compatível
+HYBRID_LLM_API_KEY=...
+HYBRID_LLM_MODEL=...
+```
+
+Para produção real: `HYBRID_LLM_SHADOW_MODE=false` (o safety gate `DRY_RUN`/
+`BETA_REAL_SEND_ENABLED`/`BETA_REQUIRE_ALLOWED_RECIPIENT`/`BETA_ALLOWED_RECIPIENTS`
+continua valendo em cima da decisão).
+
+**Rollback:** basta `HYBRID_LLM_ENABLED=false` (ou `SHADOW_MODE=true`) — o fluxo
+volta ao comportamento determinístico atual sem qualquer alteração de código.
+
+### Auditoria
+
+Cada análise grava eventos (`DeterministicAssessmentCreated`, `LLMAnalysis*`,
+`HybridDecisionCreated`/`Shadow`, `ReviewQueued`, `AutoAlertAuthorized`/`Blocked`,
+`PromptInjectionDetected`, `PolicyFallbackUsed`) com metadados auditáveis: hash do
+conteúdo, scores, versões de prompt/policy, provider/modelo, motivos curtos e latência.
+**Nunca** grava API key, prompt, chain-of-thought ou o conteúdo integral.
+
 ## Arquitetura Resumida
 
 ```text

@@ -21,6 +21,9 @@ from app.channel_adapters.evolution_demo_adapter import (
 from app.dual_bot.messages import responsible_alert_for
 from app.event_model import BotEventType, EventModelService
 from app.event_model.models import RiskLevel
+from app.hybrid.events import emit_hybrid_events
+from app.hybrid.models import HybridAction
+from app.hybrid.service import HybridAnalysisService, build_hybrid_service_from_config
 from app.evolution_demo.models import (
     EvolutionDemoHealthResponse,
     EvolutionDemoOutboundRecord,
@@ -46,6 +49,7 @@ class EvolutionDemoService:
         adapter: EvolutionDemoAdapter | None = None,
         event_model: EventModelService | None = None,
         guardian_address: str | None = None,
+        hybrid_service: HybridAnalysisService | None = None,
     ) -> None:
         self.event_model = event_model or EventModelService.in_memory()
         self.adapter = adapter or EvolutionDemoAdapter()
@@ -60,6 +64,13 @@ class EvolutionDemoService:
             provider_message_registry=self.provider_messages,
         )
         self._delivery_record_count = 0
+        # Hybrid pipeline. Built from AppConfig by default (disabled + shadow),
+        # so this never changes behavior until explicitly enabled.
+        if hybrid_service is None:
+            from app.core.config import config as _config
+
+            hybrid_service = build_hybrid_service_from_config(_config)
+        self.hybrid_service = hybrid_service
 
     def health(self) -> EvolutionDemoHealthResponse:
         return EvolutionDemoHealthResponse(
@@ -106,16 +117,51 @@ class EvolutionDemoService:
         if ingress_result.case_id:
             case = self.event_model.repositories.cases.get(ingress_result.case_id)
 
+        # --- Hybrid detection pipeline (deterministic + LLM + Policy Engine) ---
+        # Runs on every non-duplicate message with an assessment. In the default
+        # posture (LLM disabled OR shadow mode) it only records events/decisions
+        # and never changes the alerting behavior below.
+        hybrid_should_alert = False
+        if not ingress_result.duplicate and assessment is not None:
+            hybrid_outcome = self.hybrid_service.analyze(
+                assessment=assessment,
+                message_text=inbound.body,
+                sender_is_new_number="new_number" in assessment.signals,
+            )
+            emit_hybrid_events(
+                self.event_model.event_bus,
+                hybrid_outcome,
+                message_id=ingress_result.message_id,
+                case_id=ingress_result.case_id,
+                protected_person_id=case.protected_person_id if case else None,
+            )
+            ctx = self.hybrid_service.context
+            hybrid_active = ctx.llm_enabled and not ctx.shadow_mode
+            if hybrid_active:
+                hybrid_should_alert = (
+                    hybrid_outcome.decision.action == HybridAction.AUTO_ALERT
+                    and not hybrid_outcome.decision.shadow_decision
+                )
+
+        # Whether to alert the trusted contact. When the hybrid pipeline is live
+        # (enabled + not shadow) the Policy Engine's AUTO_ALERT governs; otherwise
+        # the existing deterministic rule (case + HIGH risk) governs — unchanged.
+        ctx = self.hybrid_service.context
+        hybrid_active = ctx.llm_enabled and not ctx.shadow_mode
+        if hybrid_active:
+            should_alert = hybrid_should_alert and case is not None
+        else:
+            should_alert = (
+                case is not None
+                and assessment is not None
+                and assessment.risk_level == RiskLevel.HIGH
+            )
+
         # By design the bot NEVER messages the person who sent the inbound text
         # (that would spam every contact of a paired number). The analysis result
         # only goes to (1) the single configured trusted contact and (2) the
         # backend event model / Guardian Console. This holds in production too.
-        if (
-            not ingress_result.duplicate
-            and case is not None
-            and assessment is not None
-            and assessment.risk_level == RiskLevel.HIGH
-        ):
+        if not ingress_result.duplicate and should_alert and case is not None and assessment is not None:
             destination = guardian_address or self.guardian_address
             alert_body = responsible_alert_for(
                 protected_person_alias=protected_person_alias,

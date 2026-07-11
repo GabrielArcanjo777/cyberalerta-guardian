@@ -106,12 +106,18 @@ def test_evolution_demo_service_creates_case_and_sends_demo_messages():
     # Exactly ONE send: the alert to the trusted contact. The sender is never messaged.
     assert len(transport.calls) == 1
     assert transport.calls[0]["to_address"] == "5511888880001"
+    # The core flow events (unchanged) plus the hybrid audit trail. In the
+    # default posture (LLM disabled + shadow) the hybrid pipeline only records
+    # its decision; it does NOT change the alerting (guardian still notified).
     assert response.events == [
         BotEventType.MESSAGE_RECEIVED.value,
         BotEventType.SUSPICIOUS_MESSAGE_RECEIVED.value,
         BotEventType.RISK_ASSESSMENT_CREATED.value,
         BotEventType.CASE_CREATED.value,
         BotEventType.RESPONSIBLE_ALERT_QUEUED.value,
+        BotEventType.DETERMINISTIC_ASSESSMENT_CREATED.value,
+        BotEventType.HYBRID_SHADOW_DECISION_CREATED.value,
+        BotEventType.REVIEW_QUEUED.value,
         BotEventType.DELIVERY_STATUS_UPDATED.value,
         BotEventType.RESPONSIBLE_NOTIFIED.value,
     ]
