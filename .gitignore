@@ -36,3 +36,7 @@ backend/test_send.py
 # Coverage / OS
 coverage/
 .DS_Store
+
+# Pre-codex backup snapshots (local only)
+pre_codex_*.patch
+pre_codex_*.txt
