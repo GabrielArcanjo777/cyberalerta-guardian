@@ -9,7 +9,13 @@ from app.hybrid.models import (
     HybridDecision,
     HybridDecisionContext,
 )
+from app.hybrid.pii import content_hash, detect_prompt_injection, sanitize_for_llm
 from app.hybrid.policy import HybridDecisionPolicy, PolicyThresholds
+from app.hybrid.service import (
+    HybridAnalysisOutcome,
+    HybridAnalysisService,
+    build_hybrid_service_from_config,
+)
 
 __all__ = [
     "build_deterministic_assessment",
@@ -21,4 +27,10 @@ __all__ = [
     "HybridDecisionContext",
     "HybridDecisionPolicy",
     "PolicyThresholds",
+    "content_hash",
+    "detect_prompt_injection",
+    "sanitize_for_llm",
+    "HybridAnalysisOutcome",
+    "HybridAnalysisService",
+    "build_hybrid_service_from_config",
 ]

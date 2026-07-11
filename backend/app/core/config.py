@@ -87,6 +87,23 @@ class AppConfig:
         self.beta_real_send_enabled = _env_bool("BETA_REAL_SEND_ENABLED", False)
         self.beta_allowed_recipients = _split_csv(os.getenv("BETA_ALLOWED_RECIPIENTS", ""))
         self.beta_require_allowed_recipient = _env_bool("BETA_REQUIRE_ALLOWED_RECIPIENT", True)
+        # --- Hybrid LLM pipeline (SAFE defaults: disabled + shadow) ------------
+        # The LLM is only an input. Only the Policy Engine + safety gate decide
+        # sends. Defaults must never send: disabled, shadow on, LLM required.
+        self.hybrid_llm_enabled = _env_bool("HYBRID_LLM_ENABLED", False)
+        self.hybrid_llm_shadow_mode = _env_bool("HYBRID_LLM_SHADOW_MODE", True)
+        self.hybrid_llm_provider = os.getenv("HYBRID_LLM_PROVIDER", "openai_compatible").strip()
+        self.hybrid_llm_base_url = os.getenv("HYBRID_LLM_BASE_URL", "").strip()
+        self.hybrid_llm_api_key = os.getenv("HYBRID_LLM_API_KEY", "")
+        self.hybrid_llm_model = os.getenv("HYBRID_LLM_MODEL", "").strip()
+        self.hybrid_llm_timeout_seconds = _env_int("HYBRID_LLM_TIMEOUT_SECONDS", 12)
+        self.hybrid_llm_max_retries = _env_int("HYBRID_LLM_MAX_RETRIES", 1)
+        self.hybrid_llm_temperature = float(os.getenv("HYBRID_LLM_TEMPERATURE", "0") or 0)
+        self.hybrid_llm_prompt_version = os.getenv("HYBRID_LLM_PROMPT_VERSION", "v1").strip()
+        self.hybrid_policy_version = os.getenv("HYBRID_POLICY_VERSION", "v1").strip()
+        self.hybrid_require_llm_for_auto_alert = _env_bool("HYBRID_REQUIRE_LLM_FOR_AUTO_ALERT", True)
+        self.hybrid_max_message_chars = _env_int("HYBRID_MAX_MESSAGE_CHARS", 4000)
+        self.hybrid_redact_pii = _env_bool("HYBRID_REDACT_PII", True)
         _auth_secret_key = os.getenv("AUTH_SECRET_KEY")
         if not _auth_secret_key:
             if self.is_production:
