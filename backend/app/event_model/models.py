@@ -45,6 +45,18 @@ class BotEventType(str, Enum):
     BOT_DEACTIVATED = "BotDeactivated"
     CONSENT_SCOPE_CHANGED = "ConsentScopeChanged"
     DELIVERY_STATUS_UPDATED = "DeliveryStatusUpdated"
+    # --- Hybrid detection pipeline ---
+    DETERMINISTIC_ASSESSMENT_CREATED = "DeterministicAssessmentCreated"
+    LLM_ANALYSIS_REQUESTED = "LLMAnalysisRequested"
+    LLM_ANALYSIS_COMPLETED = "LLMAnalysisCompleted"
+    LLM_ANALYSIS_FAILED = "LLMAnalysisFailed"
+    HYBRID_DECISION_CREATED = "HybridDecisionCreated"
+    HYBRID_SHADOW_DECISION_CREATED = "HybridShadowDecisionCreated"
+    REVIEW_QUEUED = "ReviewQueued"
+    AUTO_ALERT_AUTHORIZED = "AutoAlertAuthorized"
+    AUTO_ALERT_BLOCKED = "AutoAlertBlocked"
+    PROMPT_INJECTION_DETECTED = "PromptInjectionDetected"
+    POLICY_FALLBACK_USED = "PolicyFallbackUsed"
 
 
 class CaseStatus(str, Enum):
