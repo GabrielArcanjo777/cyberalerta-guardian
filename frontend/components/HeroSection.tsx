@@ -14,8 +14,12 @@ type HeroCopy = {
   primaryCta:string
   secondaryCta:string
   trustItems:string[]
-  phonePaused:string
+  phoneTitle:string
+  phoneInvariant:string
   phoneSubtitle:string
+  phoneInboundLabel:string
+  phoneCaptured:string
+  phoneFooter:string
 }
 
 const heroCopy:Record<Locale, HeroCopy> = {
@@ -32,8 +36,12 @@ const heroCopy:Record<Locale, HeroCopy> = {
       'Só alertas suspeitos no painel',
       'Uso só com autorização',
     ],
-    phonePaused:'Proteção ativa · resposta pausada',
-    phoneSubtitle:'Análise de risco',
+    phoneTitle:'Monitoramento Guardian',
+    phoneInvariant:'Nenhuma resposta enviada ao remetente.',
+    phoneSubtitle:'Somente leitura · análise silenciosa',
+    phoneInboundLabel:'Mensagem recebida',
+    phoneCaptured:'Capturada para análise às 14:22',
+    phoneFooter:'Único destino permitido: contato de confiança',
   },
   'en-US': {
     aria:'CyberAlerta — protection against WhatsApp scams',
@@ -48,23 +56,30 @@ const heroCopy:Record<Locale, HeroCopy> = {
       'Only suspicious alerts on the panel',
       'Authorized use only',
     ],
-    phonePaused:'Protection active · reply paused',
-    phoneSubtitle:'Risk analysis',
+    phoneTitle:'Guardian monitoring',
+    phoneInvariant:'No reply sent to the sender.',
+    phoneSubtitle:'Read-only · silent analysis',
+    phoneInboundLabel:'Inbound message',
+    phoneCaptured:'Captured for analysis at 14:22',
+    phoneFooter:'Only allowed destination: trusted contact',
   },
 }
 
-type Scenario = {tag:string; tone:'high'|'medium'; sent:string; verdict:string}
+type Scenario = {tag:string; tone:'high'|'medium'; sent:string; outcome:string; alerted:boolean}
 
+// Fluxo real: a mensagem é analisada em silêncio. Risco ALTO => alerta enviado
+// SOMENTE ao contato de confiança. Risco MÉDIO => caso no console, sem alerta.
+// O bot nunca responde no chat do golpista/pessoa protegida.
 const scenariosByLocale:Record<Locale, Scenario[]> = {
   'pt-BR': [
-    {tag:'Golpe do Pix', tone:'high', sent:'Mãe, troquei de número. Preciso fazer um Pix urgente.', verdict:'Risco alto. Não transfira. Confirme com o contato salvo por ligação antes de qualquer Pix.'},
-    {tag:'Falso banco', tone:'high', sent:'Banco XYZ: seu cartão foi bloqueado. Envie o código do SMS para desbloquear.', verdict:'Risco alto. Banco não pede código por mensagem. Não compartilhe o código.'},
-    {tag:'Link falso', tone:'medium', sent:'Você ganhou um prêmio! Resgate aqui: bit.ly/xz9-premio', verdict:'Risco médio. Link suspeito. Não clique — verifique no app oficial.'},
+    {tag:'Golpe do Pix', tone:'high', alerted:true, sent:'Mãe, troquei de número. Preciso fazer um Pix urgente.', outcome:'Ação segura: alertar somente o contato de confiança. Risco alto — golpe do Pix; confirme por ligação antes de transferir.'},
+    {tag:'Falso banco', tone:'high', alerted:true, sent:'Banco XYZ: seu cartão foi bloqueado. Envie o código do SMS para desbloquear.', outcome:'Ação segura: alertar somente o contato de confiança. Risco alto — falso banco pedindo código de SMS.'},
+    {tag:'Link falso', tone:'medium', alerted:false, sent:'Você ganhou um prêmio! Resgate aqui: bit.ly/xz9-premio', outcome:'Ação segura: registrar no Guardian Console para revisão. Sem alerta e sem resposta ao remetente.'},
   ],
   'en-US': [
-    {tag:'Pix scam', tone:'high', sent:'Mom, I changed my number. I need to make an urgent Pix.', verdict:'High risk. Do not transfer. Confirm with a saved contact by phone before any transfer.'},
-    {tag:'Fake bank', tone:'high', sent:'Bank XYZ: your card was blocked. Send the SMS code to unblock it.', verdict:'High risk. Banks never ask for codes by message. Do not share the code.'},
-    {tag:'Fake link', tone:'medium', sent:'You won a prize! Claim here: bit.ly/xz9-prize', verdict:'Medium risk. Suspicious link. Do not click — check the official app.'},
+    {tag:'Pix scam', tone:'high', alerted:true, sent:'Mom, I changed my number. I need to make an urgent Pix.', outcome:'Safe action: alert only the trusted contact. High risk — Pix scam; confirm by phone before any transfer.'},
+    {tag:'Fake bank', tone:'high', alerted:true, sent:'Bank XYZ: your card was blocked. Send the SMS code to unblock it.', outcome:'Safe action: alert only the trusted contact. High risk — fake bank asking for an SMS code.'},
+    {tag:'Fake link', tone:'medium', alerted:false, sent:'You won a prize! Claim here: bit.ly/xz9-prize', outcome:'Safe action: log it in the Guardian Console for review. No alert and no reply to the sender.'},
   ],
 }
 
@@ -103,32 +118,49 @@ function SentinelMockup({reduceMotion, scenario, cycleKey, copy}:{reduceMotion:b
             <span className={styles.phoneIcons}>●●●○○  ▮▮▮</span>
           </div>
           <div className={styles.chatHeader}>
-            <div className={styles.chatAvatar} />
+            <div className={styles.monitorAvatar}>G</div>
             <div className={styles.chatHeaderInfo}>
-              <div className={styles.chatName}>CyberAlerta</div>
+              <div className={styles.chatName}>{copy.phoneTitle}</div>
               <div className={styles.chatSubtitle}>{copy.phoneSubtitle}</div>
             </div>
-            <div className={styles.trustBadge}>⏸</div>
+            <div className={styles.trustBadge}>🛡</div>
           </div>
           <div key={cycleKey} className={`${styles.chatBody} ${styles.chatCycle}`}>
             <span className={styles.chatRiskTag} style={{color: toneColor, borderColor: toneColor}}>
               {scenario.tag}
             </span>
-            <div className={styles.chatBubbleSent}>
-              <span className={styles.chatBubbleSentText}>{scenario.sent}</span>
-              <span className={styles.chatTime}>14:22  ✓✓</span>
+            <div className={styles.inboundMessageCard}>
+              <span className={styles.inboundLabel}>{copy.phoneInboundLabel}</span>
+              <span className={styles.inboundMessageText}>{scenario.sent}</span>
+              <span className={styles.inboundMeta}>{copy.phoneCaptured}</span>
             </div>
-            <div className={styles.chatBubbleRecv}>
-              <span className={styles.chatBubbleRecvText}>{scenario.verdict}</span>
-              <span className={styles.chatTime}>14:22  ✓</span>
+            {/* Resultado da análise — nunca é uma resposta no chat */}
+            <div
+              className={styles.systemIntervention}
+              style={{
+                borderColor: toneColor,
+                borderLeftColor: toneColor,
+                background: scenario.alerted ? '#fdecec' : '#fff8e8',
+              }}
+            >
+              <div className={styles.interventionIcon} style={{background: toneColor}}>
+                {scenario.alerted ? '!' : '◷'}
+              </div>
+              <div className={styles.interventionText} style={{color: scenario.alerted ? '#7f1d1d' : '#6b3f06'}}>
+                {scenario.outcome}
+              </div>
             </div>
-            <div className={styles.systemIntervention} style={{borderLeftColor: toneColor}}>
-              <div className={styles.interventionIcon} style={{background: toneColor}}>⏸</div>
-              <div className={styles.interventionText}>{copy.phonePaused}</div>
+            <div
+              className={styles.systemIntervention}
+              style={{marginTop: 10, borderColor: '#14b8a6', borderLeftColor: '#14b8a6', background: '#eefaf6', boxShadow: '5px 5px 0 rgba(20,184,166,0.1)'}}
+            >
+              <div className={styles.interventionIcon} style={{background: '#14b8a6'}}>✓</div>
+              <div className={styles.interventionText} style={{color: '#0f5147'}}>{copy.phoneInvariant}</div>
             </div>
           </div>
-          <div className={styles.phoneKeyboard}>
-            <span className={styles.phoneKeyboardHint}>Demo · WhatsApp via Evolution (não-oficial)</span>
+          <div className={styles.monitorFooter}>
+            <span aria-hidden="true">🔒</span>
+            <span>{copy.phoneFooter}</span>
           </div>
         </div>
       </div>
