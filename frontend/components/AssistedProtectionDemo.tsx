@@ -13,6 +13,7 @@ type DemoCase = {
   trustLock: string
   action: string
   recommendation: string
+  shouldAlert: boolean
   audit: string
   terminal: string[]
 }
@@ -26,18 +27,19 @@ const DEMO_CASES: DemoCase[] = [
     signals: ['número novo', 'urgência financeira', 'pedido para não ligar', 'pressão emocional'],
     risk: 'HIGH',
     trustLock: 'ACTIVE',
-    action: 'PAUSE RESPONSE',
+    action: 'ALERT TRUSTED CONTACT',
     recommendation: 'Confirmar com contato salvo antes de qualquer pagamento.',
+    shouldAlert: true,
     audit: 'Decisão registrada na trilha de auditoria.',
     terminal: [
       '[INPUT] mensagem suspeita recebida',
       '[SIGNAL] número novo detectado',
       '[SIGNAL] urgência financeira detectada',
       '[RISK] severidade alta',
-      '[TRUST_LOCK] resposta pausada',
+      '[POLICY] resposta ao remetente bloqueada',
       '[ACTION] confirmar com contato salvo',
       '[AUDIT] decisão registrada localmente',
-      '[ALERT] contato de confiança notificado',
+      '[ALERT] simulado somente para o contato de confiança',
       '[CONSOLE] caso registrado para revisão',
     ],
   },
@@ -49,18 +51,19 @@ const DEMO_CASES: DemoCase[] = [
     signals: ['instituição financeira', 'pedido de código/senso', 'urgência falsa', 'link curto suspeito'],
     risk: 'HIGH',
     trustLock: 'ACTIVE',
-    action: 'DO NOT SHARE',
+    action: 'ALERT TRUSTED CONTACT',
     recommendation: 'Nunca compartilhe códigos. Fale com o banco pelo app oficial ou telefone salvo.',
+    shouldAlert: true,
     audit: 'Decisão registrada na trilha de auditoria.',
     terminal: [
       '[INPUT] mensagem suspeita recebida',
       '[SIGNAL] instituição financeira detectada',
       '[SIGNAL] pedido de código/senha detectado',
       '[RISK] severidade alta',
-      '[TRUST_LOCK] resposta pausada',
+      '[POLICY] resposta ao remetente bloqueada',
       '[ACTION] não compartilhar códigos',
       '[AUDIT] decisão registrada localmente',
-      '[ALERT] contato de confiança notificado',
+      '[ALERT] simulado somente para o contato de confiança',
       '[CONSOLE] caso registrado para revisão',
     ],
   },
@@ -72,8 +75,9 @@ const DEMO_CASES: DemoCase[] = [
     signals: ['oferta inesperada', 'link curto', 'urgência implícita', 'remetente desconhecido'],
     risk: 'MED',
     trustLock: 'STANDBY',
-    action: 'DO NOT CLICK',
+    action: 'REVIEW IN CONSOLE',
     recommendation: 'Não clique em links suspeitos. Verifique pelo site oficial ou contato conhecido.',
+    shouldAlert: false,
     audit: 'Decisão registrada na trilha de auditoria.',
     terminal: [
       '[INPUT] mensagem suspeita recebida',
@@ -83,7 +87,7 @@ const DEMO_CASES: DemoCase[] = [
       '[TRUST_LINK] modo standby',
       '[ACTION] não clicar no link',
       '[AUDIT] decisão registrada localmente',
-      '[ALERT] contato de confiança notificado',
+      '[ALERT] nenhum envio — risco médio segue para revisão',
       '[CONSOLE] caso registrado para revisão',
     ],
   },
@@ -117,7 +121,7 @@ export default function AssistedProtectionDemo(){
           </span>
           <h1 className="guardian-demo-title">Veja como uma mensagem suspeita vira uma decisão rastreável antes do dano.</h1>
           <p className="guardian-demo-subtitle">
-            Simulação local com dados demonstrativos. O bot analisa a mensagem, alerta o contato de confiança e registra o caso no console — nunca responde ao remetente. Sem envio real via WhatsApp.
+            Simulação local com dados demonstrativos. O bot analisa em silêncio, registra o caso e só simula alerta ao contato de confiança em golpe explícito (risco alto) — nunca responde ao remetente.
           </p>
         </div>
 
@@ -225,11 +229,17 @@ export default function AssistedProtectionDemo(){
         <div className="guardian-demo-steps">
           <div className="guardian-demo-step-header">
             <span className="guardian-demo-step-number">03</span>
-            <h2 className="guardian-demo-step-title">Alerta ao contato de confiança</h2>
+            <h2 className="guardian-demo-step-title">
+              {current.shouldAlert ? 'Alerta ao contato de confiança' : 'Revisão no Guardian Console'}
+            </h2>
           </div>
           <div className="guardian-demo-action">
             <div className="guardian-demo-action-main">
-              <div className="guardian-demo-action-label">Enviado ao contato de confiança + registrado no console</div>
+              <div className="guardian-demo-action-label">
+                {current.shouldAlert
+                  ? 'Alerta simulado somente ao contato de confiança + caso registrado'
+                  : 'Sem alerta: caso registrado no console para revisão'}
+              </div>
               <p className="guardian-demo-action-text">{current.recommendation}</p>
               <div className="guardian-demo-action-status">
                 <span className="guardian-demo-action-status-dot" />
