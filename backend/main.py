@@ -121,6 +121,31 @@ consent_service = ConsentService(dual_bot_service.event_model.event_bus)
 guardian_console_real_flow_service = GuardianConsoleRealFlowService(dual_bot_service, consent_service)
 n8n_integration_service = N8nIntegrationService(orchestrator=orchestrator)
 
+def _apply_runtime_safety(*, dry_run: bool | None = None, real_send: bool | None = None) -> None:
+    """Apply safety-gate toggles at runtime (UI-driven, no .env edit).
+
+    The gate lives in the frozen EvolutionDemoConfig on the adapter, so we swap
+    it via dataclasses.replace. The allowlist is always re-synced to the single
+    TRUSTED_CONTACT — the only recipient the bot may ever message — so enabling
+    real send never opens delivery to anyone else.
+    """
+    import dataclasses
+
+    if dry_run is not None:
+        config.dry_run = dry_run
+    if real_send is not None:
+        config.beta_real_send_enabled = real_send
+    updates: dict = {
+        "dry_run": config.dry_run,
+        "real_send_enabled": config.beta_real_send_enabled,
+    }
+    if config.trusted_contact:
+        updates["allowed_recipients"] = (config.trusted_contact,)
+    new_cfg = dataclasses.replace(evolution_demo_service.adapter.config, **updates)
+    evolution_demo_service.adapter.config = new_cfg
+    evolution_demo_service.config = new_cfg
+
+
 _persisted_tc = settings_store.get("trusted_contact")
 if _persisted_tc is not None and not config.trusted_contact:
     config.trusted_contact = _persisted_tc
@@ -130,6 +155,15 @@ if _persisted_tc is not None and not config.trusted_contact:
 _persisted_protected = settings_store.get("protected_number")
 if _persisted_protected is not None and not config.protected_number:
     config.protected_number = _persisted_protected
+
+# Safety toggles configured via UI survive restarts (stored values win over .env,
+# since the console is the operator surface).
+_persisted_dry = settings_store.get("dry_run")
+_persisted_real = settings_store.get("beta_real_send_enabled")
+_apply_runtime_safety(
+    dry_run=(_persisted_dry == "true") if _persisted_dry is not None else None,
+    real_send=(_persisted_real == "true") if _persisted_real is not None else None,
+)
 
 app.include_router(create_auth_router())
 app.include_router(create_n8n_router(n8n_integration_service))
@@ -397,6 +431,23 @@ def settings_set_trusted_contact(request: Request, payload: dict, access: None =
             raise HTTPException(status_code=422, detail="Numero da pessoa protegida invalido. Use +DDI seguido de 10-15 digitos.")
         config.protected_number = protected
         settings_store.put("protected_number", protected)
+
+    # Safety-gate toggles (UI switches instead of .env edits). Strict booleans
+    # only; the allowlist stays pinned to TRUSTED_CONTACT inside the helper.
+    dry_run_value: bool | None = None
+    real_send_value: bool | None = None
+    if "dry_run" in payload:
+        if not isinstance(payload["dry_run"], bool):
+            raise HTTPException(status_code=422, detail="dry_run deve ser booleano.")
+        dry_run_value = payload["dry_run"]
+        settings_store.put("dry_run", "true" if dry_run_value else "false")
+    if "beta_real_send_enabled" in payload:
+        if not isinstance(payload["beta_real_send_enabled"], bool):
+            raise HTTPException(status_code=422, detail="beta_real_send_enabled deve ser booleano.")
+        real_send_value = payload["beta_real_send_enabled"]
+        settings_store.put("beta_real_send_enabled", "true" if real_send_value else "false")
+    if dry_run_value is not None or real_send_value is not None or "trusted_contact" in payload:
+        _apply_runtime_safety(dry_run=dry_run_value, real_send=real_send_value)
 
     return _protection_settings()
 

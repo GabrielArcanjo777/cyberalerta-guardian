@@ -8,9 +8,11 @@ O projeto está em estágio **MVP / demonstração técnica**. Não é produçã
 
 ## Status atual
 
-**Beta Técnico Local.** Backend FastAPI + frontend Next.js, autenticação com Google OIDC, MFA/TOTP, recovery codes (Argon2id), RBAC, auditoria, rate limit, persistência SQLite e painel operacional.
+**Beta Técnico Local.** Backend FastAPI + frontend Next.js, autenticação com Google OIDC, MFA/TOTP, recovery codes (Argon2id), RBAC, auditoria, rate limit, persistência SQLite e painel operacional. **292 testes automatizados** no backend; dataset rotulado de 305 mensagens com métricas medidas (`docs/metrics_v1.md`).
 
-O canal de WhatsApp usa a **Evolution API** (WhatsApp Web / Baileys) — não-oficial, gratuita, pareada por QR code em `/whatsapp-setup`. Adequada para portfólio/demo: o número pode ser bloqueado pela Meta e a sessão pode cair exigindo novo pareamento. A antiga integração paga com a Meta (WhatsApp Business Cloud) foi removida.
+Detecção em camadas: regras determinísticas explicáveis + **pipeline híbrido com LLM e Policy Engine** (desligado e em shadow por padrão — a LLM nunca decide envio). **Regra cardinal: o bot nunca responde ao remetente.** O único destino possível de mensagem de saída é o contato de confiança cadastrado, e apenas em golpe explícito, sempre atrás do safety gate (simulação/envio real/allowlist).
+
+O canal de WhatsApp usa a **Evolution API** (WhatsApp Web / Baileys) — não-oficial, gratuita, pareada por QR code em `/whatsapp-setup`. Adequada para portfólio/demo: o número pode ser bloqueado pela Meta e a sessão pode cair exigindo novo pareamento. As antigas integrações Meta Cloud API e Twilio Sandbox foram removidas.
 
 ## Problema
 
@@ -29,12 +31,13 @@ O CyberAlerta Guardian foca no momento anterior ao dano:
 O Guardian organiza uma proteção assistida e contínua:
 
 1. conecta-se um número de WhatsApp autorizado por QR code (`/whatsapp-setup`);
-2. as mensagens recebidas são analisadas em tempo real;
-3. conversas normais são descartadas — não ficam no painel;
-4. mensagens suspeitas viram um caso com risco, motivo e ação recomendada;
-5. o responsável revisa e decide (confirmar golpe, falso positivo, resolver);
-6. o fluxo recomenda pausa e verificação por um canal confiável;
-7. tudo com consentimento/opt-in, retenção limitada e trilha auditável.
+2. cadastra-se o número da pessoa protegida e o do contato de confiança (na mesma tela);
+3. as mensagens recebidas são analisadas em tempo real, **em silêncio** — o bot nunca responde no chat;
+4. conversas normais são descartadas — não ficam no painel;
+5. mensagens suspeitas viram um caso com risco, motivo e ação recomendada;
+6. golpe explícito (risco alto) dispara alerta **somente ao contato de confiança** (simulado por padrão; envio real exige dupla autorização na UI);
+7. o responsável revisa e decide (confirmar golpe, falso positivo, resolver);
+8. tudo com consentimento/opt-in, retenção limitada e trilha auditável.
 
 ## Status Real
 
@@ -46,9 +49,13 @@ O Guardian organiza uma proteção assistida e contínua:
 | `/analyze` | Implementado | Fluxo principal de análise rule-based/agentic local. |
 | `/assisted-demo` | Implementado | Rota recomendada para apresentar o produto. |
 | Guardian Console | Implementado para demo/local | Inclui caso, risco, timeline, feedback e consentimento. |
-| Event Model | Implementado em memória | Base auditável local para eventos, casos e avaliações. |
+| Event Model | Implementado em `memory` ou SQLite | Eventos, casos, avaliações e audit log persistem quando `STORAGE_BACKEND=sqlite`. |
 | Pattern Intelligence | Implementado com regras | Sem ML pesado e sem IA externa. |
-| Agentes controlados | Implementados | Sem agente autônomo livre e sem LLM externo. |
+| Pipeline híbrido (regras + LLM + Policy Engine) | Implementado | Desligado e em shadow por padrão; só a Policy Engine + safety gate decidem envio. |
+| Cadastro pessoa protegida + contato de confiança | Implementado | UI em `/whatsapp-setup`, persistido em SQLite, sobrevive restart. |
+| Toggles de envio na UI (simulação/envio real) | Implementado | Sem editar `.env`; allowlist re-pinada automaticamente ao contato de confiança. |
+| Dataset rotulado + métricas | Implementado | 305 mensagens, harness com código de produção, regressão em testes (`docs/metrics_v1.md`). |
+| Agentes controlados | Implementados | Sem agente autônomo livre; LLM externa é opcional e nunca decide envio. |
 | Consentimento/opt-in | Implementado como base local | Não é consultoria jurídica nem compliance completo. |
 | Autenticação local | Implementado | Login email/senha, cookies HttpOnly, MFA/TOTP, RBAC e auditoria. |
 | Google OAuth/OIDC | Implementado como opcional | Desativado por padrão; exige configuração local segura. |
@@ -69,11 +76,10 @@ Roteiro conceitual:
 
 ```text
 Mensagem suspeita
-  -> análise de risco
-  -> resposta protegida
-  -> Guardian Console
-  -> Trust Lock
-  -> Trusted Circle
+  -> normalização e análise silenciosa
+  -> decisão determinística / Policy Engine
+  -> Guardian Console (caso revisável)
+  -> alerta somente ao contato de confiança, se HIGH e todos os gates permitirem
   -> Proof of Trust
   -> Agent Decision Trace
   -> relatório
@@ -96,18 +102,23 @@ Exemplo de narrativa:
 - Mock WhatsApp Adapter.
 - Channel Adapter Contract adapter-first.
 - Evolution Demo Adapter para desenvolvimento controlado.
-- Twilio Sandbox Adapter para POC controlada.
 - Dual Bot Flow:
-  - Bot Protegido;
-  - Bot Responsável;
-  - resposta segura;
-  - alerta ao responsável;
+  - Bot Protegido (recebe e analisa — nunca responde ao remetente);
+  - Bot Responsável (alerta somente o contato de confiança);
   - feedback auditável.
+- Pipeline híbrido de detecção (regras + LLM + Policy Engine):
+  - abstração de provedor LLM (OpenAI-compatible/OpenRouter) com Mock para testes;
+  - Policy Engine determinística e versionada (DISCARD / REVIEW / AUTO_ALERT);
+  - sanitização de PII e proteção contra prompt injection antes da chamada externa;
+  - shadow mode por padrão; a LLM nunca chama o adapter nem decide envio;
+  - trilha de auditoria com hash de conteúdo, versões e latência (sem secrets).
+- Cadastro do número da pessoa protegida + contato de confiança na UI, com persistência.
+- Toggles de simulação (DRY_RUN) e envio real (beta) direto na UI, com allowlist automática.
+- Dataset rotulado (305 mensagens) + harness de métricas rodando o código de produção.
 - Event Model com eventos, casos, mensagens e risk assessments.
 - Pattern Intelligence rule-based.
 - Agentes controlados:
   - `TriageAgent`;
-  - `SafeReplyAgent`;
   - `ResponsibleAlertAgent`;
   - `CaseSummaryAgent`;
   - `PatternReviewAgent`.
@@ -122,7 +133,7 @@ Exemplo de narrativa:
   - ações do responsável;
   - status de consentimento.
 - Consentimento/opt-in local com ativar, desativar, revogar e escopos.
-- Autenticação local por email/senha com hash PBKDF2-HMAC.
+- Autenticação local por email/senha com hash Argon2id.
 - Sessão assinada em cookie HttpOnly com SameSite=Lax.
 - MFA/TOTP com setup, enable, verify e bloqueio de admin sem MFA.
 - Google OAuth/OIDC opcional, com state anti-CSRF, validação de issuer/audience/email verificado e auto-create seguro.
@@ -138,8 +149,7 @@ Exemplo de narrativa:
 
 - Trusted Circle não envia SMS, WhatsApp ou e-mail real.
 - Mock WhatsApp não se conecta ao WhatsApp real.
-- Evolution API é apenas provider de demonstração técnica.
-- Twilio Sandbox é somente POC/sandbox, não produto final.
+- Evolution API é canal não-oficial (WhatsApp Web/Baileys) para portfólio/demo.
 - Guardian Console usa dados locais/in-memory ou SQLite local.
 - Proof of Trust é checklist assistido, não valida identidade automaticamente.
 - Pattern Intelligence usa regras explicáveis, não modelo treinado.
@@ -235,43 +245,43 @@ backend/ FastAPI + Pydantic
     +-- storage/                 memory ou SQLite local
     +-- trusted_circle/          escalonamento simulado
     +-- proof_trust/             verificação assistida
-    +-- twilio_sandbox/          POC sandbox controlada
     +-- evolution_demo/          provider demo local/controlado
+    +-- llm/                     abstração de provedor LLM (OpenAI-compatible + mock)
+    +-- hybrid/                  Policy Engine, PII, eventos e decisão híbrida
 ```
 
-No desenho-alvo, o n8n é o orquestrador de canais: recebe eventos do WhatsApp ou de webhooks, chama o backend do CyberAlerta, recebe a decisão e executa a resposta/alerta. O backend continua sendo o cérebro de decisão: risco, Trust Lock, Proof of Trust, Recovery, auditoria e regras explicáveis ficam no CyberAlerta.
+No desenho-alvo, o n8n é o orquestrador opcional de canais: recebe eventos do WhatsApp ou de webhooks, chama o backend do CyberAlerta e executa apenas a ação autorizada. O backend continua sendo o cérebro de decisão: risco, Trust Lock, Proof of Trust, Recovery, auditoria e regras explicáveis ficam no CyberAlerta. Não existe ramo de resposta ao remetente.
 
 ```text
-WhatsApp Business Cloud API / Twilio / Evolution / Webhook de teste
+Evolution API (não-oficial) / Mock / Webhook de teste
         |
         v
-n8n
+n8n (opcional)
         |
         v
 CyberAlerta Guardian Backend
         |
         v
-n8n
-        |
-        v
-resposta ao usuário / alerta familiar / recovery / log externo
+alerta ao contato de confiança (único destino) / Guardian Console / log auditável
 ```
+
+O remetente **nunca** recebe resposta em nenhum desenho.
 
 ## Stack Técnica
 
 ### Backend
 
-- Python
-- FastAPI
-- Pydantic
+- Python 3.13 (versão do CI)
+- FastAPI 0.136.3
+- Pydantic 2.13.4
 - Uvicorn
 - Pytest
 - SQLite opcional via biblioteca padrão
 
 ### Frontend
 
-- Next.js
-- React
+- Next.js 16.2.6
+- React 18.2
 - TypeScript
 - Tailwind CSS
 - Framer Motion
@@ -280,11 +290,11 @@ resposta ao usuário / alerta familiar / recovery / log externo
 
 ## Pré-Requisitos
 
-- Python 3.11+ recomendado.
-- Node.js compatível com Next.js 16.
+- Python 3.13 (mesma versão do CI).
+- Node.js 22 (mesma versão do CI; versões mais novas podem funcionar, mas não são a baseline).
 - npm.
 - Git.
-- Docker opcional, apenas se quiser rodar o n8n localmente em container.
+- Docker opcional, necessário para Evolution API + PostgreSQL + Redis locais.
 
 No Windows, se `python` não estiver no PATH, use `py` ou crie/ative uma venv explicitamente.
 
@@ -306,7 +316,7 @@ Terminal 2, interface:
 
 ```powershell
 cd cyberalerta-guardian\frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -422,7 +432,7 @@ Usuários criados automaticamente via Google, quando liberados por allowlist, na
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -447,7 +457,7 @@ Se o backend estiver em outra porta, ajuste `NEXT_PUBLIC_API_URL` no `.env.local
 | `/` | Home premium do produto. |
 | `/assisted-demo` | Demo guiada recomendada. |
 | `/before-pix` | Análise antes de uma ação de risco. |
-| `/chatbot-demo` | Canal simples/mock para pessoa protegida. |
+| `/chatbot-demo` | Ingresso mock para análise local; orientação aparece apenas na tela, sem resposta ao remetente. |
 | `/family-console` | Guardian Console para responsável. |
 | `/intake` | Intake técnico com privacidade/redaction. |
 | `/integrations` | Demos de conectores e integrações. |
@@ -457,7 +467,6 @@ Se o backend estiver em outra porta, ajuste `NEXT_PUBLIC_API_URL` no `.env.local
 | `/whatsapp-setup` | Pareia o número de WhatsApp (Evolution) via QR code. |
 | `/ml-lab` | Laboratório rule-based/ML realista. |
 | `/recovery` | Fluxo de recuperação. |
-| `/report` | Relatório/registro. |
 | `/trust-center` | Privacidade, limites e confiança. |
 
 ## Variáveis de Ambiente
@@ -486,8 +495,8 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | `RATE_LIMIT_ENABLED` | `false` | Ativa rate limit em endpoints públicos/controlados. |
 | `RATE_LIMIT_PER_MINUTE` | `60` | Limite simples por minuto quando rate limit estiver ativo. |
 | `AUTH_SECRET_KEY` | vazio no exemplo | Segredo para assinar sessão local; defina valor forte no `.env`, nunca no Git. |
-| `AUTH_ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Expiração curta do cookie de sessão. |
-| `AUTH_REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Reservado para evolução de refresh token. |
+| `AUTH_ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Janela de access token reservada; não define hoje a duração do cookie único. |
+| `AUTH_REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Duração atual da sessão assinada no cookie (não há fluxo de refresh separado). |
 | `AUTH_COOKIE_NAME` | `cyberalerta_session` | Nome do cookie HttpOnly. |
 | `AUTH_COOKIE_SECURE` | `false` local, `true` produção | Cookie Secure. |
 | `AUTH_COOKIE_SAMESITE` | `lax` | Política SameSite do cookie. |
@@ -506,16 +515,12 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | `N8N_WEBHOOK_SECRET` | vazio | Segredo local do webhook n8n; nunca commitar valor real. |
 | `N8N_WEBHOOK_HEADER` | `X-N8N-CyberAlerta-Secret` | Header esperado para integração n8n MVP/controlada. |
 | `N8N_BASE_URL` | vazio | URL local/controlada do n8n, quando usado. |
-| `N8N_DRY_RUN` | `true` | Impede execução real de resposta/alerta no n8n durante demo. |
-| `CHANNEL_PROVIDER` | `twilio_sandbox` | Provider técnico de canal. |
+| `N8N_DRY_RUN` | `true` | Impede ação outbound real pelo fluxo n8n durante a demo. |
+| `CHANNEL_PROVIDER` | `evolution` | Provider técnico de canal. |
 | `DUAL_BOT_CHANNEL_PROVIDER` | `mock_whatsapp` | Provider ativo do Dual Bot. |
-| `TRUSTED_CONTACT` | vazio | **Único** número que o bot pode contatar (o alerta vai só para ele; nunca para o remetente). Vazio => alerta simulado. Aliases legados: `EVOLUTION_GUARDIAN_TO`, `DUAL_BOT_GUARDIAN_TO`. |
-| `TWILIO_ACCOUNT_SID` | vazio | Somente sandbox/POC. |
-| `TWILIO_AUTH_TOKEN` | vazio | Somente sandbox/POC. |
-| `TWILIO_WHATSAPP_FROM` | `whatsapp:+1XXXXXXXXXX` | Número fictício/sandbox. |
-| `TWILIO_WEBHOOK_SECRET` | vazio | Segredo de webhook sandbox. |
-| `TWILIO_STATUS_CALLBACK_URL` | vazio | Callback de status sandbox. |
-| `TWILIO_VALIDATE_SIGNATURE` | `false` | Validação de assinatura Twilio em ambiente controlado. |
+| `TRUSTED_CONTACT` | vazio | **Único** número que o bot pode contatar (o alerta vai só para ele; nunca para o remetente). Vazio => alerta simulado. Também configurável pela UI em `/whatsapp-setup` (persistido em SQLite). Aliases legados: `EVOLUTION_GUARDIAN_TO`, `DUAL_BOT_GUARDIAN_TO`. |
+| `PROTECTED_PERSON_NUMBER` | vazio | Número da pessoa protegida (identificação; o bot nunca escreve para ele). Também configurável pela UI. |
+| `HYBRID_LLM_*` | ver `.env.example` | Pipeline híbrido; padrão seguro `HYBRID_LLM_ENABLED=false` + `HYBRID_LLM_SHADOW_MODE=true`. |
 | `EVOLUTION_API_URL` | `http://localhost:8080` | URL local da Evolution demo. |
 | `EVOLUTION_API_KEY` | vazio | Chave local não commitada. |
 | `EVOLUTION_INSTANCE_NAME` | `guardian-demo` | Instância local da Evolution demo. |
@@ -549,12 +554,13 @@ TRUSTED_CONTACT=                 # único número que o bot pode contatar (o ale
 | `GET` | `/api/channels/evolution/status` | Estado da conexão (open/connecting/close). Aceita `?auto_reconnect=true`. | Sessão sensível |
 | `GET` | `/api/channels/evolution/qr` | QR code (base64) para parear o número. | Sessão sensível |
 | `POST` | `/api/channels/evolution/reconnect` | Força reconexão se a sessão cair. | Sessão sensível |
-| `POST` | `/webhook/evolution` | Recebe mensagens inbound e aciona risco/resposta/alerta. | `EVOLUTION_WEBHOOK_SECRET` (opcional em dev, obrigatório em produção) |
+| `POST` | `/webhook/evolution` | Recebe mensagens inbound, normaliza e analisa; só pode alertar o contato de confiança após os gates. | `EVOLUTION_WEBHOOK_SECRET` (opcional em dev, obrigatório em produção) |
 
 Fluxo de pareamento: abra `http://localhost:3000/whatsapp-setup` (requer login), escaneie o
 QR com o WhatsApp (**Aparelhos conectados > Conectar aparelho**) e envie uma mensagem
-suspeita para o número pareado. O CyberAlerta analisa o risco, responde de forma protegida
-e alerta o responsável. A tela faz polling do status e oferece reconexão automática.
+suspeita para o número pareado. O CyberAlerta analisa em silêncio, registra o caso e, apenas
+para risco alto com todos os gates liberados, alerta o contato de confiança. A tela faz polling
+do status e oferece reconexão automática. Nada é enviado ao remetente.
 
 **Aviso:** Nunca commitar `.env` com a `EVOLUTION_API_KEY` real. Canal não-oficial: risco de
 ban do número e de reautenticação por QR. Não use para volume/produção.
@@ -609,12 +615,11 @@ ban do número e de reautenticação por QR. Não use para volume/produção.
 | `POST` | `/proof-trust/assisted-session` | Cria sessão de Proof of Trust. | Protegido recomendado | Assistido/demo. |
 | `GET` | `/proof-trust/assisted-session/{session_id}` | Consulta sessão. | Protegido recomendado | Assistido/demo. |
 | `POST` | `/proof-trust/assisted-session/{session_id}/step` | Avança etapa. | Protegido recomendado | Assistido/demo. |
-| `GET` | `/api/channels/twilio/whatsapp/health` | Health do Twilio Sandbox. | Protegido recomendado | Sandbox/POC. |
-| `POST` | `/api/channels/twilio/whatsapp/inbound` | Webhook inbound Twilio. | Assinatura/API key recomendada | Sandbox/POC, não produção. |
-| `POST` | `/api/channels/twilio/whatsapp/status` | Callback de status Twilio. | Assinatura/API key recomendada | Sandbox/POC, não produção. |
 | `GET` | `/webhook/evolution/health` | Health Evolution demo. | Protegido recomendado | Demo local/controlado. |
 | `POST` | `/webhook/evolution` | Webhook Evolution demo. | Segredo/API key recomendada | Demo, não oficial produção. |
-| `POST` | `/protected-response/generate` | Gera resposta curta para pessoa protegida. | Local/demo | Demo/local. |
+| `GET` | `/settings/trusted-contact` | Lê pessoa protegida, contato de confiança e toggles de envio. | Protegido | Persistido em SQLite. |
+| `PUT` | `/settings/trusted-contact` | Atualiza números e toggles (`dry_run`, `beta_real_send_enabled`); allowlist re-pinada ao contato. | Protegido | Runtime + persistência. |
+| `GET` | `/guardian-console/real/cases/{case_id}/hybrid-decision` | Última decisão híbrida (regras + LLM + policy) do caso. | Protegido | Metadados auditáveis, sem conteúdo bruto. |
 | `GET` | `/integrations/n8n/health` | Health da integração n8n em modo teste. | Público local | DRY_RUN/local. |
 | `POST` | `/integrations/n8n/whatsapp/inbound` | Recebe payload WhatsApp normalizado pelo n8n e aciona análise segura. | `N8N_WEBHOOK_SECRET` quando configurado; rate limit opcional | MVP local/controlado; não é WhatsApp produção. |
 | `POST` | `/integrations/n8n/recovery` | Aciona wrapper de recovery para workflow n8n. | `N8N_WEBHOOK_SECRET` quando configurado | DRY_RUN/local. |
@@ -624,11 +629,11 @@ ban do número e de reautenticação por QR. Não use para volume/produção.
 
 O n8n deve ser usado como camada de orquestração, não como cérebro de decisão. O fluxo alvo é:
 
-1. WhatsApp Business Cloud API, Twilio Sandbox, Evolution Demo ou webhook de teste recebe uma mensagem.
+1. Evolution Demo (não-oficial) ou webhook de teste recebe uma mensagem.
 2. n8n normaliza metadados mínimos e chama o backend do CyberAlerta.
-3. CyberAlerta calcula risco, sinais, Trust Lock, ação recomendada e resposta segura.
-4. O backend devolve uma decisão estruturada com risco, caso, eventos, resposta protegida e alerta ao responsável.
-5. n8n executa a ação: responder usuário, alertar contato confiável, iniciar recovery ou registrar log externo.
+3. CyberAlerta calcula risco, sinais, Trust Lock e ação recomendada.
+4. O backend devolve uma decisão estruturada com risco, caso, eventos e alerta ao responsável.
+5. n8n executa a ação permitida: alertar o contato de confiança, iniciar recovery ou registrar log externo — **nunca responder ao remetente**.
 
 Regra central:
 
@@ -672,7 +677,7 @@ Resposta esperada:
 - `case_id`: id local do caso
 - `risk_score` e `risk_level`
 - `n8n_action`: ação que o workflow deve seguir
-- `user_message`: resposta segura para a pessoa protegida
+- `user_message`: orientação de segurança exibida no console (nunca enviada ao remetente)
 - `trusted_contact_message`: alerta sugerido ao contato confiável, quando aplicável
 
 Se `N8N_WEBHOOK_SECRET` estiver configurado no backend, inclua também este header:
@@ -727,7 +732,7 @@ Ações atuais que o workflow deve tratar:
 
 | `n8n_action` | Uso esperado no workflow |
 | --- | --- |
-| `ask_for_confirmation` | Responder com orientação curta e pedir verificação segura. |
+| `ask_for_confirmation` | Mostrar orientação no console e encaminhar para verificação humana; não enviar ao remetente. |
 | `alert_trusted_contact` | Alertar o contato confiável com contexto resumido. |
 | `activate_trust_lock` | Tratar como risco alto e priorizar bloqueio/pausa antes da ação. |
 | `start_recovery` | Iniciar fluxo de recuperação quando a pessoa já clicou, pagou ou informou código. |
@@ -792,7 +797,8 @@ Frontend:
 
 ```bash
 cd frontend
-npm install
+npm ci
+npx tsc --noEmit
 npm run lint
 npm run build
 ```
@@ -813,7 +819,7 @@ materializado em `backend/data/scam_dataset_v1.jsonl`.
 Avaliação roda o **código de produção real** (sem reimplementação):
 
 ```bash
-backend/venv/Scripts/python.exe backend/scripts/evaluate_dataset.py
+backend/.venv/Scripts/python.exe backend/scripts/evaluate_dataset.py
 # relatório completo: docs/metrics_v1.md
 ```
 
@@ -860,14 +866,15 @@ deve cobrir no piloto. Regressão travada em `backend/app/tests/test_dataset_met
 │       ├── event_model/
 │       ├── evolution_demo/
 │       ├── guardian_console/
+│       ├── hybrid/
+│       ├── llm/
 │       ├── mock_whatsapp/
 │       ├── pattern_intelligence/
 │       ├── proof_trust/
 │       ├── protected_response/
 │       ├── services/
 │       ├── storage/
-│       ├── trusted_circle/
-│       └── twilio_sandbox/
+│       └── trusted_circle/
 ├── frontend/
 │   ├── app/
 │   ├── components/
@@ -887,7 +894,7 @@ deve cobrir no piloto. Regressão travada em `backend/app/tests/test_dataset_met
 - A demo usa aliases como "Dona Lucia" e "Gabriel".
 - A pessoa protegida compartilha conteúdo voluntariamente; não há monitoramento invisível.
 - O sistema não pede senha, código, dados bancários ou documentos reais.
-- Integrações externas são mock, demo ou sandbox, salvo implementação futura explícita.
+- O canal Evolution é não-oficial e voltado a demo; a integração LLM opcional permanece desligada/shadow por padrão.
 - n8n possui endpoint MVP local/controlado, mas ainda não é integração de produção nem substitui API oficial de WhatsApp.
 - API key é opcional e desativada no desenvolvimento local por padrão.
 - Sessão humana usa cookie HttpOnly; não use `localStorage` para tokens.

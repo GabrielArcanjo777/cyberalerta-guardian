@@ -1,7 +1,6 @@
 "use client"
 
 import React, {useCallback, useEffect, useState} from 'react'
-import Card from '@/components/Card'
 import {
   getGuardianConsoleRealCase,
   getGuardianConsoleRealCases,
@@ -35,8 +34,8 @@ const statusLabels: Record<string, string> = {
 const actionLabels: Record<GuardianFeedbackAction, string> = {
   confirm_scam: 'Confirmar golpe',
   false_alarm: 'Falso positivo',
-  needs_review: 'Precisa revisar',
-  mark_resolved: 'Marcar resolvido',
+  needs_review: 'Revisar',
+  mark_resolved: 'Resolvido',
 }
 
 const actionNotes: Record<GuardianFeedbackAction, string> = {
@@ -46,76 +45,35 @@ const actionNotes: Record<GuardianFeedbackAction, string> = {
   mark_resolved: 'Responsável encerrou o caso no console.',
 }
 
-// Cor de ação por semântica (confirmar = perigo, resolver = ok).
-const actionClasses: Record<GuardianFeedbackAction, string> = {
-  confirm_scam: 'border-red-500/50 bg-red-500/10 text-red-100 hover:bg-red-500/20',
-  false_alarm: 'border-slate-500/40 bg-slate-500/10 text-slate-200 hover:bg-slate-500/20',
-  needs_review: 'border-amber-400/45 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20',
-  mark_resolved: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20',
+// Segmented control: neutro por padrão; só o texto carrega a semântica.
+const actionAccents: Record<GuardianFeedbackAction, string> = {
+  confirm_scam: 'text-red-300',
+  false_alarm: 'text-slate-300',
+  needs_review: 'text-amber-200',
+  mark_resolved: 'text-emerald-300',
 }
 
 type RiskTheme = {
   label: string
-  chip: string
   dot: string
-  bar: string
   banner: string
   score: string
 }
 
-// Semáforo de risco: vermelho (alto/crítico), âmbar (médio), verde (baixo).
+// 3 cores semânticas, dessaturadas para dark mode. Vermelho forte só no detalhe.
 const RISK_THEMES: Record<string, RiskTheme> = {
-  critical: {
-    label: 'Crítico',
-    chip: 'border-red-500/50 bg-red-500/15 text-red-200',
-    dot: 'bg-red-500',
-    bar: 'border-l-4 border-l-red-500',
-    banner: 'border-red-500/40 bg-red-950/40',
-    score: 'text-red-300',
-  },
-  high: {
-    label: 'Alto',
-    chip: 'border-red-500/45 bg-red-500/12 text-red-200',
-    dot: 'bg-red-500',
-    bar: 'border-l-4 border-l-red-500',
-    banner: 'border-red-500/35 bg-red-950/35',
-    score: 'text-red-300',
-  },
-  medium: {
-    label: 'Médio',
-    chip: 'border-amber-400/45 bg-amber-400/12 text-amber-100',
-    dot: 'bg-amber-400',
-    bar: 'border-l-4 border-l-amber-400',
-    banner: 'border-amber-400/35 bg-amber-950/30',
-    score: 'text-amber-300',
-  },
-  low: {
-    label: 'Baixo',
-    chip: 'border-emerald-400/45 bg-emerald-400/12 text-emerald-100',
-    dot: 'bg-emerald-400',
-    bar: 'border-l-4 border-l-emerald-400',
-    banner: 'border-emerald-400/35 bg-emerald-950/30',
-    score: 'text-emerald-300',
-  },
+  critical: {label:'Crítico', dot:'bg-red-400', banner:'border-red-400/35 bg-red-950/30', score:'text-red-300'},
+  high: {label:'Alto', dot:'bg-red-400', banner:'border-red-400/30 bg-red-950/25', score:'text-red-300'},
+  medium: {label:'Médio', dot:'bg-amber-300', banner:'border-amber-300/30 bg-amber-950/20', score:'text-amber-200'},
+  low: {label:'Baixo', dot:'bg-emerald-400', banner:'border-emerald-400/30 bg-emerald-950/20', score:'text-emerald-300'},
 }
 
 function riskTheme(level?: string | null): RiskTheme {
   const key = (level || '').toLowerCase()
   if (key === 'critical') return RISK_THEMES.critical
   if (key === 'high' || key === 'alto') return RISK_THEMES.high
-  if (key === 'medium' || key === 'média' || key === 'media' || key === 'médio') return RISK_THEMES.medium
   if (key === 'low' || key === 'baixo') return RISK_THEMES.low
   return RISK_THEMES.medium
-}
-
-function RiskChip({level}: {level?: string | null}){
-  const theme = riskTheme(level)
-  return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${theme.chip}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${theme.dot}`} aria-hidden />
-      Risco {theme.label}
-    </span>
-  )
 }
 
 function formatTime(iso:string){
@@ -126,6 +84,23 @@ function formatTime(iso:string){
   }
 }
 
+// "há 2h" em vez de data completa — a fila é sobre recência, não sobre datas.
+function timeAgo(iso:string){
+  try{
+    const diff = Date.now() - new Date(iso).getTime()
+    const min = Math.floor(diff / 60000)
+    if(min < 1) return 'agora'
+    if(min < 60) return `há ${min}min`
+    const hours = Math.floor(min / 60)
+    if(hours < 24) return `há ${hours}h`
+    const days = Math.floor(hours / 24)
+    if(days < 7) return `há ${days}d`
+    return new Date(iso).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})
+  }catch{
+    return ''
+  }
+}
+
 function deliveryLabel(status?:string | null){
   if(!status) return 'sem status'
   if(status === 'delivered') return 'entregue'
@@ -133,14 +108,6 @@ function deliveryLabel(status?:string | null){
   if(status === 'sent') return 'enviado'
   if(status === 'failed') return 'falhou'
   return status
-}
-
-function caseStateLabel(item:GuardianConsoleRealCaseSummary){
-  if(item.guardian_confirmed) return 'confirmado'
-  if(item.false_positive) return 'falso positivo'
-  if(item.resolved) return 'resolvido'
-  if(item.alert_delivered) return 'alerta entregue'
-  return statusLabels[item.status] || item.status
 }
 
 function recurrenceText(recurrence:Record<string, number>){
@@ -159,7 +126,10 @@ function isFeedbackAction(action:string): action is GuardianFeedbackAction {
   return action in actionLabels
 }
 
-export default function GuardianAdminConsole(){
+const GHOST_BTN = 'inline-flex h-9 items-center rounded-lg border border-white/10 px-3 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white disabled:opacity-50'
+const PRIMARY_BTN = 'inline-flex h-9 items-center rounded-lg bg-teal-400 px-4 text-sm font-semibold text-slate-950 transition hover:brightness-110 disabled:opacity-50'
+
+export default function GuardianAdminConsole({operatorName}:{operatorName?:string}){
   const [consoleStatus,setConsoleStatus]=useState<GuardianConsoleRealStatusResponse | null>(null)
   const [cases,setCases]=useState<GuardianConsoleRealCaseSummary[]>([])
   const [selectedId,setSelectedId]=useState<string | null>(null)
@@ -321,74 +291,65 @@ export default function GuardianAdminConsole(){
   const selectedTimeline = selected?.bot_events?.length ? selected.bot_events : selected?.timeline ?? []
   const selectedActions = selected?.feedback?.available_actions?.filter(isFeedbackAction)
   const openCount = consoleStatus?.open_case_count ?? cases.filter(c=>!c.resolved && !c.false_positive).length
+  const caseCount = consoleStatus?.case_count ?? cases.length
+  const channel = consoleStatus?.channel_provider || 'mock'
   const level = selected ? (selected.risk_assessment?.risk_level ?? selected.risk_level) : undefined
   const theme = riskTheme(level)
+  const feedbackActions = (selectedActions?.length ? selectedActions : Object.keys(actionLabels) as GuardianFeedbackAction[])
 
   return (
-    <div className="space-y-5">
-      {/* Resumo compacto */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/50 px-5 py-4">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <div>
-            <div className="text-2xl font-bold text-white">{consoleStatus?.case_count ?? cases.length}</div>
-            <div className="app-muted-text text-xs">casos no total</div>
+    <div className="space-y-4">
+      {/* Header único do console: título + métricas inline + ações */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg border border-white/10 bg-slate-950/50 px-5 py-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h1 className="text-lg font-bold leading-tight text-white">Guardian Console</h1>
+            <span className="text-sm text-slate-400">{caseCount} casos</span>
+            <span className="text-slate-600" aria-hidden>·</span>
+            <span className={`text-sm font-medium ${openCount > 0 ? 'text-amber-200' : 'text-slate-400'}`}>
+              {openCount} {openCount === 1 ? 'precisa' : 'precisam'} de atenção
+            </span>
+            <span className="text-slate-600" aria-hidden>·</span>
+            <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
+              {channel}
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2 text-2xl font-bold text-white">
-              <span className={`h-2.5 w-2.5 rounded-full ${openCount > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} aria-hidden />
-              {openCount}
-            </div>
-            <div className="app-muted-text text-xs">precisam de atenção</div>
-          </div>
-          <div>
-            <div className="text-sm font-semibold capitalize text-white">{consoleStatus?.channel_provider || 'mock'}</div>
-            <div className="app-muted-text text-xs">canal ativo</div>
-          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            Casos compartilhados voluntariamente — decisões críticas exigem confirmação humana.{' '}
+            <a href="/trust-center" className="text-teal-300/80 transition hover:text-teal-200">Saiba mais</a>
+          </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            onClick={()=>loadConsole(selectedId)}
-            disabled={loading || simulating}
-            className="h-10 rounded-md border border-white/12 bg-slate-950/60 px-4 text-sm font-semibold text-slate-100 transition hover:border-white/25 disabled:opacity-50"
-          >
+        <div className="flex flex-wrap items-center gap-2">
+          <a href="/whatsapp-setup" className={PRIMARY_BTN}>Conectar WhatsApp</a>
+          <button onClick={()=>loadConsole(selectedId)} disabled={loading || simulating} className={GHOST_BTN}>
             Atualizar
           </button>
-          <button
-            onClick={createDemoFlow}
-            disabled={simulating}
-            className="h-10 rounded-md border border-teal-300/45 bg-teal-500/90 px-4 text-sm font-bold text-slate-950 transition hover:bg-teal-400 disabled:opacity-50"
-          >
+          <button onClick={createDemoFlow} disabled={simulating} className={GHOST_BTN}>
             {simulating ? 'Simulando…' : 'Simular caso'}
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-md border border-amber-300/25 bg-amber-950/25 px-4 py-3 text-sm font-medium text-amber-100">
+        <div className="rounded-lg border border-amber-300/25 bg-amber-950/25 px-4 py-3 text-sm font-medium text-amber-100">
           {error}
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.5fr)]">
-        {/* Fila de alertas — cor por risco na borda esquerda */}
-        <Card className="card-secondary overflow-hidden p-0">
-          <div className="border-b border-white/10 px-5 py-3">
-            <h2 className="text-base font-bold text-white">Alertas</h2>
-            <p className="app-muted-text mt-0.5 text-xs">Mensagens suspeitas monitoradas</p>
+      <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
+        {/* Fila de alertas — mínima: nome, dot de risco, 1ª linha, tempo relativo */}
+        <div className="self-start overflow-hidden rounded-lg border border-white/10 bg-slate-950/40">
+          <div className="border-b border-white/10 px-4 py-3">
+            <h2 className="text-sm font-semibold text-white">Alertas</h2>
           </div>
-          <div className="max-h-[640px] overflow-y-auto p-3">
-            {loading && <p className="app-muted-text p-2 text-sm">Carregando…</p>}
+          <div className="max-h-[620px] overflow-y-auto" style={{scrollbarWidth:'thin'}}>
+            {loading && <p className="p-4 text-sm text-slate-500">Carregando…</p>}
             {!loading && cases.length === 0 && (
-              <div className="p-2">
+              <div className="p-4">
                 <p className="text-sm font-semibold text-white">Nenhum alerta ainda.</p>
-                <p className="app-muted-text mt-2 text-sm">
-                  Simule um caso para ver o fluxo completo funcionando.
-                </p>
-                <button
-                  onClick={createDemoFlow}
-                  disabled={simulating}
-                  className="mt-4 h-10 w-full rounded-md border border-teal-300/45 bg-teal-500/90 px-4 text-sm font-bold text-slate-950 transition hover:bg-teal-400 disabled:opacity-50"
-                >
+                <p className="mt-1 text-sm text-slate-500">Simule um caso para ver o fluxo completo.</p>
+                <button onClick={createDemoFlow} disabled={simulating} className={`${PRIMARY_BTN} mt-3 w-full justify-center`}>
                   {simulating ? 'Simulando…' : 'Simular caso'}
                 </button>
               </div>
@@ -401,123 +362,133 @@ export default function GuardianAdminConsole(){
                   key={item.case_id}
                   type="button"
                   onClick={()=>selectCase(item.case_id)}
-                  className={`mb-2 w-full rounded-md border bg-slate-950/40 p-3 text-left transition ${itemTheme.bar} ${
-                    active ? 'border-white/30 ring-1 ring-white/20' : 'border-white/10 hover:border-white/20'
+                  className={`block w-full border-b border-white/5 px-4 py-3 text-left transition ${
+                    active ? 'border-l-2 border-l-teal-300 bg-white/[0.06]' : 'border-l-2 border-l-transparent hover:bg-white/[0.03]'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-white">{item.protected_person_alias}</div>
-                      <div className="app-muted-text mt-0.5 truncate text-xs">
-                        {item.guardian_alias ? `resp. ${item.guardian_alias}` : 'sem responsável'}
-                      </div>
-                    </div>
-                    <RiskChip level={item.risk_level} />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-semibold text-white">{item.protected_person_alias}</span>
+                    <span className="flex flex-none items-center gap-1.5 text-[11px] text-slate-500">
+                      <span className={`h-1.5 w-1.5 rounded-full ${itemTheme.dot}`} aria-hidden />
+                      {itemTheme.label}
+                    </span>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-sm leading-5 text-slate-300">{item.message_summary}</p>
-                  <div className="app-muted-text mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                    <span>{caseStateLabel(item)}</span>
-                    <span>·</span>
-                    <span>{formatTime(item.updated_at)}</span>
-                  </div>
+                  <p className="mt-1 truncate text-sm text-slate-400">{item.message_summary}</p>
+                  <p className="mt-1 text-[11px] text-slate-600">{timeAgo(item.updated_at)}</p>
                 </button>
               )
             })}
           </div>
-        </Card>
+        </div>
 
-        {/* Caso selecionado — visão enxuta */}
-        <div className="space-y-4">
+        {/* Detalhe do caso — hierarquia: ação recomendada > mensagem > resto */}
+        <div className="min-w-0 space-y-4">
           {detailLoading && (
-            <Card className="card-muted"><p className="app-muted-text text-sm">Carregando caso…</p></Card>
+            <div className="rounded-lg border border-white/10 bg-slate-950/40 p-5">
+              <p className="text-sm text-slate-500">Carregando caso…</p>
+            </div>
           )}
 
           {!detailLoading && selected ? (
             <>
-              {/* Banner de risco */}
-              <div className={`rounded-xl border p-5 ${theme.banner}`}>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`text-5xl font-black leading-none ${theme.score}`}>
-                      {selected.risk_assessment?.score ?? selected.risk_score}
-                    </div>
-                    <div>
-                      <RiskChip level={level} />
-                      <p className="mt-2 text-sm font-semibold text-white">
-                        {selected.protected_person?.alias ?? selected.protected_person_alias}
-                        <span className="app-muted-text font-normal"> · {statusLabels[selected.case?.status ?? selected.status] || selected.status}</span>
-                      </p>
-                    </div>
+              {/* 1. O que fazer — a informação mais importante */}
+              <div className={`rounded-lg border p-5 ${theme.banner}`}>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                  <span className="font-semibold text-white">
+                    {selected.protected_person?.alias ?? selected.protected_person_alias}
+                  </span>
+                  <span className="text-slate-500" aria-hidden>·</span>
+                  <span className={`font-semibold ${theme.score}`}>
+                    Risco {theme.label} ({selected.risk_assessment?.score ?? selected.risk_score})
+                  </span>
+                  <span className="text-slate-500" aria-hidden>·</span>
+                  <span className="text-slate-400">{statusLabels[selected.case?.status ?? selected.status] || selected.status}</span>
+                </div>
+                <p className="mt-3 text-lg font-semibold leading-snug text-white">
+                  {selected.next_step || selected.recommended_action}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">O que fazer agora</p>
+              </div>
+
+              {/* 2. Mensagem + 3. alerta/ações — um único contêiner, separadores de 1px */}
+              <div className="rounded-lg border border-white/10 bg-slate-950/40">
+                <div className="p-5">
+                  <blockquote className="border-l-2 border-white/20 pl-4 text-sm leading-6 text-slate-200">
+                    “{selected.message?.body ?? selected.source_message}”
+                  </blockquote>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {selected.message?.channel ?? selected.source_channel} · {formatTime(selected.message?.created_at ?? selected.created_at)}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {(selected.risk_assessment?.signals ?? selected.risk_signals).map(signal=> (
+                      <span key={signal} className="rounded border border-white/10 px-2 py-0.5 text-[11px] text-slate-400">
+                        {signal.replace(/_/g, ' ')}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <div className="mt-4 rounded-lg border border-white/10 bg-slate-950/40 p-4">
-                  <div className="app-label">O que fazer</div>
-                  <p className="mt-1 text-base font-semibold leading-6 text-white">
-                    {selected.next_step || selected.recommended_action}
+
+                <details className="group border-t border-white/10">
+                  <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-medium text-slate-300 transition hover:text-white">
+                    <span className="text-xs text-slate-500 transition group-open:rotate-90" aria-hidden>▸</span>
+                    Ver alerta enviado
+                    <span className="text-xs font-normal text-slate-500">
+                      {selected.responsible_contact?.alias || selected.guardian_alias || 'não vinculado'} · {deliveryLabel(selected.channel_status?.guardian_alert_status ?? selected.guardian_alert.status)}
+                    </span>
+                  </summary>
+                  <div className="px-5 pb-4">
+                    <p className="text-sm leading-6 text-slate-300">{selected.guardian_alert.body}</p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      O bot nunca responde ao remetente — o alerta vai só para o contato de confiança.
+                    </p>
+                  </div>
+                </details>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
+                  <div className="inline-flex overflow-hidden rounded-lg border border-white/10">
+                    {feedbackActions.map((action, index)=> (
+                      <button
+                        key={action}
+                        type="button"
+                        disabled={updating}
+                        onClick={()=>submitFeedback(action)}
+                        className={`h-9 px-3 text-xs font-medium transition hover:bg-white/5 disabled:opacity-50 ${
+                          index > 0 ? 'border-l border-white/10' : ''
+                        } ${actionAccents[action]}`}
+                      >
+                        {actionLabels[action]}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {selected.feedback?.latest_action
+                      ? `Último: ${selected.feedback.latest_action} por ${selected.feedback.latest_actor || 'responsável'}`
+                      : 'Nenhum feedback ainda'}
                   </p>
                 </div>
               </div>
 
-              {/* Mensagem suspeita + sinais */}
-              <Card className="card-muted">
-                <div className="app-label">Mensagem suspeita</div>
-                <p className="mt-2 rounded-md border border-white/10 bg-slate-950/40 p-3 text-sm leading-6 text-slate-200">
-                  “{selected.message?.body ?? selected.source_message}”
-                </p>
-                <div className="app-muted-text mt-2 text-xs">
-                  Canal {selected.message?.channel ?? selected.source_channel} · {formatTime(selected.message?.created_at ?? selected.created_at)}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(selected.risk_assessment?.signals ?? selected.risk_signals).map(signal=> (
-                    <span key={signal} className={`rounded-full border px-2.5 py-1 text-xs font-medium ${theme.chip}`}>
-                      {signal.replace(/_/g, ' ')}
-                    </span>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Único envio: alerta ao contato de confiança. Nada é enviado ao remetente. */}
-              <Card className="card-muted">
-                <div className="app-label">Alerta ao contato de confiança</div>
-                <p className="app-body-text mt-2 text-sm leading-6">{selected.guardian_alert.body}</p>
-                <p className="app-muted-text mt-2 text-xs">
-                  {selected.responsible_contact?.alias || selected.guardian_alias || 'não vinculado'} · {deliveryLabel(selected.channel_status?.guardian_alert_status ?? selected.guardian_alert.status)}
-                </p>
-                <p className="app-muted-text mt-2 text-xs">
-                  O bot nunca responde ao remetente. A análise fica registrada aqui no console para sua revisão.
-                </p>
-              </Card>
-
-              {/* Ações do responsável */}
-              <Card className="card-action">
-                <div className="app-label">Suas ações</div>
-                <p className="app-muted-text mt-1 text-sm">
-                  Último feedback: {selected.feedback?.latest_action ? `${selected.feedback.latest_action} por ${selected.feedback.latest_actor || 'responsável'}` : 'nenhum ainda'}
-                </p>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  {(selectedActions?.length ? selectedActions : Object.keys(actionLabels) as GuardianFeedbackAction[]).map(action=> (
-                    <button
-                      key={action}
-                      type="button"
-                      disabled={updating}
-                      onClick={()=>submitFeedback(action)}
-                      className={`h-11 rounded-md border px-3 text-sm font-semibold transition disabled:opacity-50 ${actionClasses[action]}`}
-                    >
-                      {actionLabels[action]}
-                    </button>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Detalhes técnicos — recolhido por padrão para não poluir */}
-              <details className="group rounded-xl border border-white/10 bg-slate-950/40">
-                <summary className="cursor-pointer list-none px-5 py-3 text-sm font-semibold text-slate-200 transition hover:text-white">
-                  <span className="inline-flex items-center gap-2">
-                    <span className="text-slate-500 transition group-open:rotate-90">▶</span>
-                    Detalhes técnicos (linha do tempo, padrões, auditoria e consentimento)
-                  </span>
+              {/* Detalhes técnicos — recolhido; inclui infraestrutura e canais */}
+              <details className="group rounded-lg border border-white/10 bg-slate-950/40">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-medium text-slate-300 transition hover:text-white">
+                  <span className="text-xs text-slate-500 transition group-open:rotate-90" aria-hidden>▸</span>
+                  Detalhes técnicos
+                  <span className="text-xs font-normal text-slate-500">linha do tempo, padrões, auditoria, consentimento, infra</span>
                 </summary>
-                <div className="space-y-4 border-t border-white/10 p-5">
+                <div className="space-y-5 border-t border-white/10 p-5">
+                  {/* Infraestrutura */}
+                  <section>
+                    <div className="app-label">Infraestrutura</div>
+                    <div className="mt-2 grid gap-x-6 gap-y-1 text-sm text-slate-300 sm:grid-cols-3">
+                      <span><span className="text-slate-500">Operador:</span> {operatorName || 'local'}</span>
+                      <span><span className="text-slate-500">Armazenamento:</span> SQLite (persistente)</span>
+                      <span><span className="text-slate-500">Canal:</span> {channel} · não-oficial</span>
+                    </div>
+                    <a href="/chatbot-demo" className="mt-2 inline-block text-xs text-teal-300/80 transition hover:text-teal-200">
+                      Ver canal da pessoa protegida →
+                    </a>
+                  </section>
+
                   {/* Linha do tempo */}
                   <section>
                     <div className="app-label">Linha do tempo · {selectedTimeline.length} eventos</div>
@@ -540,10 +511,13 @@ export default function GuardianAdminConsole(){
 
                   {/* Pattern Intelligence */}
                   {selected.pattern && (
-                    <section className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
+                    <section className="border-t border-white/10 pt-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="app-label">Pattern Intelligence · {selected.pattern.threat_type_label || 'padrões'}</div>
-                        <RiskChip level={selected.pattern.level} />
+                        <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <span className={`h-1.5 w-1.5 rounded-full ${riskTheme(selected.pattern.level).dot}`} aria-hidden />
+                          {riskTheme(selected.pattern.level).label}
+                        </span>
                       </div>
                       <p className="app-body-text mt-2 text-sm">{selected.pattern.explanation}</p>
                       <p className="app-muted-text mt-1 text-sm">{selected.pattern.recommendation}</p>
@@ -566,57 +540,49 @@ export default function GuardianAdminConsole(){
 
                   {/* Decisão híbrida (regras + LLM + Policy Engine) */}
                   {hybrid ? (
-                    <section>
+                    <section className="border-t border-white/10 pt-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="app-label">Decisão híbrida · policy {hybrid.policy_version ?? 'v1'}</div>
                         <div className="flex items-center gap-2">
                           {hybrid.shadow_decision ? <AppBadgeText>shadow</AppBadgeText> : null}
-                          <span className={`rounded-md border px-2 py-1 text-xs font-bold ${
+                          <span className={`rounded-lg border px-2 py-1 text-xs font-bold ${
                             hybrid.action === 'AUTO_ALERT' ? 'border-red-400/40 text-red-200'
                             : hybrid.action === 'REVIEW' ? 'border-amber-300/40 text-amber-100'
                             : 'border-slate-400/30 text-slate-300'
                           }`}>{hybrid.action ?? '—'}</span>
                         </div>
                       </div>
-                      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-md border border-white/10 bg-slate-950/30 p-3">
+                      <div className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                        <div>
                           <div className="app-muted-text text-xs">Score final</div>
-                          <p className="mt-1 text-lg font-bold text-white">{hybrid.final_score ?? '—'}</p>
-                          <p className="app-muted-text mt-1 text-xs">
-                            det {hybrid.deterministic_score ?? '—'} · LLM {hybrid.llm_score ?? '—'}
+                          <p className="mt-0.5 font-semibold text-white">{hybrid.final_score ?? '—'}
+                            <span className="ml-2 text-xs font-normal text-slate-500">det {hybrid.deterministic_score ?? '—'} · LLM {hybrid.llm_score ?? '—'}</span>
                           </p>
                         </div>
-                        <div className="rounded-md border border-white/10 bg-slate-950/30 p-3">
+                        <div>
                           <div className="app-muted-text text-xs">LLM</div>
-                          <p className="mt-1 text-sm font-semibold text-white">{hybrid.classification ?? 'indisponível'}</p>
-                          <p className="app-muted-text mt-1 text-xs">
-                            conf {hybrid.confidence != null ? hybrid.confidence.toFixed(2) : '—'} · {hybrid.llm_model ?? hybrid.llm_status ?? '—'}
+                          <p className="mt-0.5 font-semibold text-white">{hybrid.classification ?? 'indisponível'}
+                            <span className="ml-2 text-xs font-normal text-slate-500">conf {hybrid.confidence != null ? hybrid.confidence.toFixed(2) : '—'}</span>
                           </p>
                         </div>
-                        <div className="rounded-md border border-white/10 bg-slate-950/30 p-3">
+                        <div>
                           <div className="app-muted-text text-xs">Estado</div>
-                          <p className="mt-1 text-sm font-semibold text-white">
-                            {hybrid.conflict ? 'conflito regras×LLM' : 'sem conflito'}
-                          </p>
-                          <p className="app-muted-text mt-1 text-xs">
-                            {hybrid.requires_human_review ? 'requer revisão humana' : 'automatizável'}
+                          <p className="mt-0.5 font-semibold text-white">{hybrid.conflict ? 'conflito regras×LLM' : 'sem conflito'}
+                            <span className="ml-2 text-xs font-normal text-slate-500">{hybrid.requires_human_review ? 'requer revisão' : 'automatizável'}</span>
                           </p>
                         </div>
                       </div>
                       {hybrid.rule_codes?.length ? (
-                        <div className="mt-3">
-                          <div className="app-muted-text text-xs">Regras acionadas</div>
-                          <div className="mt-1 flex flex-wrap gap-1.5">
-                            {hybrid.rule_codes.map(code => (
-                              <span key={code} className="rounded border border-white/10 bg-slate-900/50 px-2 py-0.5 text-xs text-slate-300">{code}</span>
-                            ))}
-                          </div>
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {hybrid.rule_codes.map(code => (
+                            <span key={code} className="rounded border border-white/10 px-2 py-0.5 text-[11px] text-slate-400">{code}</span>
+                          ))}
                         </div>
                       ) : null}
                       {hybrid.reasons?.length ? (
-                        <ul className="mt-3 grid gap-1">
+                        <ul className="mt-2 grid gap-1">
                           {hybrid.reasons.map((reason,i) => (
-                            <li key={i} className="text-xs text-slate-400">· {reason}</li>
+                            <li key={i} className="text-xs text-slate-500">· {reason}</li>
                           ))}
                         </ul>
                       ) : null}
@@ -625,11 +591,11 @@ export default function GuardianAdminConsole(){
 
                   {/* Decisões dos agentes */}
                   {selected.agent_decisions?.length ? (
-                    <section>
+                    <section className="border-t border-white/10 pt-4">
                       <div className="app-label">Decisões dos agentes · {selected.agent_decisions.length}</div>
                       <div className="mt-3 grid gap-3 lg:grid-cols-2">
                         {selected.agent_decisions.map(decision=> (
-                          <div key={decision.event_id} className="rounded-md border border-white/10 bg-slate-950/30 p-3">
+                          <div key={decision.event_id} className="rounded-lg border border-white/10 p-3">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <span className="text-sm font-semibold text-white">{decision.agent}</span>
                               <AppBadgeText>{decision.fallback_used ? 'fallback seguro' : 'guardrails ok'}</AppBadgeText>
@@ -643,27 +609,27 @@ export default function GuardianAdminConsole(){
                   ) : null}
 
                   {/* Audit log */}
-                  <section>
+                  <section className="border-t border-white/10 pt-4">
                     <div className="app-label">Registro auditável · {selected.audit_log?.length ?? 0}</div>
-                    <div className="mt-3 grid gap-2">
+                    <div className="mt-3 grid gap-1.5">
                       {(selected.audit_log ?? []).slice(-6).map(entry=> (
-                        <div key={entry.audit_log_id} className="flex flex-col gap-1 rounded-md border border-white/10 bg-slate-950/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div key={entry.audit_log_id} className="flex flex-col gap-0.5 py-1.5 sm:flex-row sm:items-center sm:justify-between">
                           <div>
-                            <p className="text-sm font-semibold text-white">{entry.action}</p>
-                            <p className="app-muted-text mt-1 text-xs">{auditTarget(entry)}</p>
+                            <p className="text-sm font-medium text-slate-200">{entry.action}</p>
+                            <p className="text-xs text-slate-500">{auditTarget(entry)}</p>
                           </div>
                           <p className="text-xs text-slate-500">{formatTime(entry.created_at)}</p>
                         </div>
                       ))}
                       {!(selected.audit_log?.length) && (
-                        <p className="app-muted-text text-sm">Nenhum registro para este caso.</p>
+                        <p className="text-sm text-slate-500">Nenhum registro para este caso.</p>
                       )}
                     </div>
                   </section>
 
                   {/* Consentimento / opt-in */}
                   {consent && (
-                    <section className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
+                    <section className="border-t border-white/10 pt-4">
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                           <div className="app-label">Consentimento · opt-in {consent.status}</div>
@@ -675,13 +641,13 @@ export default function GuardianAdminConsole(){
                           </div>
                         </div>
                         <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[360px]">
-                          <button className="h-10 rounded-md border border-teal-300/45 bg-teal-500/90 px-3 text-sm font-bold text-slate-950 transition hover:bg-teal-400 disabled:opacity-50" disabled={consentUpdating} onClick={()=>updateConsent(['active', 'bot_disabled'].includes(consent.status) ? 'activate' : 'accept')}>
+                          <button className={`${PRIMARY_BTN} justify-center`} disabled={consentUpdating} onClick={()=>updateConsent(['active', 'bot_disabled'].includes(consent.status) ? 'activate' : 'accept')}>
                             {['active', 'bot_disabled'].includes(consent.status) ? 'Reativar bot' : 'Aceitar opt-in'}
                           </button>
-                          <button className="h-10 rounded-md border border-white/12 bg-slate-950/60 px-3 text-sm font-semibold text-slate-100 transition hover:border-white/25 disabled:opacity-50" disabled={consentUpdating || !consent.bot_active} onClick={()=>updateConsent('deactivate')}>
+                          <button className={`${GHOST_BTN} justify-center`} disabled={consentUpdating || !consent.bot_active} onClick={()=>updateConsent('deactivate')}>
                             Desativar bot
                           </button>
-                          <button className="h-10 rounded-md border border-red-500/40 bg-red-500/10 px-3 text-sm font-semibold text-red-100 transition hover:bg-red-500/20 disabled:opacity-50" disabled={consentUpdating || consent.status === 'revoked'} onClick={()=>updateConsent('revoke')}>
+                          <button className={`${GHOST_BTN} justify-center text-red-300 hover:text-red-200`} disabled={consentUpdating || consent.status === 'revoked'} onClick={()=>updateConsent('revoke')}>
                             Revogar
                           </button>
                         </div>
@@ -699,7 +665,9 @@ export default function GuardianAdminConsole(){
           ) : null}
 
           {!loading && !detailLoading && !selected && cases.length > 0 && (
-            <Card><p className="app-muted-text">Selecione um alerta na fila para ver os detalhes.</p></Card>
+            <div className="rounded-lg border border-white/10 bg-slate-950/40 p-5">
+              <p className="text-sm text-slate-500">Selecione um alerta na fila para ver os detalhes.</p>
+            </div>
           )}
         </div>
       </div>

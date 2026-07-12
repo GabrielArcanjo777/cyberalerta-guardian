@@ -132,12 +132,57 @@
   text-wrap: balance;
 }
 
-.title span {
+.title > span {
   display: block;
 }
 
-.title span:last-child {
+.title > span:last-child {
   color: var(--hero-signal);
+}
+
+/* Masked line reveal: cada linha sobe de trás da própria máscara.
+   line-height é 0.82, então a máscara ganha respiro extra embaixo
+   (padding compensado por margin negativa) para não decepar os
+   descendentes de "golpes"/"WhatsApp". */
+.titleLine {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.18em;
+  margin-bottom: -0.18em;
+}
+
+.title .titleLine:last-child {
+  color: var(--hero-signal);
+}
+
+.titleLineInner {
+  display: block;
+  opacity: 0;
+  transform: translateY(118%);
+  animation: heroLineReveal 860ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes heroLineReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(118%);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titleLineInner {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .subtitle {
@@ -241,7 +286,6 @@
 }
 
 .badge,
-.title,
 .subtitle,
 .actions,
 .trustStrip {
@@ -249,11 +293,19 @@
   will-change: transform, opacity;
 }
 
-.badge { animation-delay: 70ms; }
-.title { animation-delay: 140ms; }
-.subtitle { animation-delay: 210ms; }
-.actions { animation-delay: 280ms; }
-.trustStrip { animation-delay: 350ms; }
+.badge { animation-delay: 60ms; }
+.subtitle { animation-delay: 480ms; }
+.actions { animation-delay: 580ms; }
+.trustStrip { animation-delay: 680ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .badge,
+  .subtitle,
+  .actions,
+  .trustStrip {
+    animation: none;
+  }
+}
 
 .visual {
   position: relative;
@@ -828,6 +880,21 @@
   min-width: 0;
 }
 
+.monitorAvatar {
+  width: 29px;
+  height: 29px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid #0f9f87;
+  border-radius: 9px;
+  background: linear-gradient(145deg, rgba(50, 230, 196, 0.28), rgba(15, 159, 135, 0.12));
+  color: #087b69;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .chatSubtitle {
   font-size: 10px;
   color: rgba(7, 20, 17, 0.45);
@@ -865,6 +932,40 @@
   display: block;
 }
 
+.inboundMessageCard {
+  align-self: stretch;
+  display: grid;
+  gap: 7px;
+  border: 1px solid rgba(7, 20, 17, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px 11px;
+  color: #071411;
+  box-shadow: 4px 4px 0 rgba(7, 20, 17, 0.055);
+}
+
+.inboundLabel {
+  color: #087b69;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.inboundMessageText {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.inboundMeta {
+  color: #6b7d78;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8px;
+  font-weight: 600;
+}
+
 .phoneKeyboard {
   display: flex;
   justify-content: center;
@@ -888,6 +989,24 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 6px 0 4px;
+}
+
+.monitorFooter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  border-top: 1px solid rgba(3, 8, 7, 0.1);
+  background: rgba(239, 255, 249, 0.82);
+  padding: 7px 12px;
+  color: #0f5147;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .chatBubbleRecvText {

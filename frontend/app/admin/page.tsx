@@ -70,6 +70,18 @@ function AdminPanel({user}: {user: AuthUser}){
           <p className="mt-1 text-sm text-slate-600">{user.email} · {user.role} · MFA ativo</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <a
+            href="/whatsapp-setup"
+            className="inline-flex h-10 items-center rounded-lg bg-teal-400 px-4 text-sm font-semibold text-slate-950 transition hover:brightness-110"
+          >
+            Conectar WhatsApp (QR)
+          </a>
+          <a
+            href="/family-console"
+            className="inline-flex h-10 items-center rounded-lg border border-white/10 px-4 text-sm font-semibold text-slate-200 transition hover:bg-white/5"
+          >
+            Console Guardian
+          </a>
           <Button type="button" variant="ghost" onClick={load} disabled={loading}>Atualizar</Button>
           <Button type="button" variant="ghost" onClick={logout}>Sair</Button>
         </div>

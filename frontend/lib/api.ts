@@ -889,7 +889,12 @@ export async function getTrustedContactSettings(): Promise<TrustedContactSetting
 }
 
 export async function putTrustedContactSettings(
-  update: {protected_number?: string, trusted_contact?: string},
+  update: {
+    protected_number?: string
+    trusted_contact?: string
+    dry_run?: boolean
+    beta_real_send_enabled?: boolean
+  },
 ): Promise<TrustedContactSettings> {
   const res = await authFetch('/settings/trusted-contact', {
     method: 'PUT',

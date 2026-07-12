@@ -918,10 +918,10 @@ select {
   z-index: 80;
   isolation: isolate;
   overflow: visible;
-  border-bottom: 1px solid rgba(50, 230, 196, 0.1);
-  background: rgba(3, 8, 7, 0.86);
-  backdrop-filter: blur(18px) saturate(1.15);
-  transition: background 240ms ease, border-color 240ms ease, box-shadow 240ms ease, backdrop-filter 240ms ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 10, 10, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .guardian-menu-shield {
@@ -4093,22 +4093,12 @@ body:has(.home-hermes-page) #conteudo-principal {
 .guardian-light-page :where(input, select, textarea) { background-color: #fff !important; color: #1e293b !important; border-color: #e2e8f0 !important; }
 
 /* ═══════════════════════════════════════════
-   HEADER (continued)
+   HEADER — premium SaaS (Vercel/Linear/Stripe)
+   Verde da marca aparece só no ícone da logo e no CTA.
    ═══════════════════════════════════════════ */
-.guardian-header-scrolled {
-  border-bottom-color: rgba(50, 230, 196, 0.22);
-  background: rgba(3, 8, 7, 0.94);
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.42), inset 0 -1px 0 rgba(50, 230, 196, 0.04);
-}
-
-.guardian-header-top {
-  border-bottom-color: transparent;
-  background: rgba(3, 8, 7, 0.58);
-}
-
 .guardian-header-inner {
   display: flex;
-  min-height: 68px;
+  min-height: 64px;
   align-items: center;
   justify-content: space-between;
   gap: clamp(0.75rem, 2vw, 1.5rem);
@@ -4124,74 +4114,81 @@ body:has(.home-hermes-page) #conteudo-principal {
 .guardian-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   background: transparent;
   text-decoration: none;
   color: #f8fafc;
   line-height: 1;
 }
 
-.guardian-brand-image {
-  display: block;
-  width: auto;
-  max-width: 238px;
-  height: 40px;
-  background: transparent;
-  object-fit: contain;
-  object-position: left center;
-  mix-blend-mode: screen;
-  filter: drop-shadow(0 0 10px rgba(45, 212, 191, 0.18));
+.guardian-brand-name {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9875rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: #f8fafc;
 }
 
-.guardian-brand-name {
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  font-size: 1.0625rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+.guardian-brand-badge {
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #a1a1aa;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .guardian-mobile-toggle {
   display: none;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(50, 230, 196, 0.18);
-  border-radius: var(--guardian-radius-sm);
-  background: rgba(3, 12, 10, 0.55);
-  color: #99f6e4;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: transparent;
+  color: #a1a1aa;
   cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.guardian-mobile-toggle:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .guardian-header-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.125rem;
+  gap: 2rem;
   min-width: 0;
 }
 
 .guardian-nav-link {
   display: inline-flex;
   align-items: center;
-  min-height: 42px;
-  padding: 0 0.9rem;
-  border: 1px solid transparent;
-  border-radius: var(--guardian-radius-sm);
-  color: rgba(239, 255, 249, 0.76);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.055em;
-  text-transform: uppercase;
+  min-height: 40px;
+  color: #a1a1aa;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
   text-decoration: none;
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+  transition: color 150ms ease;
 }
 
 .guardian-nav-link:hover {
-  border-color: rgba(50, 230, 196, 0.16);
-  background: rgba(50, 230, 196, 0.055);
-  color: var(--guardian-electric);
+  color: #ffffff;
+}
+
+/* Item que só existe no menu mobile (no desktop o mesmo destino vive nas ações) */
+.guardian-nav-mobile-only {
+  display: none;
 }
 
 .guardian-mobile-console {
@@ -4200,13 +4197,19 @@ body:has(.home-hermes-page) #conteudo-principal {
   min-height: 44px;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
-  color: rgba(248, 250, 252, 0.78);
-  font-size: 0.8125rem;
+  border-radius: 8px;
+  background: #2dd4bf;
+  color: #0a0a0a;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
-  transition: background-color 180ms ease, color 180ms ease;
+  transition: filter 150ms ease;
   cursor: pointer;
+}
+
+.guardian-mobile-console:hover {
+  filter: brightness(1.08);
 }
 
 .guardian-header-actions {
@@ -4215,42 +4218,54 @@ body:has(.home-hermes-page) #conteudo-principal {
   gap: 0.5rem;
 }
 
-.guardian-console-link {
+.guardian-ghost-link {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 38px;
   align-items: center;
   justify-content: center;
-  padding: 0 1.15rem;
-  border: 1px solid rgba(50, 230, 196, 0.42);
-  border-radius: var(--guardian-radius-sm);
-  background: rgba(3, 12, 10, 0.62);
-  color: #99f6e4;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.055em;
-  text-transform: uppercase;
+  padding: 0 0.85rem;
+  border-radius: 8px;
+  color: #a1a1aa;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
   text-decoration: none;
-  box-shadow: 4px 4px 0 rgba(50, 230, 196, 0.08);
-  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.guardian-ghost-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.guardian-console-link {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #2dd4bf;
+  color: #0a0a0a;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  transition: filter 150ms ease, transform 150ms ease, box-shadow 150ms ease;
 }
 
 .guardian-console-link:hover {
-  background: rgba(50, 230, 196, 0.08);
-  border-color: rgba(50, 230, 196, 0.6);
-  color: #effff9;
+  filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 5px 5px 0 rgba(50, 230, 196, 0.12);
+  box-shadow: 0 4px 16px rgba(45, 212, 191, 0.25);
 }
 
 @media (max-width: 900px) {
   .guardian-header-inner {
     flex-wrap: wrap;
-  }
-
-  .guardian-brand-image {
-    max-width: 205px;
-    height: 38px;
   }
 
   .guardian-mobile-toggle {
@@ -4272,7 +4287,16 @@ body:has(.home-hermes-page) #conteudo-principal {
 
   .guardian-nav-link {
     min-height: 46px;
-    border-radius: var(--guardian-radius-sm);
+    padding: 0 0.5rem;
+    border-radius: 8px;
+  }
+
+  .guardian-nav-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .guardian-nav-mobile-only {
+    display: inline-flex;
   }
 
   .guardian-mobile-console {
@@ -4282,14 +4306,4 @@ body:has(.home-hermes-page) #conteudo-principal {
   .guardian-header-actions {
     display: none;
   }
-}
-
-/* Header override for hermes page */
-body:has(.home-hermes-page) .guardian-header {
-  border-bottom-color: rgba(50, 230, 196, 0.12);
-}
-
-body:has(.home-hermes-page) .guardian-header-scrolled {
-  border-bottom-color: rgba(50, 230, 196, 0.22);
-  background: rgba(3, 8, 7, 0.94);
 }
