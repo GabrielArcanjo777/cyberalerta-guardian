@@ -8,7 +8,7 @@ O projeto está em estágio **MVP / demonstração técnica**. Não é produçã
 
 ## Status atual
 
-**Beta Técnico Local.** Backend FastAPI + frontend Next.js, autenticação com Google OIDC, MFA/TOTP, recovery codes (Argon2id), RBAC, auditoria, rate limit, persistência SQLite e painel operacional. **292 testes automatizados** no backend; dataset rotulado de 305 mensagens com métricas medidas (`docs/metrics_v1.md`).
+**Beta Técnico Local.** Backend FastAPI + frontend Next.js, autenticação com Google OIDC, MFA/TOTP, recovery codes (Argon2id), RBAC, auditoria, rate limit, persistência SQLite e painel operacional. **301 testes automatizados** no backend, além de testes e2e do frontend com Playwright (acesso, redirecionamento e animação); dataset rotulado de 305 mensagens com métricas medidas (`docs/metrics_v1.md`).
 
 Detecção em camadas: regras determinísticas explicáveis + **pipeline híbrido com LLM e Policy Engine** (desligado e em shadow por padrão — a LLM nunca decide envio). **Regra cardinal: o bot nunca responde ao remetente.** O único destino possível de mensagem de saída é o contato de confiança cadastrado, e apenas em golpe explícito, sempre atrás do safety gate (simulação/envio real/allowlist).
 
@@ -55,6 +55,7 @@ O Guardian organiza uma proteção assistida e contínua:
 | Cadastro pessoa protegida + contato de confiança | Implementado | UI em `/whatsapp-setup`, persistido em SQLite, sobrevive restart. |
 | Toggles de envio na UI (simulação/envio real) | Implementado | Sem editar `.env`; allowlist re-pinada automaticamente ao contato de confiança. |
 | Dataset rotulado + métricas | Implementado | 305 mensagens, harness com código de produção, regressão em testes (`docs/metrics_v1.md`). |
+| Testes e2e frontend (Playwright) | Implementado | Smoke tests de acesso, redirecionamento de login e respeito a reduced motion (`frontend/e2e/`). |
 | Agentes controlados | Implementados | Sem agente autônomo livre; LLM externa é opcional e nunca decide envio. |
 | Consentimento/opt-in | Implementado como base local | Não é consultoria jurídica nem compliance completo. |
 | Autenticação local | Implementado | Login email/senha, cookies HttpOnly, MFA/TOTP, RBAC e auditoria. |
@@ -115,6 +116,11 @@ Exemplo de narrativa:
 - Cadastro do número da pessoa protegida + contato de confiança na UI, com persistência.
 - Toggles de simulação (DRY_RUN) e envio real (beta) direto na UI, com allowlist automática.
 - Dataset rotulado (305 mensagens) + harness de métricas rodando o código de produção.
+- Testes e2e do frontend com Playwright (acesso, redirecionamento e reduced motion).
+- Sanitização de conteúdo exibido no frontend (`frontend/lib/sanitize.ts`).
+- Acessibilidade de animações: `prefers-reduced-motion` respeitado via `usePrefersReducedMotion` e `frontend/lib/motion.ts`.
+- Idempotência inbound com TTL e limite de tamanho no registro em memória (aceita reenvio legítimo após expirar, rejeita replay dentro da janela).
+- Fail-fast de produção: a aplicação não sobe com `APP_ENV=production` sem `RATE_LIMIT_ENABLED=true` e `EVOLUTION_WEBHOOK_SECRET` definidos.
 - Event Model com eventos, casos, mensagens e risk assessments.
 - Pattern Intelligence rule-based.
 - Agentes controlados:
@@ -163,7 +169,7 @@ Exemplo de narrativa:
 - Multi-tenant, políticas refinadas por organização e gerenciamento completo de usuários.
 - Observabilidade, auditoria robusta e logging estruturado.
 - Políticas completas de LGPD, retenção e exclusão.
-- Testes end-to-end e cobertura ampliada no frontend.
+- Ampliação da cobertura e2e do frontend (hoje há smoke tests com Playwright).
 - Deploy controlado para piloto.
 - Dataset/ground truth para ML futuro, sem treinar modelo agora.
 
@@ -287,6 +293,7 @@ O remetente **nunca** recebe resposta em nenhum desenho.
 - Framer Motion
 - Three.js
 - ESLint
+- Playwright (testes e2e)
 
 ## Pré-Requisitos
 
@@ -492,7 +499,7 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | `N8N_ALLOWED_ORIGINS` | `http://localhost:5678` | Origem local/controlada do n8n. |
 | `TRUSTED_WEBHOOK_IPS` | vazio | Lista opcional de IPs confiáveis. |
 | `MAX_MESSAGE_LENGTH` | `4000` | Limite de texto analisado. |
-| `RATE_LIMIT_ENABLED` | `false` | Ativa rate limit em endpoints públicos/controlados. |
+| `RATE_LIMIT_ENABLED` | `false` | Ativa rate limit em endpoints públicos/controlados. Obrigatório `true` em produção (a aplicação não sobe sem ele). |
 | `RATE_LIMIT_PER_MINUTE` | `60` | Limite simples por minuto quando rate limit estiver ativo. |
 | `AUTH_SECRET_KEY` | vazio no exemplo | Segredo para assinar sessão local; defina valor forte no `.env`, nunca no Git. |
 | `AUTH_ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Janela de access token reservada; não define hoje a duração do cookie único. |
@@ -524,7 +531,7 @@ Use `.env.example` como referência. Não commit `.env`, `.env.local`, tokens, n
 | `EVOLUTION_API_URL` | `http://localhost:8080` | URL local da Evolution demo. |
 | `EVOLUTION_API_KEY` | vazio | Chave local não commitada. |
 | `EVOLUTION_INSTANCE_NAME` | `guardian-demo` | Instância local da Evolution demo. |
-| `EVOLUTION_WEBHOOK_SECRET` | vazio | Segredo do webhook. Opcional em desenvolvimento; obrigatório em produção (sem ele o endpoint responde 500). |
+| `EVOLUTION_WEBHOOK_SECRET` | vazio | Segredo do webhook. Opcional em desenvolvimento; obrigatório em produção (a aplicação não sobe sem ele). |
 
 ## API Principal
 
@@ -744,7 +751,7 @@ O projeto deve evitar o padrão "frontend bonito + chamada de modelo/API + respo
 | Controle | Status atual | Direção |
 | --- | --- | --- |
 | Estado próprio | Parcial | Memory/SQLite local em módulos existentes; estado operacional n8n em memória na Fase 1. |
-| Idempotência por `message_id` | Parcial | Endpoint n8n retorna `last_response_json` para mensagem já processada; precisa avançar para SQLite/dead letter/retry operacional. |
+| Idempotência por `message_id` | Implementado em memória | Registro com TTL (1h) e limite de tamanho (100k): rejeita replay dentro da janela, aceita reenvio legítimo após expirar. Endpoint n8n retorna `last_response_json` para mensagem já processada. Produção multi-worker exigiria Redis/DB. |
 | `X-Request-ID` | Parcial | Middleware aceita e ecoa o header para rastreio local/controlado. |
 | `X-N8N-Execution-ID` | Parcial | Endpoint n8n aceita e ecoa o header para rastrear execução ponta a ponta. |
 | Audit log | Parcial | Event Model e audit logs locais existem; falta padronizar request/trace. |
@@ -801,6 +808,14 @@ npm ci
 npx tsc --noEmit
 npm run lint
 npm run build
+```
+
+Testes e2e do frontend (Playwright; o `playwright.config.ts` sobe backend e frontend automaticamente, ou reutiliza servidores já em execução):
+
+```bash
+cd frontend
+npx playwright install chromium
+npm run test:e2e
 ```
 
 Se estiver usando a venv já criada no Windows:
@@ -878,6 +893,7 @@ deve cobrir no piloto. Regressão travada em `backend/app/tests/test_dataset_met
 ├── frontend/
 │   ├── app/
 │   ├── components/
+│   ├── e2e/
 │   ├── lib/
 │   ├── public/
 │   └── styles/
