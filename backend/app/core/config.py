@@ -73,6 +73,16 @@ class AppConfig:
         self.rate_limit_enabled = _env_bool("RATE_LIMIT_ENABLED", False)
         self.rate_limit_per_minute = max(1, _env_int("RATE_LIMIT_PER_MINUTE", 60))
         self.evolution_webhook_secret = os.getenv("EVOLUTION_WEBHOOK_SECRET", "")
+        if self.is_production and not self.rate_limit_enabled:
+            raise RuntimeError(
+                "RATE_LIMIT_ENABLED must be true in production. "
+                "Disabling rate limiting on a public endpoint is unsafe."
+            )
+        if self.is_production and not self.evolution_webhook_secret:
+            raise RuntimeError(
+                "EVOLUTION_WEBHOOK_SECRET must be set in production. "
+                "An empty secret would accept any webhook payload."
+            )
         # Single trusted contact the bot may ever message. Canonical env is
         # TRUSTED_CONTACT; the two legacy per-channel vars are accepted as
         # fallbacks so existing .env files keep working.
