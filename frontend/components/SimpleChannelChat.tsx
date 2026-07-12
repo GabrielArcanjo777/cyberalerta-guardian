@@ -9,9 +9,9 @@ import type {SimpleChannelStatusResponse, SimpleChannelSubmitResponse} from '@/l
 
 const defaultMessage = 'Mãe, troquei de número. Preciso fazer um Pix urgente.'
 
-type ChatMessage = {
+type AnalysisEntry = {
   id: string
-  role: 'protected' | 'guardian' | 'system' | 'typing'
+  role: 'submitted' | 'system' | 'typing'
   text: string
 }
 
@@ -20,11 +20,11 @@ export default function SimpleChannelChat(){
   const [trustedContact,setTrustedContact]=useState('Gabriel')
   const [draft,setDraft]=useState(defaultMessage)
   const [consent,setConsent]=useState(false)
-  const [messages,setMessages]=useState<ChatMessage[]>([
+  const [messages,setMessages]=useState<AnalysisEntry[]>([
     {
       id: 'welcome',
       role: 'system',
-      text: 'Conversa simulada — WhatsApp real não está conectado neste MVP.',
+      text: 'Ingresso simulado para análise local. Nenhuma resposta será enviada ao remetente.',
     },
   ])
   const [status,setStatus]=useState<SimpleChannelStatusResponse | null>(null)
@@ -48,9 +48,9 @@ export default function SimpleChannelChat(){
     }
 
     const userText = draft.trim()
-    const userMessage:ChatMessage = {
+    const userMessage:AnalysisEntry = {
       id: `user-${Date.now()}`,
-      role: 'protected',
+      role: 'submitted',
       text: userText,
     }
     const analyzingId = `typing-${Date.now()}`
@@ -77,21 +77,14 @@ export default function SimpleChannelChat(){
 
     setMessages(prev=>{
       const withoutTyping = prev.filter(message=>message.id !== analyzingId)
-      const next:ChatMessage[] = [
-        ...withoutTyping,
-        {
-          id: `guardian-${Date.now()}`,
-          role: 'guardian',
-          text: response.simple_reply,
-        },
-      ]
+      const next:AnalysisEntry[] = [...withoutTyping]
       if(response.admin_case_created){
         next.push({
           id: `status-${Date.now()}`,
           role: 'system',
           text: response.__mock
-            ? `Caso simulado enviado ao responsável (${trustedContact || 'contato de confiança'}). Modo demonstração local.`
-            : `Caso ${response.channel_case_id} enviado ao responsável. ${trustedContact || 'Seu contato de confiança'} pode acompanhar no console.`,
+            ? `Caso simulado registrado para revisão por ${trustedContact || 'contato de confiança'}. Modo demonstração local.`
+            : `Caso ${response.channel_case_id} registrado no console. ${trustedContact || 'Seu contato de confiança'} pode acompanhar por lá.`,
         })
       } else {
         next.push({
@@ -104,7 +97,7 @@ export default function SimpleChannelChat(){
         next.push({
           id: `mock-${Date.now()}`,
           role: 'system',
-          text: 'Resposta gerada em modo demonstração (backend indisponível).',
+          text: 'Análise gerada em modo demonstração (backend indisponível). Nenhuma mensagem foi enviada.',
         })
       }
       return next
@@ -117,8 +110,8 @@ export default function SimpleChannelChat(){
         <div className="border-b border-white/10 bg-slate-950/70 px-4 py-3 sm:px-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="app-label text-emerald-300/90">WhatsApp mock</div>
-              <div className="mt-1 text-sm font-semibold text-white">Canal simples · só para você</div>
+              <div className="app-label text-emerald-300/90">Ingresso mock</div>
+              <div className="mt-1 text-sm font-semibold text-white">Fila de análise · somente leitura</div>
             </div>
             <AppStatus status="mock" />
           </div>
@@ -129,23 +122,16 @@ export default function SimpleChannelChat(){
             <div
               key={message.id}
               className={
-                message.role === 'protected'
-                  ? 'ml-auto max-w-[88%] rounded-md border border-emerald-400/25 bg-emerald-950/35 px-3 py-2.5 text-sm leading-6 text-emerald-50'
-                  : message.role === 'guardian'
-                    ? 'mr-auto max-w-[88%] rounded-md border border-cyan-400/25 bg-cyan-950/30 px-3 py-2.5 text-sm leading-6 text-cyan-50'
-                    : message.role === 'typing'
+                message.role === 'submitted'
+                  ? 'w-full rounded-md border border-emerald-400/25 bg-emerald-950/35 px-3 py-2.5 text-sm leading-6 text-emerald-50'
+                  : message.role === 'typing'
                       ? 'mr-auto max-w-[88%] rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm italic text-slate-400'
                       : 'mx-auto max-w-[95%] rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-center text-xs leading-5 text-slate-400'
               }
             >
-              {message.role === 'protected' && (
+              {message.role === 'submitted' && (
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-300/80">
-                  {alias}
-                </div>
-              )}
-              {message.role === 'guardian' && (
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-300/80">
-                  Guardian
+                  Trecho encaminhado por {alias}
                 </div>
               )}
               {message.text}
@@ -201,7 +187,7 @@ export default function SimpleChannelChat(){
             aria-label="Nome do contato de confiança"
           />
           <p className="app-muted-text mt-3">
-            Experiência simples: você envia, o Guardian responde com calma e avisa o responsável se houver risco.
+            Você encaminha o trecho, o Guardian analisa em silêncio e registra o resultado. Só um golpe explícito pode gerar alerta ao contato de confiança; o remetente nunca recebe resposta.
           </p>
         </Card>
 
@@ -229,14 +215,18 @@ export default function SimpleChannelChat(){
               {lastResult.trust_lock_recommended && (
                 <p className="app-body-text text-amber-100/90">Pausa recomendada antes de qualquer Pix ou clique.</p>
               )}
+              <div className="mt-2 rounded-md border border-cyan-400/20 bg-cyan-950/20 p-3">
+                <div className="app-label text-cyan-200/90">Orientação no painel · não enviada</div>
+                <p className="app-body-text mt-2 text-cyan-50/90">{lastResult.simple_reply}</p>
+              </div>
             </div>
           </Card>
         )}
 
         <Card className="border-dashed border-amber-400/25">
-          <div className="app-label text-amber-200/90">Integração futura</div>
+          <div className="app-label text-amber-200/90">Limite do canal</div>
           <p className="app-body-text mt-2">
-            WhatsApp Business real e envio automático ficam fora deste MVP. Nada aqui conversa com golpista nem envia mensagem real.
+            Esta tela apenas submete um trecho à análise local. O canal Evolution recebe mensagens em silêncio e, quando todos os gates permitem, envia somente o alerta ao contato de confiança.
           </p>
         </Card>
       </div>

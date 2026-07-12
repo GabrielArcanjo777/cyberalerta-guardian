@@ -12,12 +12,15 @@ import {
   postRegister,
 } from '@/lib/api'
 import {LoginResponse} from '@/lib/types'
+import {sanitizeAuthRedirect, DEFAULT_REDIRECT} from '@/lib/sanitize'
 
 type AuthMode = 'login' | 'register'
 
-function nextRouteFor(result: LoginResponse){
+function nextRouteFor(result: LoginResponse, redirect?: string | null){
   if(result.mfa_setup_required) return '/mfa'
-  return result.user?.role === 'admin' ? '/admin' : '/family-console'
+  const safe = sanitizeAuthRedirect(redirect)
+  if(safe) return safe
+  return DEFAULT_REDIRECT
 }
 
 function authErrorMessage(error: unknown, fallback: string){
@@ -45,6 +48,10 @@ export default function LoginPage(){
   const [loading,setLoading] = useState(false)
   const [error,setError] = useState<string | null>(null)
   const [notice,setNotice] = useState<string | null>(null)
+
+  const redirect = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('redirect')
+    : null
 
   useEffect(()=>{
     const query = new URLSearchParams(window.location.search)
@@ -80,11 +87,12 @@ export default function LoginPage(){
     getAuthMe()
       .then((session)=>{
         if(!active || !session.user) return
-        router.replace(session.user.role === 'admin' ? '/admin' : '/family-console')
+        const dest = sanitizeAuthRedirect(redirect) || DEFAULT_REDIRECT
+        router.replace(dest)
       })
       .catch(()=>{})
     return ()=>{ active = false }
-  },[router])
+  },[router, redirect])
 
   async function onSubmit(event:FormEvent<HTMLFormElement>){
     event.preventDefault()
@@ -97,7 +105,7 @@ export default function LoginPage(){
         setPendingMfa(result)
         return
       }
-      router.push(nextRouteFor(result))
+      router.push(nextRouteFor(result, redirect))
     }catch(error){
       setError(authErrorMessage(error, 'Credenciais invalidas.'))
     }finally{
@@ -115,7 +123,7 @@ export default function LoginPage(){
         throw new Error('As senhas nao conferem.')
       }
       const result = await postRegister({email, full_name: fullName, password})
-      router.push(nextRouteFor(result))
+      router.push(nextRouteFor(result, redirect))
     }catch(error){
       setError(authErrorMessage(error, 'Nao foi possivel criar a conta.'))
     }finally{
@@ -131,7 +139,7 @@ export default function LoginPage(){
     setNotice(null)
     try{
       const result = await postMfaVerify(pendingMfa.temporary_token, mfaCode)
-      router.push(nextRouteFor(result))
+      router.push(nextRouteFor(result, redirect))
     }catch(error){
       setError(authErrorMessage(error, 'Codigo MFA invalido.'))
     }finally{

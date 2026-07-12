@@ -16,7 +16,10 @@ export default function AdminRoute({children}:AdminRouteProps){
         if(user.role !== 'admin' || !user.is_admin){
           return (
             <div className="rounded-md border border-red-300/20 bg-red-400/[0.08] p-5 text-sm text-red-100">
-              Esta area exige permissao de administrador.
+              <p>Esta area exige permissao de administrador.</p>
+              <Link href="/family-console" className="mt-4 inline-flex min-h-10 items-center rounded-md border border-teal-300/40 bg-teal-300/[0.12] px-4 text-sm font-bold text-teal-50">
+                Ir para o console
+              </Link>
             </div>
           )
         }

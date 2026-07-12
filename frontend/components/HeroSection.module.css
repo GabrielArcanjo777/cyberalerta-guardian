@@ -177,8 +177,16 @@
   }
 }
 
+/* reduced: never animate */
+[data-motion="reduced"] .titleLineInner {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+/* system: delegate to OS media query */
 @media (prefers-reduced-motion: reduce) {
-  .titleLineInner {
+  [data-motion="system"] .titleLineInner {
     animation: none;
     opacity: 1;
     transform: none;
@@ -298,11 +306,20 @@
 .actions { animation-delay: 580ms; }
 .trustStrip { animation-delay: 680ms; }
 
+/* reduced: never animate */
+[data-motion="reduced"] .badge,
+[data-motion="reduced"] .subtitle,
+[data-motion="reduced"] .actions,
+[data-motion="reduced"] .trustStrip {
+  animation: none;
+}
+
+/* system: delegate to OS media query */
 @media (prefers-reduced-motion: reduce) {
-  .badge,
-  .subtitle,
-  .actions,
-  .trustStrip {
+  [data-motion="system"] .badge,
+  [data-motion="system"] .subtitle,
+  [data-motion="system"] .actions,
+  [data-motion="system"] .trustStrip {
     animation: none;
   }
 }
@@ -815,40 +832,42 @@
   }
 }
 
-:global(html.guardian-reduced-motion) .nodeBreathe,
-:global(html.guardian-reduced-motion) .animatedLine,
-:global(html.guardian-reduced-motion) .scanSweep,
-:global(html.guardian-reduced-motion) .systemIntervention,
-:global(html.guardian-reduced-motion) .chatCycle,
-:global(html.guardian-reduced-motion) .badge,
-:global(html.guardian-reduced-motion) .title,
-:global(html.guardian-reduced-motion) .subtitle,
-:global(html.guardian-reduced-motion) .actions,
-:global(html.guardian-reduced-motion) .trustStrip,
-:global(html.guardian-reduced-motion) .visual,
-:global(html.guardian-reduced-motion) .visual::before,
-:global(html.guardian-reduced-motion) .hudPanel,
-:global(html.guardian-reduced-motion) .connectionLines,
-:global(html.guardian-reduced-motion) .phoneFrame {
+/* reduced: never animate */
+:global([data-motion="reduced"]) .nodeBreathe,
+:global([data-motion="reduced"]) .animatedLine,
+:global([data-motion="reduced"]) .scanSweep,
+:global([data-motion="reduced"]) .systemIntervention,
+:global([data-motion="reduced"]) .chatCycle,
+:global([data-motion="reduced"]) .badge,
+:global([data-motion="reduced"]) .title,
+:global([data-motion="reduced"]) .subtitle,
+:global([data-motion="reduced"]) .actions,
+:global([data-motion="reduced"]) .trustStrip,
+:global([data-motion="reduced"]) .visual,
+:global([data-motion="reduced"]) .visual::before,
+:global([data-motion="reduced"]) .hudPanel,
+:global([data-motion="reduced"]) .connectionLines,
+:global([data-motion="reduced"]) .phoneFrame {
   animation: none !important;
 }
 
+/* system: delegate to OS media query */
 @media (prefers-reduced-motion: reduce) {
-  .nodeBreathe,
-  .animatedLine,
-  .scanSweep,
-  .systemIntervention,
-  .chatCycle,
-  .badge,
-  .title,
-  .subtitle,
-  .actions,
-  .trustStrip,
-  .visual,
-  .visual::before,
-  .hudPanel,
-  .connectionLines,
-  .phoneFrame {
+  :global([data-motion="system"]) .nodeBreathe,
+  :global([data-motion="system"]) .animatedLine,
+  :global([data-motion="system"]) .scanSweep,
+  :global([data-motion="system"]) .systemIntervention,
+  :global([data-motion="system"]) .chatCycle,
+  :global([data-motion="system"]) .badge,
+  :global([data-motion="system"]) .title,
+  :global([data-motion="system"]) .subtitle,
+  :global([data-motion="system"]) .actions,
+  :global([data-motion="system"]) .trustStrip,
+  :global([data-motion="system"]) .visual,
+  :global([data-motion="system"]) .visual::before,
+  :global([data-motion="system"]) .hudPanel,
+  :global([data-motion="system"]) .connectionLines,
+  :global([data-motion="system"]) .phoneFrame {
     animation: none !important;
   }
 }

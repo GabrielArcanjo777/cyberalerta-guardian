@@ -179,7 +179,7 @@ export default function Home(){
           <RevealItem><p>{copy.closingBody}</p></RevealItem>
           <RevealItem className="home-closing-actions">
             <Link href="/assisted-demo" className="home-primary-cta">{copy.closingPrimary}</Link>
-            <Link href="/login" className="home-secondary-cta">{copy.closingSecondary}</Link>
+            <Link href="/whatsapp-setup" className="home-secondary-cta">{copy.closingSecondary}</Link>
           </RevealItem>
           <RevealItem className="home-status-note">{copy.statusNote}</RevealItem>
         </RevealGroup>

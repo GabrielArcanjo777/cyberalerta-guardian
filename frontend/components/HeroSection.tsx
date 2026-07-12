@@ -67,9 +67,6 @@ const heroCopy:Record<Locale, HeroCopy> = {
 
 type Scenario = {tag:string; tone:'high'|'medium'; sent:string; outcome:string; alerted:boolean}
 
-// Fluxo real: a mensagem é analisada em silêncio. Risco ALTO => alerta enviado
-// SOMENTE ao contato de confiança. Risco MÉDIO => caso no console, sem alerta.
-// O bot nunca responde no chat do golpista/pessoa protegida.
 const scenariosByLocale:Record<Locale, Scenario[]> = {
   'pt-BR': [
     {tag:'Golpe do Pix', tone:'high', alerted:true, sent:'Mãe, troquei de número. Preciso fazer um Pix urgente.', outcome:'Ação segura: alertar somente o contato de confiança. Risco alto — golpe do Pix; confirme por ligação antes de transferir.'},
@@ -83,7 +80,6 @@ const scenariosByLocale:Record<Locale, Scenario[]> = {
   ],
 }
 
-/* ── Radar Backdrop ── */
 function RadarBackdrop({reduceMotion}:{reduceMotion:boolean}){
   return (
     <div className={styles.radarBackdrop} aria-hidden="true">
@@ -103,13 +99,11 @@ function RadarBackdrop({reduceMotion}:{reduceMotion:boolean}){
   )
 }
 
-/* ── Sentinel Mockup — phone that cycles through real scam examples ── */
 function SentinelMockup({reduceMotion, scenario, cycleKey, copy}:{reduceMotion:boolean; scenario:Scenario; cycleKey:number; copy:HeroCopy}){
   const toneColor = scenario.tone === 'high' ? '#ff5c64' : '#f59e0b'
   return (
     <div className={styles.mockupContainer} aria-hidden="true">
       <RadarBackdrop reduceMotion={reduceMotion} />
-
       <div className={styles.phoneFrame}>
         <div className={styles.phoneNotch} />
         <div className={styles.phoneScreen}>
@@ -134,7 +128,6 @@ function SentinelMockup({reduceMotion, scenario, cycleKey, copy}:{reduceMotion:b
               <span className={styles.inboundMessageText}>{scenario.sent}</span>
               <span className={styles.inboundMeta}>{copy.phoneCaptured}</span>
             </div>
-            {/* Resultado da análise — nunca é uma resposta no chat */}
             <div
               className={styles.systemIntervention}
               style={{
@@ -168,12 +161,51 @@ function SentinelMockup({reduceMotion, scenario, cycleKey, copy}:{reduceMotion:b
   )
 }
 
+/** Dev-only diagnostic overlay showing animation state. */
+function MotionDiagnostic(){
+  if (typeof window === 'undefined') return null
+  const pref = window.localStorage.getItem('cyberalerta-motion-preference') || 'enabled'
+  const sysReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const el = document.querySelector('[class*="titleLineInner"]')
+  const cs = el ? getComputedStyle(el) : null
+  return (
+    <div style={{
+      position:'fixed', bottom:10, left:10, zIndex:9999,
+      background:'#030807', border:'1px solid #32e6c4', borderRadius:6,
+      padding:'8px 12px', fontSize:10, fontFamily:'monospace', color:'#effff9',
+      opacity:0.85, maxWidth:340,
+    }}>
+      <div>Motion pref: <b style={{color:'#32e6c4'}}>{pref}</b></div>
+      <div>System reduce: <b>{String(sysReduce)}</b></div>
+      <div>HTML data-motion: <b style={{color:'#32e6c4'}}>{document.documentElement.getAttribute('data-motion')}</b></div>
+      <div>Animation: <b>{cs?.animationName || '—'}</b></div>
+      <div>Duration: <b>{cs?.animationDuration || '—'}</b></div>
+      <div>Play state: <b>{cs?.animationPlayState || '—'}</b></div>
+      <div style={{marginTop:4, display:'flex', gap:4}}>
+        <button onClick={()=>{window.localStorage.setItem('cyberalerta-motion-preference','enabled');location.reload()}}
+          style={{background:'#32e6c4',color:'#030807',border:'none',borderRadius:3,padding:'2px 6px',cursor:'pointer',fontSize:9}}>Enabled</button>
+        <button onClick={()=>{window.localStorage.setItem('cyberalerta-motion-preference','reduced');location.reload()}}
+          style={{background:'#475569',color:'#fff',border:'none',borderRadius:3,padding:'2px 6px',cursor:'pointer',fontSize:9}}>Reduced</button>
+        <button onClick={()=>{window.localStorage.setItem('cyberalerta-motion-preference','system');location.reload()}}
+          style={{background:'#1e293b',color:'#94a3b8',border:'none',borderRadius:3,padding:'2px 6px',cursor:'pointer',fontSize:9}}>System</button>
+      </div>
+    </div>
+  )
+}
+
 export default function HeroSection(){
   const reduceMotion = usePrefersReducedMotion()
   const [locale] = useGuardianLocale()
   const copy = heroCopy[locale]
   const scenarios = scenariosByLocale[locale]
   const [index, setIndex] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  // Trigger animation after mount to avoid flash
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   useEffect(()=>{
     if(reduceMotion) return
@@ -184,7 +216,7 @@ export default function HeroSection(){
   const scenario = scenarios[index % scenarios.length]
 
   return (
-    <section id="plataforma" className={styles.hero} aria-label={copy.aria}>
+    <section id="plataforma" className={styles.hero} aria-label={copy.aria} data-mounted={mounted ? 'true' : undefined}>
       <div className={styles.gridBg} aria-hidden="true" />
       <div className={styles.glowBg} aria-hidden="true" />
       <div className={styles.watermark} aria-hidden="true">CYBERALERTA</div>
@@ -207,7 +239,7 @@ export default function HeroSection(){
           <p className={styles.subtitle}>{copy.subtitle}</p>
           <div className={styles.actions}>
             <Link href="/assisted-demo" className={styles.primaryCta}>{copy.primaryCta}</Link>
-            <Link href="/login" className={styles.secondaryCta}>{copy.secondaryCta}</Link>
+            <Link href="/whatsapp-setup" className={styles.secondaryCta}>{copy.secondaryCta}</Link>
           </div>
           <div className={styles.trustStrip}>
             {copy.trustItems.map(label=><span key={label}>{label}</span>)}
@@ -218,6 +250,8 @@ export default function HeroSection(){
           <SentinelMockup reduceMotion={reduceMotion} scenario={scenario} cycleKey={index} copy={copy} />
         </div>
       </div>
+
+      {process.env.NODE_ENV === 'development' && <MotionDiagnostic />}
     </section>
   )
 }

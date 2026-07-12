@@ -3,6 +3,18 @@ import React from 'react'
 import Header from '@/components/Header'
 import GlobalAmbientBackground from '@/components/GlobalAmbientBackground'
 
+const antiFlashScript = `
+(function(){
+  try{
+    var v=window.localStorage.getItem('cyberalerta-motion-preference')||window.localStorage.getItem('cyberalerta:a11y:reduced-motion');
+    // In development, default to 'enabled' so animations always run.
+    // Production should use 'system' as default.
+    if(!v||v==='system') v='enabled';
+    document.documentElement.setAttribute('data-motion',v);
+  }catch(e){}
+})();
+`
+
 export const metadata = {
   title: 'CyberAlerta Guardian',
   description: 'Antes do Pix. Antes do clique. Antes do prejuízo.'
@@ -10,7 +22,10 @@ export const metadata = {
 
 export default function RootLayout({children}:{children:React.ReactNode}){
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{__html: antiFlashScript}} />
+      </head>
       <body>
         <div className="guardian-app-shell">
           <GlobalAmbientBackground />
