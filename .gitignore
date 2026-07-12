@@ -33,9 +33,16 @@ backend/test_send.py
 # Claude Code local config (agent settings, launch config) — do not commit
 .claude/
 
+# Playwright artifacts
+frontend/test-results/
+frontend/playwright-report/
+
 # Coverage / OS
 coverage/
 .DS_Store
+
+# Local editor extension packages
+*.vsix
 
 # Pre-codex backup snapshots (local only)
 pre_codex_*.patch
