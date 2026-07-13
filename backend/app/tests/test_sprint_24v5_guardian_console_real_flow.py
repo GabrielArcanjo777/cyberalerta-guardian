@@ -34,7 +34,7 @@ def test_v5_console_detail_exposes_operational_entities():
     assert detail.case.source_message_id == flow.message_id
     assert detail.case.risk_assessment_id == flow.risk_assessment_id
     assert detail.case.open is True
-    assert detail.message.body.startswith("Mae, troquei de numero")
+    assert detail.message.body == "[REDACTED]"
     assert detail.message.channel == "whatsapp:mock"
     assert detail.message.simulated is True
     assert detail.risk_assessment.score == detail.risk_score

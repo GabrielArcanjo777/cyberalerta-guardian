@@ -4,6 +4,7 @@ import hashlib
 import re
 import unicodedata
 from dataclasses import dataclass
+from threading import RLock
 from typing import Pattern
 
 from app.event_model import BotEventType, LocalEventBus, Message
@@ -209,6 +210,7 @@ class PatternIntelligenceService:
         self._message_index: dict[str, str] = {}
         self._clusters: dict[str, PatternCluster] = {}
         self._feedback: list[PatternFeedbackRecord] = []
+        self._lock = RLock()
 
     def detect(
         self,
@@ -219,130 +221,136 @@ class PatternIntelligenceService:
         sender_address: str | None = None,
         case_id: str | None = None,
     ) -> PatternDetectionResult:
-        normalized = normalize_text(message.body)
-        normalized_threat_text = self._normalized_threat_text(message.body, normalized)
-        base_signals = self._rule_signals(normalized)
-        base_signal_names = [signal.signal for signal in base_signals]
-        threat_type = self._threat_type_for_signal_names(base_signal_names)
-        threat_type_label = self._threat_type_label(threat_type)
-        recurrence = self._recurrence(
-            normalized,
-            protected_person_id,
-            protected_person_alias,
-            sender_address,
-            threat_type,
-        )
-        signals = list(base_signals)
-        for key in (
-            "repeated_similar_text",
-            "recurring_sender",
-            "recurring_protected_person",
-            "recurring_threat_type",
-        ):
-            if recurrence.get(key, 0) > 0:
-                signals.append(RECURRENCE_SIGNALS[key])
+        with self._lock:
+            normalized = normalize_text(message.body)
+            normalized_threat_text = self._normalized_threat_text(message.body, normalized)
+            base_signals = self._rule_signals(normalized)
+            base_signal_names = [signal.signal for signal in base_signals]
+            threat_type = self._threat_type_for_signal_names(base_signal_names)
+            threat_type_label = self._threat_type_label(threat_type)
+            recurrence = self._recurrence(
+                normalized,
+                protected_person_id,
+                protected_person_alias,
+                sender_address,
+                threat_type,
+            )
+            signals = list(base_signals)
+            for key in (
+                "repeated_similar_text",
+                "recurring_sender",
+                "recurring_protected_person",
+                "recurring_threat_type",
+            ):
+                if recurrence.get(key, 0) > 0:
+                    signals.append(RECURRENCE_SIGNALS[key])
 
-        score = min(100, sum(signal.weight for signal in signals))
-        level = score_level(score)
-        risk_explanation = self._risk_explanation(signals, recurrence, score, level, threat_type_label)
-        candidate = PatternCandidate(
-            message_id=message.message_id,
-            case_id=case_id,
-            protected_person_id=protected_person_id,
-            protected_person_alias=protected_person_alias,
-            sender_address=sender_address,
-            normalized_text=normalized,
-            normalized_text_sha1=normalized_threat_text.normalized_text_sha1,
-            text_fingerprint=normalized_threat_text.text_fingerprint,
-            normalized_threat_text=normalized_threat_text,
-            threat_type=threat_type,
-            threat_type_label=threat_type_label,
-            score=score,
-            level=level,
-            signal_names=[signal.signal for signal in signals],
-            risk_explanation=risk_explanation,
-        )
-        cluster_ids = self._assign_clusters(candidate, signals, recurrence)
-        candidate = candidate.model_copy(update={"cluster_ids": cluster_ids})
-        self._store_candidate(candidate)
+            score = min(100, sum(signal.weight for signal in signals))
+            level = score_level(score)
+            risk_explanation = self._risk_explanation(signals, recurrence, score, level, threat_type_label)
+            candidate = PatternCandidate(
+                message_id=message.message_id,
+                case_id=case_id,
+                protected_person_id=protected_person_id,
+                protected_person_alias=protected_person_alias,
+                sender_address=sender_address,
+                normalized_text=normalized,
+                normalized_text_sha1=normalized_threat_text.normalized_text_sha1,
+                text_fingerprint=normalized_threat_text.text_fingerprint,
+                normalized_threat_text=normalized_threat_text,
+                threat_type=threat_type,
+                threat_type_label=threat_type_label,
+                score=score,
+                level=level,
+                signal_names=[signal.signal for signal in signals],
+                risk_explanation=risk_explanation,
+            )
+            cluster_ids = self._assign_clusters(candidate, signals, recurrence)
+            candidate = candidate.model_copy(update={"cluster_ids": cluster_ids})
+            self._store_candidate(candidate)
 
-        result = PatternDetectionResult(
-            message_id=message.message_id,
-            case_id=case_id,
-            candidate_id=candidate.candidate_id,
-            threat_type=threat_type,
-            threat_type_label=threat_type_label,
-            score=score,
-            level=level,
-            signals=signals,
-            signal_names=[signal.signal for signal in signals],
-            explanation=risk_explanation.summary,
-            normalized_text=normalized,
-            normalized_text_sha1=candidate.normalized_text_sha1,
-            normalized_threat_text=normalized_threat_text,
-            risk_explanation=risk_explanation,
-            recurrence={key: value for key, value in recurrence.items() if isinstance(value, int)},
-            similar_message_ids=list(recurrence.get("similar_message_ids", [])),
-            cluster_ids=cluster_ids,
-        )
-        self._publish_pattern_detected(result)
-        return result
+            result = PatternDetectionResult(
+                message_id=message.message_id,
+                case_id=case_id,
+                candidate_id=candidate.candidate_id,
+                threat_type=threat_type,
+                threat_type_label=threat_type_label,
+                score=score,
+                level=level,
+                signals=signals,
+                signal_names=[signal.signal for signal in signals],
+                explanation=risk_explanation.summary,
+                normalized_text=normalized,
+                normalized_text_sha1=candidate.normalized_text_sha1,
+                normalized_threat_text=normalized_threat_text,
+                risk_explanation=risk_explanation,
+                recurrence={key: value for key, value in recurrence.items() if isinstance(value, int)},
+                similar_message_ids=list(recurrence.get("similar_message_ids", [])),
+                cluster_ids=cluster_ids,
+            )
+            self._publish_pattern_detected(result)
+            return result
 
     def get_result_for_case(self, case_id: str) -> PatternDetectionResult | None:
-        candidate_id = self._case_index.get(case_id)
-        if not candidate_id:
-            return None
-        candidate = self._candidates.get(candidate_id)
-        if not candidate:
-            return None
-        signals = [
-            signal
-            for signal in self._signals_from_names(candidate.signal_names)
-        ]
-        recurrence = self._recurrence_for_candidate(candidate)
-        risk_explanation = candidate.risk_explanation or self._risk_explanation(
-            signals,
-            recurrence,
-            candidate.score,
-            candidate.level,
-            candidate.threat_type_label,
-        )
-        normalized_threat_text = candidate.normalized_threat_text or self._normalized_threat_text(
-            candidate.normalized_text,
-            candidate.normalized_text,
-        )
-        return PatternDetectionResult(
-            message_id=candidate.message_id,
-            case_id=candidate.case_id,
-            candidate_id=candidate.candidate_id,
-            threat_type=candidate.threat_type,
-            threat_type_label=candidate.threat_type_label,
-            score=candidate.score,
-            level=candidate.level,
-            signals=signals,
-            signal_names=candidate.signal_names,
-            explanation=risk_explanation.summary,
-            normalized_text=candidate.normalized_text,
-            normalized_text_sha1=candidate.normalized_text_sha1,
-            normalized_threat_text=normalized_threat_text,
-            risk_explanation=risk_explanation,
-            recurrence=recurrence,
-            similar_message_ids=self._similar_message_ids(candidate),
-            cluster_ids=candidate.cluster_ids,
-        )
+        with self._lock:
+            candidate_id = self._case_index.get(case_id)
+            if not candidate_id:
+                return None
+            candidate = self._candidates.get(candidate_id)
+            if not candidate:
+                return None
+            signals = [
+                signal
+                for signal in self._signals_from_names(candidate.signal_names)
+            ]
+            recurrence = self._recurrence_for_candidate(candidate)
+            risk_explanation = candidate.risk_explanation or self._risk_explanation(
+                signals,
+                recurrence,
+                candidate.score,
+                candidate.level,
+                candidate.threat_type_label,
+            )
+            normalized_threat_text = candidate.normalized_threat_text or self._normalized_threat_text(
+                candidate.normalized_text,
+                candidate.normalized_text,
+            )
+            return PatternDetectionResult(
+                message_id=candidate.message_id,
+                case_id=candidate.case_id,
+                candidate_id=candidate.candidate_id,
+                threat_type=candidate.threat_type,
+                threat_type_label=candidate.threat_type_label,
+                score=candidate.score,
+                level=candidate.level,
+                signals=signals,
+                signal_names=candidate.signal_names,
+                explanation=risk_explanation.summary,
+                normalized_text=candidate.normalized_text,
+                normalized_text_sha1=candidate.normalized_text_sha1,
+                normalized_threat_text=normalized_threat_text,
+                risk_explanation=risk_explanation,
+                recurrence=recurrence,
+                similar_message_ids=self._similar_message_ids(candidate),
+                cluster_ids=candidate.cluster_ids,
+            )
 
     def get_candidate_for_case(self, case_id: str) -> PatternCandidate | None:
-        candidate_id = self._case_index.get(case_id)
-        return self._candidates.get(candidate_id) if candidate_id else None
+        with self._lock:
+            candidate_id = self._case_index.get(case_id)
+            return self._candidates.get(candidate_id) if candidate_id else None
 
     def list_clusters(self) -> list[PatternCluster]:
-        return list(self._clusters.values())
+        with self._lock:
+            return list(self._clusters.values())
 
     def list_candidates(self) -> list[PatternCandidate]:
-        return list(self._candidates.values())
+        with self._lock:
+            return list(self._candidates.values())
 
     def list_feedback(self) -> list[PatternFeedbackRecord]:
-        return list(self._feedback)
+        with self._lock:
+            return list(self._feedback)
 
     def record_feedback(
         self,
@@ -352,31 +360,32 @@ class PatternIntelligenceService:
         note: str | None = None,
     ) -> PatternFeedback:
         expected_label = self._label_for_feedback(feedback_action)
-        candidate_ids = [
-            candidate.candidate_id
-            for candidate in self._candidates.values()
-            if candidate.case_id == case_id
-        ]
-        for candidate_id in candidate_ids:
-            candidate = self._candidates[candidate_id]
-            self._candidates[candidate_id] = candidate.model_copy(
-                update={
-                    "expected_label": expected_label,
-                    "feedback_action": feedback_action,
-                    "feedback_note": note,
-                    "updated_at": utc_now(),
-                }
+        with self._lock:
+            candidate_ids = [
+                candidate.candidate_id
+                for candidate in self._candidates.values()
+                if candidate.case_id == case_id
+            ]
+            for candidate_id in candidate_ids:
+                candidate = self._candidates[candidate_id]
+                self._candidates[candidate_id] = candidate.model_copy(
+                    update={
+                        "expected_label": expected_label,
+                        "feedback_action": feedback_action,
+                        "feedback_note": note,
+                        "updated_at": utc_now(),
+                    }
+                )
+            record = PatternFeedback(
+                case_id=case_id,
+                candidate_ids=candidate_ids,
+                feedback_action=feedback_action,
+                expected_label=expected_label,
+                confirmed_scam=expected_label == "confirmed_scam",
+                false_positive=expected_label == "false_alarm",
+                note=note,
             )
-        record = PatternFeedback(
-            case_id=case_id,
-            candidate_ids=candidate_ids,
-            feedback_action=feedback_action,
-            expected_label=expected_label,
-            confirmed_scam=expected_label == "confirmed_scam",
-            false_positive=expected_label == "false_alarm",
-            note=note,
-        )
-        self._feedback.append(record)
+            self._feedback.append(record)
         return record
 
     def _normalized_threat_text(self, original_text: str, normalized_text: str) -> NormalizedThreatText:

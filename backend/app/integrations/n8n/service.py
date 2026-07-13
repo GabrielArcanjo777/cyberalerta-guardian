@@ -313,7 +313,11 @@ class N8nIntegrationService:
         n8n_execution_id: str | None,
     ) -> N8nWhatsAppInboundResponse:
         n8n_action = self._n8n_action(analysis.risk_level, payload.already_acted)
-        reply_to = payload.reply_to_number or payload.from_number
+        # Regra cardinal: o bot nunca responde ao remetente da mensagem suspeita.
+        # reply_to_number deve ser fornecido explicitamente pelo fluxo n8n apontando
+        # para um destinatário autorizado (ex.: contato de confiança). Nunca usar
+        # from_number como fallback.
+        reply_to = payload.reply_to_number or None
         send_mode = self._resolve_send_mode(reply_to)
         safe_to_send = send_mode == "real_beta_allowed"
         user_msg = getattr(analysis, "whatsapp_user_message", None) or analysis.user_message

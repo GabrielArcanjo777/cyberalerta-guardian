@@ -6,22 +6,29 @@
 # Parar:   docker compose -f docker-compose.evolution.yml down
 # Zerar:   docker compose -f docker-compose.evolution.yml down -v   (apaga a sessão pareada)
 #
-# Depois de subir, defina no backend/.env:  EVOLUTION_API_KEY=guardian-local-key
+# Antes de subir, copie este arquivo para .env.evolution e defina valores fortes:
+#   EVOLUTION_API_KEY=...
+#   POSTGRES_PASSWORD=...
+# Não comite segredos no repositório.
 
+# shellcheck disable=SC2046
+# yaml-language-server: $schema=https://json.schemastore.org/docker-compose.json
 services:
   evolution-api:
     image: evoapicloud/evolution-api:v2.3.7   # imagem oficial (hub.docker.com/r/evoapicloud/evolution-api/tags)
     container_name: cyberalerta-evolution
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - .env.evolution
     environment:
       SERVER_URL: http://localhost:8080
-      AUTHENTICATION_API_KEY: guardian-local-key
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-}
       # Banco (Postgres) — persiste a sessão pareada entre restarts
       DATABASE_ENABLED: "true"
       DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgresql://evolution:evolution@postgres:5432/evolution?schema=public
+      DATABASE_CONNECTION_URI: postgresql://evolution:${POSTGRES_PASSWORD:-}@postgres:5432/evolution?schema=public
       DATABASE_CONNECTION_CLIENT_NAME: cyberalerta
       DATABASE_SAVE_DATA_INSTANCE: "true"
       DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
@@ -34,24 +41,38 @@ services:
       CACHE_REDIS_PREFIX_KEY: evolution
       CACHE_LOCAL_ENABLED: "false"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   postgres:
     image: postgres:16-alpine
     container_name: cyberalerta-evolution-db
     restart: unless-stopped
+    env_file:
+      - .env.evolution
     environment:
       POSTGRES_USER: evolution
-      POSTGRES_PASSWORD: evolution
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
       POSTGRES_DB: evolution
     volumes:
       - evolution_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution -d evolution"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
     container_name: cyberalerta-evolution-redis
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   evolution_pgdata:

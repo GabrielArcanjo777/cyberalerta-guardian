@@ -86,6 +86,7 @@ from app.services.examples import get_example_scenarios
 from app.services.safety_policy import SafetyPolicyService
 from app.event_model import EventModelService
 from app.core.config import config
+from app.core.logging import get_logger, structured_log
 from app.storage import settings_store
 from app.hybrid.query import get_hybrid_decision_for_case
 from app.core.middleware import RequestContextHeadersMiddleware, SecurityHeadersMiddleware
@@ -445,6 +446,19 @@ def settings_set_trusted_contact(request: Request, payload: dict, access: None =
         if not isinstance(payload["beta_real_send_enabled"], bool):
             raise HTTPException(status_code=422, detail="beta_real_send_enabled deve ser booleano.")
         real_send_value = payload["beta_real_send_enabled"]
+        if real_send_value and not config.auth_require_sensitive_routes:
+            structured_log(
+                logger,
+                "real_send_blocked_in_development",
+                level=logging.WARNING,
+                dry_run=config.dry_run,
+                trusted_contact=config.trusted_contact,
+                reason="auth_require_sensitive_routes_disabled",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Real send cannot be enabled while sensitive routes are unauthenticated. Set AUTH_REQUIRE_SENSITIVE_ROUTES=true or enable real send via trusted .env only.",
+            )
         settings_store.put("beta_real_send_enabled", "true" if real_send_value else "false")
     if dry_run_value is not None or real_send_value is not None or "trusted_contact" in payload:
         _apply_runtime_safety(dry_run=dry_run_value, real_send=real_send_value)

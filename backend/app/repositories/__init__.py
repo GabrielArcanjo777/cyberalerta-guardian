@@ -5,6 +5,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
+from threading import Lock
 
 
 class InboundProcessingStatus(str, Enum):
@@ -111,18 +112,22 @@ class OperationalStateRepository:
 
 
 _repository: OperationalStateRepository | None = None
+_repository_lock = Lock()
 
 
 def get_operational_state_repository() -> OperationalStateRepository:
     global _repository
     if _repository is None:
-        _repository = OperationalStateRepository()
+        with _repository_lock:
+            if _repository is None:
+                _repository = OperationalStateRepository()
     return _repository
 
 
 def reset_operational_state_repository() -> OperationalStateRepository:
     global _repository
-    _repository = OperationalStateRepository()
+    with _repository_lock:
+        _repository = OperationalStateRepository()
     return _repository
 
 

@@ -1,0 +1,311 @@
+# =============================================================================
+# CyberAlerta Guardian — Compose de SERVIDOR (Linux) para deploy atrás de
+# Cloudflare Tunnel. NÃO substitui o docker-compose.evolution.yml de dev.
+# -----------------------------------------------------------------------------
+# Princípios:
+#   * Segredos são OBRIGATÓRIOS (${VAR:?...}); o compose falha sem eles.
+#   * Nada de dados é publicado no host: só frontend e backend, e apenas em
+#     127.0.0.1 (o Cloudflare Tunnel conecta no localhost do servidor).
+#   * Postgres, Redis, Evolution e a UI do n8n NÃO expõem portas.
+#   * Três redes isolam as camadas: edge / backend_private / data_private.
+#   * Defaults seguros: DRY_RUN=true, envio real desligado, shadow no LLM.
+#
+# Uso (ver docs/server-deployment.md):
+#   Validar:  docker compose --env-file .env.server -f compose.server.yml config
+#   Subir:    docker compose --env-file .env.server -f compose.server.yml up -d --build
+#   Com n8n:  docker compose --env-file .env.server -f compose.server.yml --profile n8n up -d
+#
+# Requer .env.server preenchido (a partir de .env.server.example) e, para o
+# perfil n8n, .env.n8n.
+# yaml-language-server: $schema=https://json.schemastore.org/docker-compose.json
+
+# ---- Blocos reutilizáveis --------------------------------------------------
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ------------------------------------------------------------------ frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # URL PÚBLICA da API (embutida no bundle em build). Não é segredo.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL obrigatório}
+    image: cyberalerta/frontend:local
+    container_name: cyberalerta-frontend
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
+    # Somente localhost do servidor → o Cloudflare Tunnel aponta aqui.
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - edge
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Next.js grava cache de runtime em /app/.next/cache e usa /tmp.
+    tmpfs:
+      - /tmp
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 640M
+        reservations:
+          memory: 192M
+
+  # ------------------------------------------------------------------- backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: cyberalerta/backend:local
+    container_name: cyberalerta-backend
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
+    # Somente localhost do servidor → o Cloudflare Tunnel aponta aqui.
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-8000}:8000"
+    env_file:
+      - .env.server
+    environment:
+      # Segredos OBRIGATÓRIOS — o compose falha claramente se ausentes.
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?AUTH_SECRET_KEY obrigatório}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:?EVOLUTION_API_KEY obrigatório}
+      EVOLUTION_WEBHOOK_SECRET: ${EVOLUTION_WEBHOOK_SECRET:?EVOLUTION_WEBHOOK_SECRET obrigatório}
+      # Endereço interno da Evolution (rede backend_private). Sobrescreve
+      # qualquer valor do .env para evitar erro de operador.
+      EVOLUTION_API_URL: http://evolution:8080
+      # Persistência local do backend (SQLite) no volume montado em /data.
+      STORAGE_BACKEND: sqlite
+      SQLITE_DATABASE_URL: sqlite:////data/cyberalerta_guardian.db
+    volumes:
+      - backend_data:/data
+    depends_on:
+      evolution:
+        condition: service_started
+    networks:
+      - edge
+      - backend_private
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 640M
+        reservations:
+          memory: 192M
+
+  # ------------------------------------------------------------------ postgres
+  # Banco da Evolution (sessão pareada + mensagens). NÃO publica porta.
+  postgres:
+    image: postgres:16-alpine
+    container_name: cyberalerta-postgres
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-evolution}
+      POSTGRES_DB: ${POSTGRES_DB:-evolution}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obrigatório}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evolution} -d ${POSTGRES_DB:-evolution}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - data_private
+    # Exceção de hardening: o entrypoint do Postgres precisa iniciar como root
+    # para inicializar/chown o datadir e então baixar privilégios (gosu). Por
+    # isso NÃO aplicamos cap_drop/read_only/user; mantemos no-new-privileges.
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 256M
+
+  # --------------------------------------------------------------------- redis
+  # Cache da Evolution. NÃO publica porta. Protegido por senha mesmo na rede
+  # privada (defesa em profundidade).
+  redis:
+    image: redis:7-alpine
+    container_name: cyberalerta-redis
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
+    user: redis
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD obrigatório}
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - "yes"
+    environment:
+      # Usado só pelo redis-cli do healthcheck (não altera o servidor).
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD obrigatório}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - data_private
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+        reservations:
+          memory: 128M
+
+  # ----------------------------------------------------------------- evolution
+  # WhatsApp Web (Baileys) — canal NÃO oficial. NÃO publica porta: só o backend
+  # a alcança pela rede backend_private.
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.7
+    container_name: cyberalerta-evolution
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    environment:
+      SERVER_URL: http://evolution:8080
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:?EVOLUTION_API_KEY obrigatório}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER:-evolution}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obrigatório}@postgres:5432/${POSTGRES_DB:-evolution}?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: cyberalerta
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://default:${REDIS_PASSWORD:?REDIS_PASSWORD obrigatório}@redis:6379/6
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_LOCAL_ENABLED: "false"
+    volumes:
+      - evolution_instances:/evolution/instances
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8080').then(()=>process.exit(0)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend_private
+      - data_private
+    # Exceção de hardening: imagem não oficial (Baileys). Aplicamos
+    # no-new-privileges, mas NÃO cap_drop/read_only/user para não arriscar
+    # quebra da sessão pareada. Ver docs/server-deployment.md.
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 256M
+
+  # ----------------------------------------------------------------------- n8n
+  # Orquestração opcional. DESLIGADO por padrão (profile). NÃO publica porta:
+  # o acesso é feito por túnel/porta local só quando explicitamente ativado.
+  n8n:
+    image: n8nio/n8n:1.66.0
+    container_name: cyberalerta-n8n
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
+    profiles:
+      - n8n
+    env_file:
+      - .env.server
+      - .env.n8n
+    environment:
+      # Escuta só no loopback do container; exposição controlada por túnel.
+      N8N_LISTEN_ADDRESS: 127.0.0.1
+      N8N_PORT: "5678"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_HIRING_BANNER_ENABLED: "false"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - backend_private
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+
+# ---- Redes -----------------------------------------------------------------
+# edge            → camada voltada ao túnel (frontend + backend)
+# backend_private → app ↔ serviços internos (backend ↔ evolution/n8n)
+# data_private    → apenas dados (postgres/redis/evolution); sem saída ao edge
+networks:
+  edge:
+    driver: bridge
+  backend_private:
+    driver: bridge
+    internal: true
+  data_private:
+    driver: bridge
+    internal: true
+
+# ---- Volumes ---------------------------------------------------------------
+# Volumes nomeados (gerenciados pelo Docker). Dados críticos devem ficar no
+# SSD: garanta que o data-root do Docker esteja no SSD, ou relocalize estes
+# volumes (ver docs/server-deployment.md). O compose NÃO fixa caminhos físicos.
+volumes:
+  backend_data:
+  pgdata:
+  redisdata:
+  evolution_instances:
+  n8n_data:

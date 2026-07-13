@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.core.config import config
 from app.event_model.case_service import CaseService
 from app.event_model.event_bus import LocalEventBus
 from app.event_model.models import (
@@ -12,6 +13,7 @@ from app.event_model.models import (
 )
 from app.event_model.repositories import EventModelRepositories, create_in_memory_repositories
 from app.event_model.risk_assessment_service import RiskAssessmentService
+from app.repositories import message_preview, stable_hash
 
 
 class EventModelService:
@@ -56,6 +58,9 @@ class EventModelService:
         before_events = len(self.repositories.events.list_all())
         saved_protected_person = self.repositories.protected_people.save(protected_person)
         saved_guardian = self.repositories.guardians.save(guardian) if guardian else None
+
+        # Persist the message first with the full body so the risk assessment
+        # and case creation can reference the same message_id.
         message = self.repositories.messages.save(
             Message(
                 protected_person_id=saved_protected_person.protected_person_id,
@@ -92,6 +97,20 @@ class EventModelService:
         )
 
         assessment = self.risk_assessments.assess(message)
+
+        # Respect STORE_FULL_MESSAGE: when disabled, replace the persisted body
+        # with a redacted marker while keeping the same message_id so the
+        # risk_assessment -> case link remains valid.
+        if not config.store_full_message:
+            redacted = message.model_copy(
+                update={
+                    "body": "[REDACTED]",
+                    "body_hash": stable_hash(body),
+                    "body_preview": message_preview(body, store_full_message=False),
+                }
+            )
+            message = self.repositories.messages.save(redacted)
+
         case = None
         if assessment.case_threshold_reached:
             case = self.cases.create_case(

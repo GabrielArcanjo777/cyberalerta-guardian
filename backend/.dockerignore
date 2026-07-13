@@ -1,0 +1,16 @@
+# Nunca copiar para a imagem: ambientes virtuais, caches, segredos, bancos locais.
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.db
+*.sqlite
+*.sqlite3
+debug_*.py
+test_send.py
+.git/

@@ -108,7 +108,7 @@ def test_responsible_bot_context_contains_risk_signals_message_and_history():
     assert context.protected_person_alias == "Dona Lucia"
     assert context.guardian_alias == "Gabriel"
     assert context.risk_score == 90
-    assert "Pix urgente" in context.message_summary
+    assert context.message_summary == "[REDACTED]"
     assert "do_not_call" in context.risk_signals
     assert BotEventType.CASE_CREATED.value in [event.event_type for event in context.history]
 

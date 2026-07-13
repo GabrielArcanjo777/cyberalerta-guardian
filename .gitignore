@@ -14,12 +14,31 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Environment / secrets — never commit real values; use .env.example as reference
+# Environment / secrets — never commit real values; use *.example as reference
 .env
 .env.*
 !.env.example
+!.env.*.example
 frontend/.env.local
 .n8n_cookie.txt
+
+# Secret material — never commit
+*.pem
+*.key
+credentials/
+secrets/
+
+# Backups & logs — never commit
+backups/
+logs/
+
+# Runtime data (containers) — bind mounts if used; keep out of Git.
+# NÃO ignorar backend/data inteiro: backend/data/scam_dataset_v1.jsonl é versionado.
+runtime-data/
+data/postgres/
+data/redis/
+data/evolution/
+data/n8n/
 
 # Local scratch / debug scripts — never commit
 backend/debug_*.py

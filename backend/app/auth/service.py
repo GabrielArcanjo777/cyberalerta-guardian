@@ -7,6 +7,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+from threading import Lock
 from typing import Optional
 
 from fastapi import HTTPException, Request, status
@@ -131,22 +132,27 @@ def _user_agent(request: Request | None) -> str | None:
 class AuthRateLimiter:
     def __init__(self) -> None:
         self._failures: dict[str, list[float]] = {}
+        self._lock = Lock()
 
     def is_blocked(self, key: str, *, limit: int = 5, window_seconds: int = 300) -> bool:
         now = time.monotonic()
         cutoff = now - window_seconds
-        hits = [item for item in self._failures.get(key, []) if item >= cutoff]
-        self._failures[key] = hits
-        return len(hits) >= limit
+        with self._lock:
+            hits = [item for item in self._failures.get(key, []) if item >= cutoff]
+            self._failures[key] = hits
+            return len(hits) >= limit
 
     def record_failure(self, key: str) -> None:
-        self._failures.setdefault(key, []).append(time.monotonic())
+        with self._lock:
+            self._failures.setdefault(key, []).append(time.monotonic())
 
     def clear(self, key: str) -> None:
-        self._failures.pop(key, None)
+        with self._lock:
+            self._failures.pop(key, None)
 
     def reset(self) -> None:
-        self._failures.clear()
+        with self._lock:
+            self._failures.clear()
 
 
 auth_rate_limiter = AuthRateLimiter()

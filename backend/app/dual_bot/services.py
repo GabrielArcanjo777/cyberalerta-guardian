@@ -400,8 +400,13 @@ class ProtectedBotService(OutboundAuditMixin):
                 else None
             )
             if stored_message is not None and self.pattern_intelligence is not None:
+                # Pattern intelligence must analyze the original message text, not
+                # the redacted store view, so redaction does not weaken detection.
+                pattern_message = stored_message.model_copy(
+                    update={"body": ingress_result.inbound.body}
+                )
                 pattern_detection = self.pattern_intelligence.detect(
-                    message=stored_message,
+                    message=pattern_message,
                     protected_person_id=stored_message.protected_person_id,
                     protected_person_alias=resolved_protected_alias,
                     sender_address=ingress_result.inbound.from_address,

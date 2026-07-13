@@ -137,6 +137,8 @@ class Message(BaseModel):
     simulated: bool = True
     provider_message_id: Optional[str] = None
     status: MessageStatus = MessageStatus.RECEIVED
+    body_hash: Optional[str] = Field(default=None, max_length=64)
+    body_preview: Optional[str] = Field(default=None, max_length=200)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 

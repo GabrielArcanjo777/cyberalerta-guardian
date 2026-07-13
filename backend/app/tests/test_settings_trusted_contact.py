@@ -103,17 +103,18 @@ def test_toggle_dry_run_updates_runtime_and_persists(client: TestClient):
 
 def test_toggle_real_send_pins_allowlist_to_trusted_contact(client: TestClient):
     client.put(ENDPOINT, json={"trusted_contact": "+5511999990001"})
+    # In development (AUTH_REQUIRE_SENSITIVE_ROUTES=false), enabling real
+    # send via request is blocked. Real send must be enabled only through
+    # trusted .env configuration, not via the runtime API.
     response = client.put(ENDPOINT, json={"dry_run": False, "beta_real_send_enabled": True})
-    assert response.status_code == 200
+    assert response.status_code == 403
 
+    # The adapter must remain in its safe default after the blocked request.
     adapter_cfg = main.evolution_demo_service.adapter.config
-    assert adapter_cfg.real_send_enabled is True
-    # Invariante inviolável: a allowlist fica cravada no contato de confiança.
+    assert adapter_cfg.real_send_enabled is False
+
+    # Invariante: a allowlist continua cravada no contato de confiança.
     assert adapter_cfg.allowed_recipients == ("+5511999990001",)
-    # O gate libera SOMENTE o contato de confiança; qualquer outro número
-    # (por ex. o remetente) continua bloqueado.
-    assert adapter_cfg.real_send_blocked_reason("+5511999990001") is None
-    assert adapter_cfg.real_send_blocked_reason("+5511977776666") == "recipient_not_allowed"
 
 
 def test_toggle_rejects_non_boolean(client: TestClient):

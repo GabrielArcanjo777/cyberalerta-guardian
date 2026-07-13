@@ -133,7 +133,7 @@ def test_v5_case_context_is_history_for_responsible_bot():
     assert context.protected_person_alias == "Maria"
     assert context.guardian_alias == "Gabriel"
     assert context.risk_level == "high"
-    assert "Pix urgente" in context.message_summary
+    assert context.message_summary == "[REDACTED]"
     assert BotEventType.CASE_CREATED.value in [event.event_type for event in context.history]
 
 
