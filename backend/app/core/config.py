@@ -145,6 +145,11 @@ class AppConfig:
         self.google_auth_allowed_emails = _split_csv(os.getenv("GOOGLE_AUTH_ALLOWED_EMAILS", ""))
         self.google_auth_allowed_domains = _split_csv(os.getenv("GOOGLE_AUTH_ALLOWED_DOMAINS", ""))
         self.google_auto_create_users = _env_bool("GOOGLE_AUTO_CREATE_USERS", False)
+        # --- Push notifications (FCM) --------------------------------------
+        # Missing config => push sender stays None; test-push fails closed with
+        # a clear reason instead of pretending to deliver (Apendice A do plano).
+        self.fcm_project_id = os.getenv("FCM_PROJECT_ID", "").strip()
+        self.fcm_service_account_json = os.getenv("FCM_SERVICE_ACCOUNT_JSON", "")
 
     @property
     def is_development(self):

@@ -1,3 +1,4 @@
+from app.devices.device_auth import DEVICE_SESSION_HEADER, require_device_session
 from app.devices.models import (
     Device,
     DevicePlatform,
@@ -28,6 +29,7 @@ from app.devices.service import (
 
 __all__ = [
     "ActorOrganizationRequiredError",
+    "DEVICE_SESSION_HEADER",
     "Device",
     "DeviceNotFoundError",
     "DevicePlatform",
@@ -47,5 +49,6 @@ __all__ = [
     "create_device_repository",
     "create_devices_router",
     "get_device_repository",
+    "require_device_session",
     "reset_device_repository_for_tests",
 ]

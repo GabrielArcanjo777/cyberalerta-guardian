@@ -42,3 +42,11 @@ class DeviceItem(BaseModel):
 
 class DeviceListResponse(BaseModel):
     devices: list[DeviceItem]
+
+
+class RegisterPushTokenRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=4000)
+
+
+class StatusResponse(BaseModel):
+    status: str = "ok"

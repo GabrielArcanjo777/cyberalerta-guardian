@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import require_role
 from app.auth.models import AuthUser, UserRole
+from app.devices.device_auth import require_device_session
+from app.devices.models import Device, PushToken
+from app.devices.repository import DeviceRepository, get_device_repository
 from app.devices.schemas import (
     CreatePairingInvitationRequest,
     CreatePairingInvitationResponse,
@@ -11,6 +14,8 @@ from app.devices.schemas import (
     DeviceListResponse,
     PairDeviceRequest,
     PairDeviceResponse,
+    RegisterPushTokenRequest,
+    StatusResponse,
 )
 from app.devices.service import (
     ActorOrganizationRequiredError,
@@ -94,5 +99,14 @@ def create_devices_router() -> APIRouter:
         except DeviceNotFoundError as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return DeviceItem.model_validate(device.model_dump())
+
+    @router.post("/devices/me/push-token", response_model=StatusResponse)
+    def register_push_token(
+        payload: RegisterPushTokenRequest,
+        device: Device = Depends(require_device_session),
+        repository: DeviceRepository = Depends(get_device_repository),
+    ) -> StatusResponse:
+        repository.upsert_push_token(PushToken(device_id=device.id, token=payload.token))
+        return StatusResponse()
 
     return router
