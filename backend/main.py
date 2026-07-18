@@ -92,6 +92,7 @@ from app.hybrid.query import get_hybrid_decision_for_case
 from app.core.middleware import RequestContextHeadersMiddleware, SecurityHeadersMiddleware
 from app.core.security import check_rate_limit, require_api_key, validate_message_text
 from app.auth import create_auth_router, require_sensitive_access
+from app.devices import create_devices_router
 from app.integrations.n8n import N8nIntegrationService, create_n8n_router
 from app.integrations.evolution import create_evolution_router
 
@@ -167,6 +168,7 @@ _apply_runtime_safety(
 )
 
 app.include_router(create_auth_router())
+app.include_router(create_devices_router())
 app.include_router(create_n8n_router(n8n_integration_service))
 app.include_router(create_evolution_router(), prefix="/api/channels/evolution")
 
