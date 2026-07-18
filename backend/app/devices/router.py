@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.auth.dependencies import require_role
 from app.auth.models import AuthUser, UserRole
@@ -21,6 +21,7 @@ from app.devices.service import (
     ActorOrganizationRequiredError,
     DeviceNotFoundError,
     DeviceService,
+    PairingAttemptsExceededError,
     PairingInvitationExpiredError,
     PairingInvitationInvalidError,
     PairingInvitationTargetError,
@@ -61,6 +62,7 @@ def create_devices_router() -> APIRouter:
     @router.post("/devices/pair", response_model=PairDeviceResponse)
     def pair_device(
         payload: PairDeviceRequest,
+        request: Request,
         service: DeviceService = Depends(get_device_service),
     ) -> PairDeviceResponse:
         try:
@@ -68,11 +70,14 @@ def create_devices_router() -> APIRouter:
                 token=payload.token,
                 platform=payload.platform,
                 public_key=payload.public_key,
+                request=request,
             )
         except (PairingInvitationInvalidError, PairingInvitationExpiredError) as exc:
             # Same status for "unknown", "used" and "expired" — an attacker
             # probing tokens learns nothing beyond "this one doesn't work".
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        except PairingAttemptsExceededError as exc:
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
         return PairDeviceResponse(device_id=device.id, session_id=session.id, state=device.state)
 
     @router.get("/devices", response_model=DeviceListResponse)

@@ -19,7 +19,7 @@ from app.core.config import config
 from app.devices.device_auth import DEVICE_SESSION_HEADER
 from app.devices.models import Device, DevicePlatform, DeviceSession, DeviceState, PushToken, utc_now
 from app.devices.repository import get_device_repository, reset_device_repository_for_tests
-from app.devices.service import DeviceNotFoundError, DeviceService
+from app.devices.service import DeviceNotFoundError, DeviceService, pairing_rate_limiter
 from app.notifications.models import AlertState
 from app.notifications.repository import reset_notification_repository_for_tests
 from app.notifications.router import get_notification_service
@@ -46,6 +46,7 @@ def _reset_state():
     reset_device_repository_for_tests()
     reset_notification_repository_for_tests()
     auth_rate_limiter.reset()
+    pairing_rate_limiter.reset()
     config.auth_require_sensitive_routes = False
     yield
     app.dependency_overrides.pop(get_notification_service, None)
@@ -53,6 +54,7 @@ def _reset_state():
     reset_device_repository_for_tests()
     reset_notification_repository_for_tests()
     auth_rate_limiter.reset()
+    pairing_rate_limiter.reset()
     config.auth_require_sensitive_routes = original_sensitive
 
 

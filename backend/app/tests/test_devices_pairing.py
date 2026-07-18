@@ -20,8 +20,11 @@ from app.core.config import config
 from app.devices.models import DeviceState, PairingInvitation, utc_now
 from app.devices.repository import get_device_repository, reset_device_repository_for_tests
 from app.devices.service import (
+    PAIRING_CODE_LENGTH,
+    PAIRING_MAX_ATTEMPTS,
     DeviceService,
     PairingInvitationExpiredError,
+    pairing_rate_limiter,
 )
 from main import app
 
@@ -34,11 +37,13 @@ def _reset_state():
     reset_auth_repository_for_tests()
     reset_device_repository_for_tests()
     auth_rate_limiter.reset()
+    pairing_rate_limiter.reset()
     config.auth_require_sensitive_routes = False
     yield
     reset_auth_repository_for_tests()
     reset_device_repository_for_tests()
     auth_rate_limiter.reset()
+    pairing_rate_limiter.reset()
     config.auth_require_sensitive_routes = original_sensitive
 
 
@@ -168,6 +173,42 @@ def test_pair_device_rejects_unknown_token():
         json={"token": "not-a-real-token", "platform": "android", "public_key": "pubkey-abc"},
     )
     assert response.status_code == 404
+
+
+def test_pairing_invitation_token_is_a_short_numeric_code():
+    operator, contact = _create_operator_and_contact("org-a")
+    client = _login(TestClient(app), operator.email)
+
+    response = client.post(
+        "/devices/pairing-invitations", json={"trusted_contact_user_id": contact.id}
+    )
+
+    token = response.json()["token"]
+    assert token.isdigit()
+    assert len(token) == PAIRING_CODE_LENGTH
+
+
+def test_pair_device_locks_out_client_after_too_many_failed_attempts():
+    operator, contact = _create_operator_and_contact("org-a")
+    client = _login(TestClient(app), operator.email)
+    invitation = client.post(
+        "/devices/pairing-invitations", json={"trusted_contact_user_id": contact.id}
+    ).json()
+
+    guesser = TestClient(app)
+    for _ in range(PAIRING_MAX_ATTEMPTS):
+        bad = guesser.post(
+            "/devices/pair",
+            json={"token": "00000000", "platform": "android", "public_key": "pubkey-abc"},
+        )
+        assert bad.status_code == 404
+
+    # Even the real code is now rejected — the client is locked out, not the code.
+    locked_out = guesser.post(
+        "/devices/pair",
+        json={"token": invitation["token"], "platform": "android", "public_key": "pubkey-abc"},
+    )
+    assert locked_out.status_code == 429
 
 
 def test_pairing_service_rejects_expired_token_and_marks_invitation_expired():

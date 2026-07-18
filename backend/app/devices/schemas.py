@@ -10,7 +10,7 @@ from app.devices.models import DevicePlatform, DeviceState
 
 class CreatePairingInvitationRequest(BaseModel):
     trusted_contact_user_id: str = Field(min_length=1)
-    ttl_minutes: int = Field(default=15, ge=1, le=120)
+    ttl_minutes: int = Field(default=10, ge=1, le=120)
 
 
 class CreatePairingInvitationResponse(BaseModel):

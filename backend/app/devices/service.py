@@ -8,11 +8,16 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+import time
 from datetime import timedelta
+from threading import Lock
 from typing import Optional
+
+from fastapi import Request
 
 from app.auth.models import AuthUser, UserRole
 from app.auth.repository import AuthRepository, get_auth_repository
+from app.core.config import config
 from app.core.logging import get_logger, structured_log
 from app.devices.models import (
     Device,
@@ -27,16 +32,72 @@ from app.devices.repository import DeviceRepository, get_device_repository
 
 logger = get_logger("devices")
 
-DEFAULT_INVITATION_TTL_MINUTES = 15
+# Short enough to type/copy on a phone by hand (Sprint 5 will add a QR
+# scanner and make this moot). Brute force is bounded by
+# PairingRateLimiter below, not by the code's own entropy.
+DEFAULT_INVITATION_TTL_MINUTES = 10
+PAIRING_CODE_LENGTH = 8
+PAIRING_MAX_ATTEMPTS = 5
+PAIRING_LOCKOUT_WINDOW_SECONDS = 300
 DEVICE_SESSION_TTL_DAYS = 30
 
 
 def _hash_token(token: str) -> str:
-    # The token itself is 256 bits of random entropy (secrets.token_urlsafe),
-    # so an unkeyed digest is fine — brute force isn't feasible either way.
-    # Mirrors body_hash's use of a plain SHA-256 digest for correlation
-    # without persisting the original secret.
+    # Unlike a 256-bit urlsafe token, an 8-digit code has too little entropy
+    # for an unkeyed digest to rely on secrecy alone — PairingRateLimiter is
+    # what actually makes guessing infeasible. The hash here only avoids
+    # persisting the raw code at rest, mirroring body_hash elsewhere.
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _generate_pairing_code() -> str:
+    return f"{secrets.randbelow(10 ** PAIRING_CODE_LENGTH):0{PAIRING_CODE_LENGTH}d}"
+
+
+def _client_ip(request: Optional[Request]) -> Optional[str]:
+    if request is None:
+        return None
+    direct = request.client.host if request.client and request.client.host else None
+    forwarded = request.headers.get("X-Forwarded-For")
+    # Trust X-Forwarded-For only from a configured trusted proxy, same rule
+    # as auth's login rate limiter, so the lockout key cannot be spoofed.
+    if forwarded and direct and direct in config.trusted_webhook_ips:
+        return forwarded.split(",", 1)[0].strip()
+    return direct
+
+
+class PairingRateLimiter:
+    """Failure-lockout limiter for /devices/pair, keyed by client IP —
+    mirrors AuthRateLimiter in app/auth/service.py. Needed because the short
+    numeric pairing code (PAIRING_CODE_LENGTH) is only safe against
+    brute-force guessing when attempts are throttled like this."""
+
+    def __init__(self) -> None:
+        self._failures: dict[str, list[float]] = {}
+        self._lock = Lock()
+
+    def is_blocked(self, key: str) -> bool:
+        now = time.monotonic()
+        cutoff = now - PAIRING_LOCKOUT_WINDOW_SECONDS
+        with self._lock:
+            hits = [item for item in self._failures.get(key, []) if item >= cutoff]
+            self._failures[key] = hits
+            return len(hits) >= PAIRING_MAX_ATTEMPTS
+
+    def record_failure(self, key: str) -> None:
+        with self._lock:
+            self._failures.setdefault(key, []).append(time.monotonic())
+
+    def clear(self, key: str) -> None:
+        with self._lock:
+            self._failures.pop(key, None)
+
+    def reset(self) -> None:
+        with self._lock:
+            self._failures.clear()
+
+
+pairing_rate_limiter = PairingRateLimiter()
 
 
 class PairingInvitationTargetError(Exception):
@@ -50,6 +111,10 @@ class PairingInvitationInvalidError(Exception):
 
 class PairingInvitationExpiredError(Exception):
     pass
+
+
+class PairingAttemptsExceededError(Exception):
+    """Too many failed /devices/pair guesses from this client recently."""
 
 
 class DeviceNotFoundError(Exception):
@@ -95,7 +160,7 @@ class DeviceService:
             # do not let a 422 vs 404 split leak cross-org existence.
             raise PairingInvitationTargetError("Trusted contact not found.")
 
-        raw_token = secrets.token_urlsafe(32)
+        raw_token = _generate_pairing_code()
         invitation = self.repository.create_invitation(
             PairingInvitation(
                 organization_id=organization_id,
@@ -108,17 +173,29 @@ class DeviceService:
         return invitation, raw_token
 
     def pair_device(
-        self, *, token: str, platform: DevicePlatform, public_key: str
+        self,
+        *,
+        token: str,
+        platform: DevicePlatform,
+        public_key: str,
+        request: Optional[Request] = None,
     ) -> tuple[Device, DeviceSession]:
+        rate_limit_key = _client_ip(request) or "unknown"
+        if pairing_rate_limiter.is_blocked(rate_limit_key):
+            raise PairingAttemptsExceededError("Too many pairing attempts. Try again later.")
+
         invitation = self.repository.get_invitation_by_token_hash(_hash_token(token))
         if invitation is None or invitation.status != PairingInvitationStatus.PENDING:
+            pairing_rate_limiter.record_failure(rate_limit_key)
             raise PairingInvitationInvalidError("Invalid or already-used pairing token.")
         if invitation.expires_at < utc_now():
             self.repository.update_invitation(
                 invitation.model_copy(update={"status": PairingInvitationStatus.EXPIRED})
             )
+            pairing_rate_limiter.record_failure(rate_limit_key)
             raise PairingInvitationExpiredError("Pairing token expired.")
 
+        pairing_rate_limiter.clear(rate_limit_key)
         device = self.repository.create_device(
             Device(
                 organization_id=invitation.organization_id,
