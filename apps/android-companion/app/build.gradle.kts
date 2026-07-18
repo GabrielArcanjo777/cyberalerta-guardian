@@ -36,10 +36,11 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            // 10.0.2.2 e o alias do emulador Android para o localhost da
-            // maquina host — aponta para o backend rodando via
-            // `uvicorn main:app --port 8000` fora do emulador.
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
+            // IP da maquina na rede local (nao 10.0.2.2, que so funciona no
+            // emulador) — pra testar num Android fisico na mesma Wi-Fi/rede
+            // do backend rodando via `uvicorn main:app --port 8000`. Troque
+            // se o IP da sua maquina mudar (ipconfig / ifconfig).
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.11:8000/\"")
         }
         create("staging") {
             dimension = "environment"
