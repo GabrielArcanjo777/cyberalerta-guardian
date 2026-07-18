@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Manifest/splash-level theme only — actual UI theming happens in
-         Compose (ui/theme/Theme.kt). NoActionBar because every screen is
-         Compose-driven. -->
-    <style name="Theme.CyberAlertaCompanion" parent="Theme.Material3.DayNight.NoActionBar" />
+         Compose (ui/theme/Theme.kt). Parented off a plain platform theme
+         (not Theme.Material3.*, which requires the View-system
+         com.google.android.material:material AAR we deliberately don't
+         depend on in a Compose-only app) — caught by the first real
+         Gradle/aapt2 build, not visible from reading the XML alone. -->
+    <style name="Theme.CyberAlertaCompanion" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
