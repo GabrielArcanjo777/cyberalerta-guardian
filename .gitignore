@@ -66,3 +66,13 @@ coverage/
 # Pre-codex backup snapshots (local only)
 pre_codex_*.patch
 pre_codex_*.txt
+
+# Android Companion (apps/android-companion) — local/generated, never commit
+apps/android-companion/**/build/
+apps/android-companion/.gradle/
+apps/android-companion/local.properties
+apps/android-companion/**/google-services.json
+*.jks
+*.keystore
+*.apk
+*.aab

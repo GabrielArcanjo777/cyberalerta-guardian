@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CyberAlerta Companion</string>
+    <string name="notification_channel_id">cyberalerta_alerts</string>
+    <string name="notification_channel_name">Alertas CyberAlerta</string>
+    <string name="notification_channel_description">Avisos de risco da pessoa protegida</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Placeholder brand color (indigo, matching the web/frontend hero) —
+         swap for the real design-system token when one exists for mobile. -->
+    <color name="brand_primary">#6D5CF6</color>
+    <color name="brand_on_primary">#FFFFFF</color>
+    <color name="launcher_background">#0F172A</color>
+</resources>

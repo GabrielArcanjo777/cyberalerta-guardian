@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Manifest/splash-level theme only — actual UI theming happens in
+         Compose (ui/theme/Theme.kt). NoActionBar because every screen is
+         Compose-driven. -->
+    <style name="Theme.CyberAlertaCompanion" parent="Theme.Material3.DayNight.NoActionBar" />
+</resources>
