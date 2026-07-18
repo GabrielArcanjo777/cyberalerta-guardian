@@ -14,9 +14,12 @@ dirigi a sessão real via Chrome DevTools Protocol (WebSocket bruto, sem
 Playwright — não existe driver Tauri/WebView2 pronto): naveguei pra
 `/login.html`, preenchi o formulário de verdade (`admin@cyberalerta.local`),
 disparei o submit real e confirmei a navegação pra `/mfa` — ou seja, login
-end-to-end contra o backend real, não um mock. **Ainda assim, ninguém
-confirmou visualmente a janela num monitor de verdade — isso fica pendente
-pra você na primeira vez que rodar localmente.**
+end-to-end contra o backend real, não um mock. **Depois disso o Gabriel
+testou numa máquina com sessão de desktop de verdade**: janela abre
+corretamente na tela de login, autentica e mostra o Console. Achou dois
+problemas reais nessa rodada, já corrigidos/documentados abaixo (Secao 6):
+a sessão persiste entre reinícios (bom, mas não estava documentado direito)
+e falta um botão de logout dentro do `/family-console`.
 
 ## 1. Decisão de arquitetura: build estático embutido, não URL remota
 
@@ -138,14 +141,23 @@ precisa rodar isso manualmente antes.
 
 ## 6. Lacunas conhecidas (decisões de escopo desta passada, não esquecimento)
 
-- **Sessão não persiste entre reinícios do app.** O cookie jar do
-  `tauri-plugin-http` é em memória (nada na documentação oficial menciona
-  persistência em disco) — fechar e abrir o app de novo exige logar de
-  novo. Isso não bloqueia o critério de aceite da Sprint 4 (que não fala de
-  persistência), mas diverge de "token salvo no cofre seguro do sistema"
-  (Secao 3.4) — ficaria pra uma passada de hardening, talvez com Stronghold
-  ou serializando os cookies via `tauri-plugin-store` no diretório de dados
-  do app.
+- **Sessão PERSISTE entre reinícios do app** — correção de uma nota errada
+  de uma versão anterior deste arquivo. `tauri-plugin-http` grava o cookie
+  jar num arquivo `.cookies` em
+  `%LOCALAPPDATA%\com.cyberalerta.guardian.desktop\` (achado testando com o
+  Gabriel: reabrir o app foi direto pro Console sem pedir login de novo,
+  porque a sessão de um teste anterior via CDP ainda era válida). Isso é
+  bom (mais perto de "token salvo no cofre seguro do sistema", Secao 3.4)
+  mas o arquivo não é criptografado — só um arquivo local comum, mesmo
+  nível de proteção que um cookie de navegador comum. Criptografar isso
+  (Stronghold, ou DPAPI via `keyring`) fica pra uma passada de hardening.
+  Pra forçar login de novo manualmente: apagar esse arquivo `.cookies`.
+- **`/family-console` (a tela que `consoleHref` chama de "Console") não tem
+  botão de logout na própria página** — só `/admin` tem ("Sair",
+  `app/admin/page.tsx`). Hoje a única forma de sair do Console é pelo menu
+  da bandeja ("Desconectar"). Achado testando com o Gabriel; vale adicionar
+  um botão de logout em `GuardianAdminConsole.tsx` numa próxima passada —
+  não fiz a mudança agora pra não misturar com o escopo desta sessão.
 - **Requests de prefetch RSC do Next 16 retornam 500** contra o servidor de
   assets estático simples do Tauri (`__next.<rota>.__PAGE__.txt?_rsc=...`)
   — parece um descompasso entre o nome de arquivo que o export estático
@@ -161,7 +173,9 @@ precisa rodar isso manualmente antes.
   atualização — "Updater assinado, canal stable e rollback documentado"
   (Secao 3.4) fica pra quando tiver um canal de distribuição real pra
   atualizar contra.
-- **Tray/deep link não testados clicando de verdade** (só via CDP —
-  `Runtime.evaluate`/`Page.navigate`, que não simula o menu nativo do
-  tray). A lógica em `src/lib.rs` compila e os handlers foram revisados,
-  mas ninguém apertou "Desconectar" no menu de bandeja de verdade ainda.
+- **Janela e login confirmados numa sessão real** (Gabriel testou
+  localmente: abre no login, autentica, mostra o Console). **Tray e deep
+  link ainda não** — o ícone pode estar escondido no chevron de ícones
+  ocultos do Windows 11 (não confirmado se aparece/funciona de verdade).
+  Falta clicar no menu da bandeja e testar `cyberalerta://pair?token=...`
+  de fato numa próxima rodada.
