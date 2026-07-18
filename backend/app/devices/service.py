@@ -1,8 +1,7 @@
-"""Pairing flow (Plano Mestre v1.1, Secao 6.2, Secao 8.4 / Sprint 2 Unidade 3).
-
-Only the pairing handshake lives here: invitation creation, single-use
-redemption and org-scoped device lookup. Push-token registration, the test
-push and the ACK/ACTIVE transition are Unidade 4; revocation is Unidade 5.
+"""Pairing + revocation (Plano Mestre v1.1, Secao 6.2, Secao 8.4 / Sprint 2
+Unidades 3 e 5): invitation creation, single-use redemption, org-scoped
+device lookup, and revoking a device's access. Push-token registration, the
+test push and the ACK/ACTIVE transition are Unidade 4.
 """
 
 from __future__ import annotations
@@ -14,6 +13,7 @@ from typing import Optional
 
 from app.auth.models import AuthUser, UserRole
 from app.auth.repository import AuthRepository, get_auth_repository
+from app.core.logging import get_logger, structured_log
 from app.devices.models import (
     Device,
     DevicePlatform,
@@ -24,6 +24,8 @@ from app.devices.models import (
     utc_now,
 )
 from app.devices.repository import DeviceRepository, get_device_repository
+
+logger = get_logger("devices")
 
 DEFAULT_INVITATION_TTL_MINUTES = 15
 DEVICE_SESSION_TTL_DAYS = 30
@@ -149,4 +151,33 @@ class DeviceService:
         device = self.repository.get_device(device_id)
         if device is None or device.organization_id != organization_id:
             raise DeviceNotFoundError("Device not found.")
+        return device
+
+    def revoke_device(self, *, actor: AuthUser, device_id: str) -> Device:
+        """Revocation must work even if the device never comes back online
+        (Secao 6.2): flip the device state, revoke every session by id (not
+        just rely on the device-state check in require_device_session — this
+        is the same defense-in-depth as the safety gates), and drop the push
+        token so a stale send can't reach it. Idempotent: revoking an
+        already-revoked device is a no-op, not an error."""
+        device = self.get_device(actor=actor, device_id=device_id)
+
+        if device.state != DeviceState.REVOKED:
+            device = self.repository.update_device(
+                device.model_copy(update={"state": DeviceState.REVOKED, "revoked_at": utc_now()})
+            )
+
+        for session in self.repository.list_sessions_by_device(device.id):
+            if session.revoked_at is None:
+                self.repository.update_session(session.model_copy(update={"revoked_at": utc_now()}))
+
+        self.repository.delete_push_token_by_device(device.id)
+
+        structured_log(
+            logger,
+            "device_revoked",
+            device_id=device.id,
+            organization_id=device.organization_id,
+            actor_id=actor.id,
+        )
         return device

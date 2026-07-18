@@ -80,6 +80,12 @@ class NotificationService:
             )
         )
 
+        if device.state == DeviceState.REVOKED:
+            # Revocation already drops the push token, so this would fail
+            # closed as "push_token_missing" anyway — naming it explicitly
+            # makes the operator-facing reason honest about what happened.
+            return self._fail(alert, "device_revoked")
+
         push_token = self.device_repository.get_push_token_by_device(device.id)
         if push_token is None:
             return self._fail(alert, "push_token_missing")

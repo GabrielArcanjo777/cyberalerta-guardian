@@ -100,6 +100,20 @@ def create_devices_router() -> APIRouter:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return DeviceItem.model_validate(device.model_dump())
 
+    @router.post("/devices/{device_id}/revoke", response_model=DeviceItem)
+    def revoke_device(
+        device_id: str,
+        actor: AuthUser = Depends(_require_operator),
+        service: DeviceService = Depends(get_device_service),
+    ) -> DeviceItem:
+        try:
+            device = service.revoke_device(actor=actor, device_id=device_id)
+        except ActorOrganizationRequiredError as exc:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
+        except DeviceNotFoundError as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        return DeviceItem.model_validate(device.model_dump())
+
     @router.post("/devices/me/push-token", response_model=StatusResponse)
     def register_push_token(
         payload: RegisterPushTokenRequest,
