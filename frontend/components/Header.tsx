@@ -6,6 +6,7 @@ import {usePathname} from 'next/navigation'
 import {Menu, X} from 'lucide-react'
 import {Locale, useGuardianLocale} from '@/lib/i18n'
 import {getAuthMe} from '@/lib/api'
+import {isTauriRuntime} from '@/lib/runtime'
 import {AuthUser} from '@/lib/types'
 
 const headerCopy = {
@@ -20,6 +21,7 @@ const headerCopy = {
     navLabel:'Navegação principal',
     console:'Acessar Console',
     admin:'Admin',
+    download:'Baixar para Windows',
   },
   'en-US': {
     nav: [
@@ -32,13 +34,22 @@ const headerCopy = {
     navLabel:'Primary navigation',
     console:'Access Console',
     admin:'Admin',
+    download:'Download for Windows',
   },
 } satisfies Record<Locale, {
   nav:Array<{href:string; label:string}>
   navLabel:string
   console:string
   admin:string
+  download:string
 }>
+
+// Ainda nao existe instalador assinado publicado (Sprint 4 — certificado de
+// assinatura de codigo e um item de lead-time longo do Plano Mestre, Secao
+// 10.1/8.10, adquirido separadamente). Aponta pra Releases do repo publico
+// em vez de inventar uma URL de download que nao existe — funciona de
+// verdade assim que a primeira release for publicada la.
+const WINDOWS_DOWNLOAD_URL = 'https://github.com/GabrielArcanjo777/cyberalerta-guardian/releases'
 
 function ShieldMark(){
   return (
@@ -71,8 +82,16 @@ export default function Header(){
   const [locale]=useGuardianLocale()
   const [menuOpen,setMenuOpen]=useState(false)
   const [user,setUser] = useState<AuthUser | null>(null)
+  const [isTauri,setIsTauri] = useState(false)
   const pathname = usePathname()
   const copy = headerCopy[locale]
+
+  // So resolvido no cliente (evita mismatch de hidratacao no build Web SSR)
+  // — dentro do shell Windows o app e so o Console, sem a navegacao de
+  // marketing da landing page (Plano Mestre v1.1, Secao 3.4).
+  useEffect(()=>{
+    setIsTauri(isTauriRuntime())
+  },[])
 
   // Auth-aware: check session on mount so we can show/hide the Admin link.
   useEffect(()=>{
@@ -90,12 +109,16 @@ export default function Header(){
   const isAdmin = user?.role === 'admin' && user?.is_admin
   // When authenticated go straight to the console; otherwise redirect via login.
   const consoleHref = user ? '/family-console' : '/login?redirect=/family-console'
+  // No shell Windows nao existe "/" (paginas de marketing nao vao no
+  // instalador) — a marca leva pro Console, ou pro login se ainda nao
+  // autenticado.
+  const brandHref = isTauri ? (user ? consoleHref : '/login') : '/'
 
   return (
     <header className="guardian-header">
       <div className="guardian-header-inner">
         <div className="guardian-brand-row">
-          <Link href="/" className="guardian-brand">
+          <Link href={brandHref} className="guardian-brand">
             <ShieldMark />
             <span className="guardian-brand-name">CyberAlerta</span>
             <span className="guardian-brand-badge">Guardian</span>
@@ -117,7 +140,7 @@ export default function Header(){
           className={`guardian-header-nav ${menuOpen ? 'is-open' : ''}`}
           aria-label={copy.navLabel}
         >
-          {copy.nav.map((item)=> (
+          {!isTauri && copy.nav.map((item)=> (
             <Link key={item.href} href={item.href} className="guardian-nav-link" onClick={()=>setMenuOpen(false)}>
               {item.label}
             </Link>
@@ -126,6 +149,17 @@ export default function Header(){
             <Link href="/admin" className="guardian-nav-link guardian-nav-mobile-only" onClick={()=>setMenuOpen(false)}>
               {copy.admin}
             </Link>
+          )}
+          {!isTauri && (
+            <a
+              href={WINDOWS_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="guardian-nav-link guardian-nav-mobile-only"
+              onClick={()=>setMenuOpen(false)}
+            >
+              {copy.download}
+            </a>
           )}
           <Link href={consoleHref} className="guardian-mobile-console" onClick={()=>setMenuOpen(false)}>
             {copy.console}
@@ -137,6 +171,11 @@ export default function Header(){
             <Link href="/admin" className="guardian-ghost-link">
               {copy.admin}
             </Link>
+          )}
+          {!isTauri && (
+            <a href={WINDOWS_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" className="guardian-ghost-link">
+              {copy.download}
+            </a>
           )}
           <Link href={consoleHref} className="guardian-console-link">
             {copy.console}

@@ -14,6 +14,7 @@ import {
   postGuardianConsoleRealFeedback,
   type HybridDecisionView,
 } from '@/lib/api'
+import {isTauriRuntime} from '@/lib/runtime'
 import type {
   GuardianConsoleAuditLogView,
   GuardianConsoleRealCaseDetail,
@@ -130,6 +131,11 @@ const GHOST_BTN = 'inline-flex h-9 items-center rounded-lg border border-white/1
 const PRIMARY_BTN = 'inline-flex h-9 items-center rounded-lg bg-teal-400 px-4 text-sm font-semibold text-slate-950 transition hover:brightness-110 disabled:opacity-50'
 
 export default function GuardianAdminConsole({operatorName}:{operatorName?:string}){
+  // No shell Windows so login/mfa/admin/family-console/whatsapp-setup vao
+  // no instalador (Plano Mestre v1.1, Secao 3.4) — links pra paginas de
+  // marketing/demo como /trust-center e /chatbot-demo nao existem la.
+  const [isTauri,setIsTauri]=useState(false)
+  useEffect(()=>{ setIsTauri(isTauriRuntime()) },[])
   const [consoleStatus,setConsoleStatus]=useState<GuardianConsoleRealStatusResponse | null>(null)
   const [cases,setCases]=useState<GuardianConsoleRealCaseSummary[]>([])
   const [selectedId,setSelectedId]=useState<string | null>(null)
@@ -316,8 +322,10 @@ export default function GuardianAdminConsole({operatorName}:{operatorName?:strin
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            Casos compartilhados voluntariamente — decisões críticas exigem confirmação humana.{' '}
-            <a href="/trust-center" className="text-teal-300/80 transition hover:text-teal-200">Saiba mais</a>
+            Casos compartilhados voluntariamente — decisões críticas exigem confirmação humana.
+            {!isTauri && (
+              <>{' '}<a href="/trust-center" className="text-teal-300/80 transition hover:text-teal-200">Saiba mais</a></>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -484,9 +492,11 @@ export default function GuardianAdminConsole({operatorName}:{operatorName?:strin
                       <span><span className="text-slate-500">Armazenamento:</span> SQLite (persistente)</span>
                       <span><span className="text-slate-500">Canal:</span> {channel} · não-oficial</span>
                     </div>
-                    <a href="/chatbot-demo" className="mt-2 inline-block text-xs text-teal-300/80 transition hover:text-teal-200">
-                      Ver canal da pessoa protegida →
-                    </a>
+                    {!isTauri && (
+                      <a href="/chatbot-demo" className="mt-2 inline-block text-xs text-teal-300/80 transition hover:text-teal-200">
+                        Ver canal da pessoa protegida →
+                      </a>
+                    )}
                   </section>
 
                   {/* Linha do tempo */}
