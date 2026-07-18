@@ -1,36 +1,36 @@
 # Android Companion — notas de build (Sprint 3, MVP)
 
-Este projeto foi escrito **sem acesso a JDK, Gradle ou Android SDK** — a
-máquina onde ele foi gerado não tem toolchain Android instalada. Nada aqui
-foi compilado nem rodado. O código segue APIs estáveis e bem documentadas
-(AndroidX Security, Keystore, Retrofit + kotlinx.serialization, Firebase
-Messaging, Compose/Material3), mas o primeiro `Sync` no Android Studio deve
-ser tratado como o verdadeiro primeiro compile — é esperado precisar de
-pequenos ajustes (versões de dependência que o Android Studio sugerir
-atualizar, algum import quebrado que passou despercebido).
+**Atualização pós-validação:** o projeto foi originalmente escrito sem
+nenhuma toolchain Android disponível. Depois disso, instalei JDK 17 +
+Android SDK cmdline-tools + Gradle 8.10.2 (só pra essa validação, não fazem
+parte do projeto) e rodei o build de verdade nesta mesma máquina.
+`compileDevDebugKotlin`, `testDevDebugUnitTest` (17/17 testes verdes) e
+`assembleDevDebug` (gera `app-dev-debug.apk`, ~12,4MB) passam limpos. Dois
+bugs reais só apareceram nessa hora (documentados no commit
+`fix(android): corrige build real`, não visíveis lendo o código):
+um import de pacote errado (`ApiClient.kt`, biblioteca kotlinx.serialization
+do Retrofit) e um tema XML que dependia de uma lib que o projeto não usa
+(`themes.xml`). Os testes usaram um `google-services.json` placeholder local
+(gitignored) só pra satisfazer o plugin do Google Services — isso não
+substitui testar contra Firebase de verdade (seção 3).
 
 ## 1. Pré-requisitos
 
-- Android Studio (Ladybug ou mais recente) com JDK 17 embutido.
+- Android Studio (Ladybug ou mais recente) com JDK 17 embutido — ou a
+  mesma combinação JDK 17 + SDK cmdline-tools + Gradle 8.10.2 usada nesta
+  validação, se preferir linha de comando.
 - Android SDK Platform 35 + Build-Tools correspondentes (o próprio Android
   Studio resolve isso no primeiro Sync).
 - Um projeto Firebase (gratuito) para o FCM — mesmo projeto cujas
   credenciais entram no backend (`FCM_PROJECT_ID`/`FCM_SERVICE_ACCOUNT_JSON`,
   ver `.env.example` na raiz do repo).
 
-## 2. Gradle wrapper — passo manual obrigatório
+## 2. Gradle wrapper
 
-**Não commitei `gradlew`, `gradlew.bat` nem `gradle/wrapper/gradle-wrapper.jar`.**
-Escrever esses arquivos sem poder rodá-los depois arriscava entregar um
-wrapper corrompido/desatualizado, o que é pior do que não ter nenhum. Ao
-abrir `apps/android-companion` no Android Studio, ele detecta a ausência do
-wrapper e oferece para gerar um automaticamente — aceite. Alternativa via
-linha de comando, se tiver um Gradle instalado localmente:
-
-```bash
-cd apps/android-companion
-gradle wrapper --gradle-version 8.7
-```
+`gradlew`, `gradlew.bat` e `gradle/wrapper/gradle-wrapper.jar` **estão
+commitados** (Gradle 8.10.2) — gerados e exercitados de verdade nesta
+validação, não escritos às cegas. Não precisa rodar `gradle wrapper`
+manualmente.
 
 ## 3. Firebase / google-services.json
 
