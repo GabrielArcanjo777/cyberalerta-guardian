@@ -44,6 +44,7 @@ import {
   AnalyzeResponse,
   EvolutionConnectionState,
 } from './types'
+import { apiFetch } from './platformFetch'
 import { createMockOCRPreview, createMockURLCheck, mockConnectorStatuses } from './connectorMockData'
 import {
   createMockIntakeAnalyze,
@@ -63,7 +64,7 @@ async function authFetch(path:string, init:RequestInit = {}){
   if(init.body && !headers.has('Content-Type')){
     headers.set('Content-Type', 'application/json')
   }
-  const res = await fetch(`${API}${path}`, {
+  const res = await apiFetch(`${API}${path}`, {
     ...init,
     headers,
     credentials: 'include',
@@ -96,7 +97,7 @@ export async function postRegister(payload:RegisterPayload){
 }
 
 export async function getGoogleAuthStatus(){
-  const res = await fetch(`${API}/auth/google/status`, {credentials: 'include'})
+  const res = await apiFetch(`${API}/auth/google/status`, {credentials: 'include'})
   if(!res.ok) throw new Error('google-auth-status-error')
   return await res.json() as GoogleAuthStatusResponse
 }
@@ -156,20 +157,20 @@ export async function getAdminAuditLogs(){
 }
 
 export async function getBackendHealth(){
-  const res = await fetch(`${API}/health`, {credentials: 'include'})
+  const res = await apiFetch(`${API}/health`, {credentials: 'include'})
   if(!res.ok) throw new Error('backend-health-error')
   return await res.json() as {status:string; service:string}
 }
 
 export async function getN8nHealth(){
-  const res = await fetch(`${API}/integrations/n8n/health`, {credentials: 'include'})
+  const res = await apiFetch(`${API}/integrations/n8n/health`, {credentials: 'include'})
   if(!res.ok) throw new Error('n8n-health-error')
   return await res.json() as Record<string, unknown>
 }
 
 export async function analyzeMessage(payload: AnalyzePayload): Promise<AnalyzeResponse>{
   try{
-    const res = await fetch(`${API}/analyze`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+    const res = await apiFetch(`${API}/analyze`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
@@ -180,7 +181,7 @@ export async function analyzeMessage(payload: AnalyzePayload): Promise<AnalyzeRe
 
 export async function postRecovery(payload: RecoveryPayload){
   try{
-    const res = await fetch(`${API}/recovery`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+    const res = await apiFetch(`${API}/recovery`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
@@ -191,7 +192,7 @@ export async function postRecovery(payload: RecoveryPayload){
 
 export async function analyzeTextML(texto:string){
   try{
-    const res = await fetch(`${API}/analisar`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({texto})})
+    const res = await apiFetch(`${API}/analisar`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({texto})})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
@@ -202,7 +203,7 @@ export async function analyzeTextML(texto:string){
 
 export async function analyzeURLML(url:string){
   try{
-    const res = await fetch(`${API}/analisar-url`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url})})
+    const res = await apiFetch(`${API}/analisar-url`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url})})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
@@ -213,7 +214,7 @@ export async function analyzeURLML(url:string){
 
 export async function postRedactPreview(payload: RedactPreviewPayload){
   try{
-    const res = await fetch(`${API}/intake/redact-preview`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+    const res = await apiFetch(`${API}/intake/redact-preview`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
@@ -224,7 +225,7 @@ export async function postRedactPreview(payload: RedactPreviewPayload){
 
 export async function postIntakeAnalyze(payload: IntakePayload){
   try{
-    const res = await fetch(`${API}/intake/analyze`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+    const res = await apiFetch(`${API}/intake/analyze`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
@@ -235,7 +236,7 @@ export async function postIntakeAnalyze(payload: IntakePayload){
 
 export async function getConnectorsStatus(){
   try{
-    const res = await fetch(`${API}/connectors/status`)
+    const res = await apiFetch(`${API}/connectors/status`)
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
@@ -246,7 +247,7 @@ export async function getConnectorsStatus(){
 
 export async function postURLCheck(url:string){
   try{
-    const res = await fetch(`${API}/connectors/url-check`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url})})
+    const res = await apiFetch(`${API}/connectors/url-check`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url})})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}
@@ -329,7 +330,7 @@ const mockSimpleChannelStatus: SimpleChannelStatusResponse = {
 
 export async function getSimpleChannelStatus(){
   try{
-    const res = await fetch(`${API}/simple-channel/status`)
+    const res = await apiFetch(`${API}/simple-channel/status`)
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as SimpleChannelStatusResponse
@@ -340,7 +341,7 @@ export async function getSimpleChannelStatus(){
 
 export async function postSimpleChannelSubmit(payload: SimpleChannelSubmitPayload){
   try{
-    const res = await fetch(`${API}/simple-channel/submit`, {
+    const res = await apiFetch(`${API}/simple-channel/submit`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
@@ -407,7 +408,7 @@ const mockGuardianCases: AdminCase[] = [
 
 export async function getGuardianConsoleStatus(){
   try{
-    const res = await fetch(`${API}/guardian-console/status`)
+    const res = await apiFetch(`${API}/guardian-console/status`)
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as GuardianConsoleStatusResponse
@@ -427,7 +428,7 @@ export async function getGuardianConsoleStatus(){
 
 export async function getGuardianConsoleCases(){
   try{
-    const res = await fetch(`${API}/guardian-console/cases`)
+    const res = await apiFetch(`${API}/guardian-console/cases`)
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as AdminCaseListResponse
@@ -438,7 +439,7 @@ export async function getGuardianConsoleCases(){
 
 export async function getGuardianConsoleCase(caseId:string){
   try{
-    const res = await fetch(`${API}/guardian-console/cases/${caseId}`)
+    const res = await apiFetch(`${API}/guardian-console/cases/${caseId}`)
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as AdminCase
@@ -451,7 +452,7 @@ export async function getGuardianConsoleCase(caseId:string){
 
 export async function patchGuardianCaseStatus(caseId:string, status:AdminCaseStatus){
   try{
-    const res = await fetch(`${API}/guardian-console/cases/${caseId}/status`, {
+    const res = await apiFetch(`${API}/guardian-console/cases/${caseId}/status`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({status}),
@@ -467,19 +468,19 @@ export async function patchGuardianCaseStatus(caseId:string, status:AdminCaseSta
 }
 
 export async function getGuardianConsoleRealStatus(){
-  const res = await fetch(`${API}/guardian-console/real/status`)
+  const res = await apiFetch(`${API}/guardian-console/real/status`)
   if(!res.ok) throw new Error('guardian-console-real-status-error')
   return await res.json() as GuardianConsoleRealStatusResponse
 }
 
 export async function getGuardianConsoleRealCases(){
-  const res = await fetch(`${API}/guardian-console/real/cases`)
+  const res = await apiFetch(`${API}/guardian-console/real/cases`)
   if(!res.ok) throw new Error('guardian-console-real-cases-error')
   return await res.json() as GuardianConsoleRealCaseListResponse
 }
 
 export async function getGuardianConsoleRealCase(caseId:string){
-  const res = await fetch(`${API}/guardian-console/real/cases/${caseId}`)
+  const res = await apiFetch(`${API}/guardian-console/real/cases/${caseId}`)
   if(!res.ok) throw new Error('guardian-console-real-case-error')
   return await res.json() as GuardianConsoleRealCaseDetail
 }
@@ -514,7 +515,7 @@ export async function getHybridDecision(caseId:string): Promise<HybridDecisionRe
 }
 
 export async function postGuardianConsoleRealFeedback(caseId:string, payload:GuardianFeedbackPayload){
-  const res = await fetch(`${API}/guardian-console/real/cases/${caseId}/feedback`, {
+  const res = await apiFetch(`${API}/guardian-console/real/cases/${caseId}/feedback`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
@@ -524,7 +525,7 @@ export async function postGuardianConsoleRealFeedback(caseId:string, payload:Gua
 }
 
 export async function postDualBotMockProtectedMessage(payload:DualBotInboundPayload){
-  const res = await fetch(`${API}/dual-bot/mock/protected-message`, {
+  const res = await apiFetch(`${API}/dual-bot/mock/protected-message`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
@@ -534,13 +535,13 @@ export async function postDualBotMockProtectedMessage(payload:DualBotInboundPayl
 }
 
 export async function getConsentStatus(protectedPersonId = 'demo-protected-person'){
-  const res = await fetch(`${API}/consent/status?protected_person_id=${encodeURIComponent(protectedPersonId)}`)
+  const res = await apiFetch(`${API}/consent/status?protected_person_id=${encodeURIComponent(protectedPersonId)}`)
   if(!res.ok) throw new Error('consent-status-error')
   return await res.json() as ConsentStatusResponse
 }
 
 export async function postConsentAccept(payload:ConsentAcceptPayload){
-  const res = await fetch(`${API}/consent/accept`, {
+  const res = await apiFetch(`${API}/consent/accept`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
@@ -550,7 +551,7 @@ export async function postConsentAccept(payload:ConsentAcceptPayload){
 }
 
 export async function postConsentRevoke(payload:ConsentActionPayload){
-  const res = await fetch(`${API}/consent/revoke`, {
+  const res = await apiFetch(`${API}/consent/revoke`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
@@ -560,7 +561,7 @@ export async function postConsentRevoke(payload:ConsentActionPayload){
 }
 
 export async function postConsentBotActivate(payload:ConsentActionPayload){
-  const res = await fetch(`${API}/consent/bot/activate`, {
+  const res = await apiFetch(`${API}/consent/bot/activate`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
@@ -570,7 +571,7 @@ export async function postConsentBotActivate(payload:ConsentActionPayload){
 }
 
 export async function postConsentBotDeactivate(payload:ConsentActionPayload){
-  const res = await fetch(`${API}/consent/bot/deactivate`, {
+  const res = await apiFetch(`${API}/consent/bot/deactivate`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
@@ -580,7 +581,7 @@ export async function postConsentBotDeactivate(payload:ConsentActionPayload){
 }
 
 export async function postConsentScopes(protectedPersonId:string, scopes:ConsentScope[]){
-  const res = await fetch(`${API}/consent/scopes`, {
+  const res = await apiFetch(`${API}/consent/scopes`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({protected_person_id: protectedPersonId, scopes}),
@@ -656,7 +657,7 @@ function mockTrustedCircleEscalate(
 
 export async function getTrustedCircleStatus(){
   try{
-    const res = await fetch(`${API}/trusted-circle/status`)
+    const res = await apiFetch(`${API}/trusted-circle/status`)
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as TrustedCircleStatusResponse
@@ -674,7 +675,7 @@ export async function getTrustedCircleStatus(){
 
 export async function postTrustedCircleEscalate(payload: TrustedCircleEscalatePayload){
   try{
-    const res = await fetch(`${API}/trusted-circle/escalate`, {
+    const res = await apiFetch(`${API}/trusted-circle/escalate`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
@@ -689,7 +690,7 @@ export async function postTrustedCircleEscalate(payload: TrustedCircleEscalatePa
 
 export async function getTrustedCircleEscalation(escalationId:string){
   try{
-    const res = await fetch(`${API}/trusted-circle/escalations/${escalationId}`)
+    const res = await apiFetch(`${API}/trusted-circle/escalations/${escalationId}`)
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as TrustedCircleEscalationRecord
@@ -809,7 +810,7 @@ function mockUpdateProofStep(
 
 export async function postAssistedProofSession(payload: AssistedProofSessionCreatePayload){
   try{
-    const res = await fetch(`${API}/proof-trust/assisted-session`, {
+    const res = await apiFetch(`${API}/proof-trust/assisted-session`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
@@ -832,7 +833,7 @@ export async function postAssistedProofSession(payload: AssistedProofSessionCrea
 
 export async function getAssistedProofSession(sessionId: string){
   try{
-    const res = await fetch(`${API}/proof-trust/assisted-session/${sessionId}`)
+    const res = await apiFetch(`${API}/proof-trust/assisted-session/${sessionId}`)
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as AssistedProofSessionResponse
@@ -848,7 +849,7 @@ export async function postAssistedProofSessionStep(
   payload: AssistedProofStepUpdatePayload,
 ){
   try{
-    const res = await fetch(`${API}/proof-trust/assisted-session/${sessionId}/step`, {
+    const res = await apiFetch(`${API}/proof-trust/assisted-session/${sessionId}/step`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
@@ -905,7 +906,7 @@ export async function putTrustedContactSettings(
 
 export async function postOCRPreview(source:string, content:string){
   try{
-    const res = await fetch(`${API}/connectors/ocr-preview`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source, content})})
+    const res = await apiFetch(`${API}/connectors/ocr-preview`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source, content})})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false}

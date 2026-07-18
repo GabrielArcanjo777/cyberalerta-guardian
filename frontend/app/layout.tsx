@@ -2,6 +2,7 @@ import './globals.css'
 import React from 'react'
 import Header from '@/components/Header'
 import GlobalAmbientBackground from '@/components/GlobalAmbientBackground'
+import TauriDeepLinkBridge from '@/components/TauriDeepLinkBridge'
 
 const antiFlashScript = `
 (function(){
@@ -28,6 +29,7 @@ export default function RootLayout({children}:{children:React.ReactNode}){
       </head>
       <body>
         <div className="guardian-app-shell">
+          <TauriDeepLinkBridge />
           <GlobalAmbientBackground />
           <a
             href="#conteudo-principal"
