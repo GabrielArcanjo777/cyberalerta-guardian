@@ -76,3 +76,11 @@ apps/android-companion/**/google-services.json
 *.keystore
 *.apk
 *.aab
+
+# Windows Shell (apps/windows-shell) — local/generated, never commit
+frontend/out/
+apps/windows-shell/src-tauri/target/
+apps/windows-shell/src-tauri/gen/
+*.pfx
+*.p12
+*.msix

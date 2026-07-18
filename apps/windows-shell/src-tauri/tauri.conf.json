@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CyberAlerta Guardian",
+  "identifier": "com.cyberalerta.guardian.desktop",
+  "version": "0.1.0",
+  "build": {
+    "beforeDevCommand": "cd ../../frontend && npm run build:tauri",
+    "beforeBuildCommand": "cd ../../frontend && npm run build:tauri",
+    "frontendDist": "../../../frontend/out"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "CyberAlerta Guardian",
+        "url": "login.html",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 640,
+        "visible": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["PortugueseBR"]
+      }
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["cyberalerta"]
+      }
+    }
+  }
+}
