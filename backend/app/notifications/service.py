@@ -132,6 +132,12 @@ class NotificationService:
 
         return alert
 
+    def get_alert_for_device(self, *, device: Device, alert_id: str) -> Alert:
+        alert = self.repository.get_alert(alert_id)
+        if alert is None or alert.device_id != device.id:
+            raise AlertNotFoundError("Alert not found.")
+        return alert
+
 
 def _build_push_sender() -> Optional[PushSender]:
     if not (config.fcm_project_id and config.fcm_service_account_json):

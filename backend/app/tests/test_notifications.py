@@ -233,6 +233,49 @@ def test_send_test_push_cross_organization_returns_not_found_error():
 
 
 # ---------------------------------------------------------------------------
+# Alert detail fetch (device-authenticated) — what the app calls after
+# opening the push, per Secao 4.3: "busca os detalhes permitidos pela API".
+# ---------------------------------------------------------------------------
+
+
+def test_get_alert_returns_detail_for_owning_device():
+    device, session_id = _paired_device()
+    get_device_repository().upsert_push_token(PushToken(device_id=device.id, token="fcm-token"))
+    # Uses the global repositories (no override), same ones the HTTP layer's
+    # get_notification_service() reads from — unlike _service()'s isolated
+    # in-memory repo, this alert needs to be visible to the GET below.
+    alert = NotificationService(sender=FakePushSender()).send_test_push(actor=_org_actor(), device_id=device.id)
+
+    response = TestClient(app).get(
+        f"/devices/me/alerts/{alert.id}", headers={DEVICE_SESSION_HEADER: session_id}
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["alert_id"] == alert.id
+    assert body["type"] == AlertType.TEST.value
+    assert body["state"] == AlertState.SENT.value
+
+
+def test_get_alert_rejects_alert_belonging_to_another_device():
+    device_a, _ = _paired_device(organization_id="org-a")
+    device_b, session_b = _paired_device(organization_id="org-a")
+    get_device_repository().upsert_push_token(PushToken(device_id=device_a.id, token="fcm-token"))
+    alert = NotificationService(sender=FakePushSender()).send_test_push(actor=_org_actor(), device_id=device_a.id)
+
+    response = TestClient(app).get(
+        f"/devices/me/alerts/{alert.id}", headers={DEVICE_SESSION_HEADER: session_b}
+    )
+
+    assert response.status_code == 404
+
+
+def test_get_alert_requires_device_session():
+    response = TestClient(app).get("/devices/me/alerts/some-alert-id")
+    assert response.status_code == 401
+
+
+# ---------------------------------------------------------------------------
 # ACK handling + PENDING_PAIRING -> ACTIVE promotion
 # ---------------------------------------------------------------------------
 
