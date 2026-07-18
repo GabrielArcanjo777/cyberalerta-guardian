@@ -100,6 +100,21 @@ class RiskLevel(str, Enum):
     HIGH = "high"
 
 
+class Organization(BaseModel):
+    """Isolation boundary for a family/tenant (Plano Mestre v1.1, Secao 5.3).
+
+    Optional and unset (None) on ProtectedPerson/Guardian/Case for backward
+    compatibility with the single-tenant demo data that predates this model;
+    the devices/pairing module (Sprint 2) is what starts requiring it.
+    """
+
+    organization_id: str = Field(default_factory=lambda: new_id("org"))
+    name: str = Field(min_length=1, max_length=160)
+    status: EntityStatus = EntityStatus.ACTIVE
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
 class User(BaseModel):
     user_id: str = Field(default_factory=lambda: new_id("user"))
     alias: str = Field(min_length=1, max_length=120)
@@ -111,6 +126,7 @@ class User(BaseModel):
 
 class ProtectedPerson(BaseModel):
     protected_person_id: str = Field(default_factory=lambda: new_id("protected"))
+    organization_id: Optional[str] = None
     alias: str = Field(min_length=1, max_length=120)
     user_id: Optional[str] = None
     status: EntityStatus = EntityStatus.ACTIVE
@@ -120,6 +136,7 @@ class ProtectedPerson(BaseModel):
 
 class Guardian(BaseModel):
     guardian_id: str = Field(default_factory=lambda: new_id("guardian"))
+    organization_id: Optional[str] = None
     alias: str = Field(min_length=1, max_length=120)
     user_id: Optional[str] = None
     status: EntityStatus = EntityStatus.ACTIVE
@@ -156,6 +173,7 @@ class RiskAssessment(BaseModel):
 
 class Case(BaseModel):
     case_id: str = Field(default_factory=lambda: new_id("case"))
+    organization_id: Optional[str] = None
     protected_person_id: str
     guardian_id: Optional[str] = None
     channel_connection_id: Optional[str] = None

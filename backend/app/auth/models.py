@@ -20,6 +20,7 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     ANALYST = "analyst"
     VIEWER = "viewer"
+    TRUSTED_CONTACT = "trusted_contact"
 
 
 class AuthEventType(str, Enum):
@@ -46,6 +47,7 @@ class AuthUser(BaseModel):
     password_hash: Optional[str] = None
     full_name: str = Field(min_length=1, max_length=160)
     role: UserRole = UserRole.VIEWER
+    organization_id: Optional[str] = None
     is_active: bool = True
     is_admin: bool = False
     mfa_enabled: bool = False
@@ -94,6 +96,7 @@ class PublicUser(BaseModel):
     email: str
     full_name: str
     role: UserRole
+    organization_id: Optional[str] = None
     is_active: bool
     is_admin: bool
     mfa_enabled: bool
@@ -105,6 +108,7 @@ class PublicUser(BaseModel):
             email=user.email,
             full_name=user.full_name,
             role=user.role,
+            organization_id=user.organization_id,
             is_active=user.is_active,
             is_admin=user.is_admin,
             mfa_enabled=user.mfa_enabled,

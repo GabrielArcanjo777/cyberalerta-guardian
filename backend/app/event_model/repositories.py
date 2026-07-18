@@ -14,10 +14,17 @@ from app.event_model.models import (
     ChannelConnection,
     Guardian,
     Message,
+    Organization,
     ProtectedPerson,
     RiskAssessment,
     User,
 )
+
+
+class OrganizationRepository(Protocol):
+    def save(self, entity: Organization) -> Organization: ...
+    def get(self, entity_id: str) -> Optional[Organization]: ...
+    def list_all(self) -> List[Organization]: ...
 
 
 class UserRepository(Protocol):
@@ -102,6 +109,11 @@ class _InMemoryEntityRepository(Generic[EntityT]):
         return [entity.model_copy(deep=True) for entity in entities]
 
 
+class InMemoryOrganizationRepository(_InMemoryEntityRepository[Organization]):
+    def __init__(self) -> None:
+        super().__init__("organization_id")
+
+
 class InMemoryProtectedPersonRepository(_InMemoryEntityRepository[ProtectedPerson]):
     def __init__(self) -> None:
         super().__init__("protected_person_id")
@@ -171,6 +183,7 @@ class InMemoryAuditLogRepository(_InMemoryEntityRepository[AuditLog]):
 
 @dataclass(frozen=True)
 class EventModelRepositories:
+    organizations: OrganizationRepository
     users: UserRepository
     protected_people: ProtectedPersonRepository
     guardians: GuardianRepository
@@ -184,6 +197,7 @@ class EventModelRepositories:
 
 def create_in_memory_repositories() -> EventModelRepositories:
     return EventModelRepositories(
+        organizations=InMemoryOrganizationRepository(),
         users=InMemoryUserRepository(),
         protected_people=InMemoryProtectedPersonRepository(),
         guardians=InMemoryGuardianRepository(),

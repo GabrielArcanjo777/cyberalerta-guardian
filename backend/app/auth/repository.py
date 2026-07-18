@@ -146,6 +146,7 @@ class SQLiteAuthRepository:
                 password_hash TEXT,
                 full_name TEXT NOT NULL,
                 role TEXT NOT NULL,
+                organization_id TEXT,
                 is_active INTEGER NOT NULL,
                 is_admin INTEGER NOT NULL,
                 mfa_enabled INTEGER NOT NULL,
@@ -156,6 +157,13 @@ class SQLiteAuthRepository:
             )
             """
         )
+        # Backfill for databases created before organization_id existed — SQLite
+        # has no "ADD COLUMN IF NOT EXISTS", so check PRAGMA table_info first.
+        existing_columns = {
+            row["name"] for row in self._execute("PRAGMA table_info(users)").fetchall()
+        }
+        if "organization_id" not in existing_columns:
+            self._execute("ALTER TABLE users ADD COLUMN organization_id TEXT")
         self._execute(
             """
             CREATE TABLE IF NOT EXISTS oauth_accounts (
@@ -202,9 +210,9 @@ class SQLiteAuthRepository:
         self._execute(
             """
             INSERT INTO users (
-                id, email, password_hash, full_name, role, is_active, is_admin,
+                id, email, password_hash, full_name, role, organization_id, is_active, is_admin,
                 mfa_enabled, mfa_secret, created_at, updated_at, last_login_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             self._user_params(stored),
         )
@@ -215,7 +223,7 @@ class SQLiteAuthRepository:
         self._execute(
             """
             UPDATE users SET
-                email = ?, password_hash = ?, full_name = ?, role = ?, is_active = ?,
+                email = ?, password_hash = ?, full_name = ?, role = ?, organization_id = ?, is_active = ?,
                 is_admin = ?, mfa_enabled = ?, mfa_secret = ?, updated_at = ?, last_login_at = ?
             WHERE id = ?
             """,
@@ -224,6 +232,7 @@ class SQLiteAuthRepository:
                 stored.password_hash,
                 stored.full_name,
                 stored.role.value,
+                stored.organization_id,
                 int(stored.is_active),
                 int(stored.is_admin),
                 int(stored.mfa_enabled),
@@ -347,6 +356,7 @@ class SQLiteAuthRepository:
             user.password_hash,
             user.full_name,
             user.role.value,
+            user.organization_id,
             int(user.is_active),
             int(user.is_admin),
             int(user.mfa_enabled),

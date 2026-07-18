@@ -27,6 +27,7 @@ from app.event_model.models import (
     ChannelConnection,
     Guardian,
     Message,
+    Organization,
     ProtectedPerson,
     RiskAssessment,
     User,
@@ -147,6 +148,12 @@ class SqliteEventRepository:
 def create_sqlite_repositories(connection: SQLiteConnection) -> EventModelRepositories:
     """Build the full repository set backed by a shared SQLite connection."""
     return EventModelRepositories(
+        organizations=_SqliteEntityRepository(
+            connection,
+            table="event_organizations",
+            id_attribute="organization_id",
+            model_cls=Organization,
+        ),
         users=_SqliteEntityRepository(
             connection, table="event_users", id_attribute="user_id", model_cls=User
         ),
