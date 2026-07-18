@@ -195,6 +195,11 @@ def test_send_test_push_success_marks_alert_sent():
     assert token_used == "fcm-token"
     assert payload["alert_id"] == alert.id
     assert "protected_person_alias" not in payload or payload.get("protected_person_alias") is None
+    # Must use the "case" deep-link host (cyberalerta://case/{id}) — that's
+    # the only one MainActivity.consumeIntent (Android) routes to
+    # AlertDetailScreen, which is what fires the ACK on notification tap.
+    assert alert.deep_link == f"cyberalerta://case/{alert.id}"
+    assert payload["deep_link"] == alert.deep_link
 
 
 def test_send_test_push_invalid_token_deletes_token_and_fails():

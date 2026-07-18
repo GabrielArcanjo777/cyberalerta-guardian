@@ -16,7 +16,7 @@ from app.devices.models import Device, DeviceState
 from app.devices.repository import DeviceRepository, get_device_repository
 from app.devices.service import DeviceService
 from app.notifications.contract import PushProviderError, PushProviderTokenInvalid, PushSender
-from app.notifications.models import AckEvent, Alert, AlertState, AlertType, utc_now
+from app.notifications.models import AckEvent, Alert, AlertState, AlertType, new_id, utc_now
 from app.notifications.repository import AlertRepository, get_notification_repository
 
 logger = logging.getLogger("cyberalerta.notifications")
@@ -33,7 +33,15 @@ _STATE_RANK = {
     AlertState.OPENED: 3,
     AlertState.ACTIONED: 4,
 }
-_TEST_PUSH_DEEP_LINK = "cyberalerta://pair"
+# Host must be "case" — that's the only scheme MainActivity.consumeIntent
+# (Android) maps to opening AlertDetailScreen. GET/POST devices/me/alerts/{id}
+# are generic (any Alert, not only a real Case), so this works for a
+# synthetic TEST alert too. Using "cyberalerta://pair" here previously meant
+# tapping the test-push notification opened the app but never navigated
+# anywhere, so the ACK (and the pending_pairing -> active transition) never
+# fired.
+def _test_push_deep_link(alert_id: str) -> str:
+    return f"cyberalerta://case/{alert_id}"
 
 
 class AlertNotFoundError(Exception):
@@ -70,13 +78,15 @@ class NotificationService:
         # fails exactly like the GET /devices/{id} IDOR case (404).
         device = self._devices.get_device(actor=actor, device_id=device_id)
 
+        alert_id = new_id("alert")
         alert = self.repository.create_alert(
             Alert(
+                id=alert_id,
                 organization_id=device.organization_id,
                 device_id=device.id,
                 type=AlertType.TEST,
                 severity="INFO",
-                deep_link=_TEST_PUSH_DEEP_LINK,
+                deep_link=_test_push_deep_link(alert_id),
             )
         )
 
