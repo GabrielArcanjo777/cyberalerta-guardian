@@ -108,6 +108,30 @@ RISK_RULES = (
         weight=35,
         patterns=_patterns(r"\bsenha\b", r"\bcodigo\b", r"\btoken\b", r"\botp\b"),
     ),
+    # INSS/beneficio: golpe classico contra idosos (falso bloqueio de
+    # aposentadoria/beneficio exigindo "atualizacao" de dados/pagamento).
+    RiskRule(
+        signal="government_benefit_threat",
+        weight=25,
+        patterns=_patterns(
+            r"\binss\b",
+            r"\bbeneficio\w*\s+(?:bloquead\w*|suspens\w*|cancelad\w*)\b",
+            r"\baposentadoria\s+(?:bloquead\w*|suspens\w*|cancelad\w*)\b",
+            r"\bcadastro\s+unico\b",
+        ),
+    ),
+    # Ameaca judicial falsa: mandado/intimacao/processo usados pra assustar e
+    # extorquir pagamento imediato — outro alvo classico de idosos.
+    RiskRule(
+        signal="fake_legal_threat",
+        weight=25,
+        patterns=_patterns(
+            r"\bmandado de (?:prisao|captura)\b",
+            r"\bintimacao judicial\b",
+            r"\bprocesso judicial\b",
+            r"\boficial de justica\b",
+        ),
+    ),
 )
 
 

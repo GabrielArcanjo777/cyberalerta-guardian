@@ -139,6 +139,23 @@ def test_fake_bank_asking_token_is_auto_alert():
     assert d.action == HybridAction.AUTO_ALERT
 
 
+def test_fake_inss_asking_data_is_auto_alert():
+    llm = _llm(
+        LLMClassification.SCAM,
+        confidence=0.9,
+        risk_score=85,
+        scam_types=[ScamType.GOVERNMENT_BENEFIT_SCAM, ScamType.CREDENTIAL_THEFT],
+        impersonated=["inss"],
+    )
+    d = policy.decide(
+        _det(70, objective_signals=2, credential=True),
+        llm,
+        REAL,
+        llm_available=True,
+    )
+    assert d.action == HybridAction.AUTO_ALERT
+
+
 def test_two_strong_agreeing_signals_auto_alert():
     d = policy.decide(
         _det(80, objective_signals=2, money=True, urgency=True, impersonation=True, new_number=True),

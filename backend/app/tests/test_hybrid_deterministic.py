@@ -63,6 +63,21 @@ def test_signals_carry_excerpt_and_weight():
     assert money[0].rule_version == "v1"
 
 
+def test_government_benefit_scam_maps_flag():
+    assessment, body = _assess("Seu beneficio do INSS foi bloqueado, ligue urgente para regularizar.")
+    det = build_deterministic_assessment(assessment, body)
+    assert det.has_impersonation is True
+    assert det.has_urgency is True
+    assert ScamType.GOVERNMENT_BENEFIT_SCAM in det.scam_types
+
+
+def test_fake_legal_threat_maps_flag():
+    assessment, body = _assess("Voce tem um mandado de prisao em aberto, pague agora para evitar a captura.")
+    det = build_deterministic_assessment(assessment, body)
+    assert det.has_impersonation is True
+    assert ScamType.FAKE_LEGAL_THREAT in det.scam_types
+
+
 def test_soft_signals_not_counted_as_objective():
     assessment, body = _assess("urgente, por favor")
     det = build_deterministic_assessment(assessment, body)

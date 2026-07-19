@@ -23,10 +23,13 @@ _MONEY_SIGNALS = {"pix_or_payment"}
 _CREDENTIAL_SIGNALS = {"password_or_code"}
 _LINK_SIGNALS = {"unknown_link"}
 _URGENCY_SIGNALS = {"urgency", "emotional_pressure"}
-# The current rules have no bank/company impersonation detector; "new number"
-# ("troquei de número") is the classic family-impersonation vector, so we use it
-# as a weak deterministic proxy. Bank/company impersonation is left to the LLM.
+# "new number" ("troquei de número") is the classic family-impersonation
+# vector. government_benefit_threat/fake_legal_threat are institutional
+# impersonation (INSS/beneficio, mandado/processo judicial falso) — common
+# scams targeting elderly people. Generic bank/company impersonation (a bank
+# call center persona with no fixed keyword) is still left to the LLM.
 _NEW_NUMBER_SIGNALS = {"new_number"}
+_INSTITUTIONAL_IMPERSONATION_SIGNALS = {"government_benefit_threat", "fake_legal_threat"}
 
 # Weak scam-type hints derived from deterministic signals. The LLM refines these.
 _SIGNAL_SCAM_TYPES = {
@@ -34,6 +37,8 @@ _SIGNAL_SCAM_TYPES = {
     "password_or_code": ScamType.CREDENTIAL_THEFT,
     "unknown_link": ScamType.MALICIOUS_LINK,
     "new_number": ScamType.FAMILY_IMPERSONATION,
+    "government_benefit_threat": ScamType.GOVERNMENT_BENEFIT_SCAM,
+    "fake_legal_threat": ScamType.FAKE_LEGAL_THREAT,
 }
 
 CRITICAL_THRESHOLD = 90
@@ -98,6 +103,7 @@ def build_deterministic_assessment(
 
     signal_set = set(signal_names)
     has_new_number = bool(signal_set & _NEW_NUMBER_SIGNALS)
+    has_institutional_impersonation = bool(signal_set & _INSTITUTIONAL_IMPERSONATION_SIGNALS)
     objective_count = sum(1 for s in signals if s.objective)
 
     return DeterministicAssessment(
@@ -110,6 +116,6 @@ def build_deterministic_assessment(
         has_credential_request=bool(signal_set & _CREDENTIAL_SIGNALS),
         has_suspicious_link=bool(signal_set & _LINK_SIGNALS),
         has_urgency=bool(signal_set & _URGENCY_SIGNALS),
-        has_impersonation=has_new_number,
+        has_impersonation=has_new_number or has_institutional_impersonation,
         has_new_number_signal=has_new_number,
     )

@@ -34,11 +34,15 @@ class PolicyThresholds:
     combo_bonus: int = 8
 
 
-# Scam types that mean "impersonating a bank / company / support / account".
+# Scam types that mean "impersonating a bank / company / support / account /
+# government body / the justice system" — an authority figure whose claimed
+# identity is meant to pressure the victim into acting fast.
 _BANKISH_IMPERSONATION = {
     ScamType.BANK_IMPERSONATION,
     ScamType.TECH_SUPPORT_SCAM,
     ScamType.ACCOUNT_TAKEOVER,
+    ScamType.GOVERNMENT_BENEFIT_SCAM,
+    ScamType.FAKE_LEGAL_THREAT,
 }
 _FAMILY_IMPERSONATION = {ScamType.FAMILY_IMPERSONATION}
 
