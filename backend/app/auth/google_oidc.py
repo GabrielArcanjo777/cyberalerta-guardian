@@ -41,6 +41,6 @@ def verify_google_id_token(id_token: str, *, expected_nonce: str | None = None) 
         raise GoogleOidcError("invalid_iat")
     if str(payload.get("email_verified")).lower() != "true":
         raise GoogleOidcError("email_not_verified")
-    if expected_nonce and payload.get("nonce") and payload.get("nonce") != expected_nonce:
+    if expected_nonce and payload.get("nonce") != expected_nonce:
         raise GoogleOidcError("invalid_nonce")
     return payload

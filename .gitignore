@@ -84,3 +84,9 @@ apps/windows-shell/src-tauri/gen/
 *.pfx
 *.p12
 *.msix
+
+# Session handoff notes (local only — may contain test credentials/paths)
+HANDOFF_STATUS.md
+
+# One-off manual test scripts with hardcoded local test credentials — never commit
+backend/scripts/setup_mobile_test.py

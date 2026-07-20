@@ -408,7 +408,7 @@ const mockGuardianCases: AdminCase[] = [
 
 export async function getGuardianConsoleStatus(){
   try{
-    const res = await apiFetch(`${API}/guardian-console/status`)
+    const res = await apiFetch(`${API}/guardian-console/status`, {credentials: 'include'})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as GuardianConsoleStatusResponse
@@ -428,7 +428,7 @@ export async function getGuardianConsoleStatus(){
 
 export async function getGuardianConsoleCases(){
   try{
-    const res = await apiFetch(`${API}/guardian-console/cases`)
+    const res = await apiFetch(`${API}/guardian-console/cases`, {credentials: 'include'})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as AdminCaseListResponse
@@ -439,7 +439,7 @@ export async function getGuardianConsoleCases(){
 
 export async function getGuardianConsoleCase(caseId:string){
   try{
-    const res = await apiFetch(`${API}/guardian-console/cases/${caseId}`)
+    const res = await apiFetch(`${API}/guardian-console/cases/${caseId}`, {credentials: 'include'})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as AdminCase
@@ -456,6 +456,7 @@ export async function patchGuardianCaseStatus(caseId:string, status:AdminCaseSta
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({status}),
+      credentials: 'include',
     })
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
@@ -468,19 +469,19 @@ export async function patchGuardianCaseStatus(caseId:string, status:AdminCaseSta
 }
 
 export async function getGuardianConsoleRealStatus(){
-  const res = await apiFetch(`${API}/guardian-console/real/status`)
+  const res = await apiFetch(`${API}/guardian-console/real/status`, {credentials: 'include'})
   if(!res.ok) throw new Error('guardian-console-real-status-error')
   return await res.json() as GuardianConsoleRealStatusResponse
 }
 
 export async function getGuardianConsoleRealCases(){
-  const res = await apiFetch(`${API}/guardian-console/real/cases`)
+  const res = await apiFetch(`${API}/guardian-console/real/cases`, {credentials: 'include'})
   if(!res.ok) throw new Error('guardian-console-real-cases-error')
   return await res.json() as GuardianConsoleRealCaseListResponse
 }
 
 export async function getGuardianConsoleRealCase(caseId:string){
-  const res = await apiFetch(`${API}/guardian-console/real/cases/${caseId}`)
+  const res = await apiFetch(`${API}/guardian-console/real/cases/${caseId}`, {credentials: 'include'})
   if(!res.ok) throw new Error('guardian-console-real-case-error')
   return await res.json() as GuardianConsoleRealCaseDetail
 }
@@ -519,6 +520,7 @@ export async function postGuardianConsoleRealFeedback(caseId:string, payload:Gua
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
+    credentials: 'include',
   })
   if(!res.ok) throw new Error('guardian-console-real-feedback-error')
   return await res.json() as GuardianFeedbackResponse
@@ -535,7 +537,7 @@ export async function postDualBotMockProtectedMessage(payload:DualBotInboundPayl
 }
 
 export async function getConsentStatus(protectedPersonId = 'demo-protected-person'){
-  const res = await apiFetch(`${API}/consent/status?protected_person_id=${encodeURIComponent(protectedPersonId)}`)
+  const res = await apiFetch(`${API}/consent/status?protected_person_id=${encodeURIComponent(protectedPersonId)}`, {credentials: 'include'})
   if(!res.ok) throw new Error('consent-status-error')
   return await res.json() as ConsentStatusResponse
 }
@@ -545,6 +547,7 @@ export async function postConsentAccept(payload:ConsentAcceptPayload){
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
+    credentials: 'include',
   })
   if(!res.ok) throw new Error('consent-accept-error')
   return await res.json() as ConsentStatusResponse
@@ -555,6 +558,7 @@ export async function postConsentRevoke(payload:ConsentActionPayload){
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
+    credentials: 'include',
   })
   if(!res.ok) throw new Error('consent-revoke-error')
   return await res.json() as ConsentStatusResponse
@@ -565,6 +569,7 @@ export async function postConsentBotActivate(payload:ConsentActionPayload){
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
+    credentials: 'include',
   })
   if(!res.ok) throw new Error('consent-bot-activate-error')
   return await res.json() as ConsentStatusResponse
@@ -575,6 +580,7 @@ export async function postConsentBotDeactivate(payload:ConsentActionPayload){
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
+    credentials: 'include',
   })
   if(!res.ok) throw new Error('consent-bot-deactivate-error')
   return await res.json() as ConsentStatusResponse
@@ -585,6 +591,7 @@ export async function postConsentScopes(protectedPersonId:string, scopes:Consent
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({protected_person_id: protectedPersonId, scopes}),
+    credentials: 'include',
   })
   if(!res.ok) throw new Error('consent-scopes-error')
   return await res.json() as ConsentStatusResponse
@@ -657,7 +664,7 @@ function mockTrustedCircleEscalate(
 
 export async function getTrustedCircleStatus(){
   try{
-    const res = await apiFetch(`${API}/trusted-circle/status`)
+    const res = await apiFetch(`${API}/trusted-circle/status`, {credentials: 'include'})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as TrustedCircleStatusResponse
@@ -679,6 +686,7 @@ export async function postTrustedCircleEscalate(payload: TrustedCircleEscalatePa
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
+      credentials: 'include',
     })
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
@@ -690,7 +698,7 @@ export async function postTrustedCircleEscalate(payload: TrustedCircleEscalatePa
 
 export async function getTrustedCircleEscalation(escalationId:string){
   try{
-    const res = await apiFetch(`${API}/trusted-circle/escalations/${escalationId}`)
+    const res = await apiFetch(`${API}/trusted-circle/escalations/${escalationId}`, {credentials: 'include'})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as TrustedCircleEscalationRecord
@@ -814,6 +822,7 @@ export async function postAssistedProofSession(payload: AssistedProofSessionCrea
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
+      credentials: 'include',
     })
     if(!res.ok){
       if(res.status === 400) throw new Error('proof-risk-not-allowed')
@@ -833,7 +842,7 @@ export async function postAssistedProofSession(payload: AssistedProofSessionCrea
 
 export async function getAssistedProofSession(sessionId: string){
   try{
-    const res = await apiFetch(`${API}/proof-trust/assisted-session/${sessionId}`)
+    const res = await apiFetch(`${API}/proof-trust/assisted-session/${sessionId}`, {credentials: 'include'})
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
     return {...data, __mock: false} as AssistedProofSessionResponse
@@ -853,6 +862,7 @@ export async function postAssistedProofSessionStep(
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
+      credentials: 'include',
     })
     if(!res.ok) throw new Error('api-error')
     const data = await res.json()
