@@ -6,6 +6,8 @@ CyberAlerta Guardian analisa as mensagens recebidas em um número de WhatsApp **
 
 O projeto está em estágio **MVP / demonstração técnica**. Não é produção, **não é ferramenta de espionagem** e só deve ser usado em contas próprias ou com **autorização expressa do titular**. Não substitui banco, polícia, advogado ou canais oficiais, e não promete detecção infalível.
 
+**Licença:** [Elastic License 2.0](./LICENSE) — código-fonte disponível para uso, cópia e modificação; a única restrição relevante é não oferecer este software como serviço hospedado/gerenciado a terceiros. Ver [LICENSE](./LICENSE).
+
 ## Status atual
 
 **Beta Técnico Local, com piloto multi-plataforma em validação.** Backend FastAPI + frontend Next.js, autenticação com Google OIDC, MFA/TOTP, recovery codes (Argon2id), RBAC, auditoria, rate limit, persistência SQLite e painel operacional. **359 testes automatizados** no backend, além de testes e2e do frontend com Playwright (acesso, redirecionamento e animação); dataset rotulado de 305 mensagens com métricas medidas (`docs/metrics_v1.md`).
