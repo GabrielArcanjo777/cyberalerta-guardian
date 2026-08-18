@@ -161,38 +161,6 @@ function SentinelMockup({reduceMotion, scenario, cycleKey, copy}:{reduceMotion:b
   )
 }
 
-/** Dev-only diagnostic overlay showing animation state. */
-function MotionDiagnostic(){
-  if (typeof window === 'undefined') return null
-  const pref = window.localStorage.getItem('cyberalerta-motion-preference') || 'enabled'
-  const sysReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const el = document.querySelector('[class*="titleLineInner"]')
-  const cs = el ? getComputedStyle(el) : null
-  return (
-    <div style={{
-      position:'fixed', bottom:10, left:10, zIndex:9999,
-      background:'#030807', border:'1px solid #32e6c4', borderRadius:6,
-      padding:'8px 12px', fontSize:10, fontFamily:'monospace', color:'#effff9',
-      opacity:0.85, maxWidth:340,
-    }}>
-      <div>Motion pref: <b style={{color:'#32e6c4'}}>{pref}</b></div>
-      <div>System reduce: <b>{String(sysReduce)}</b></div>
-      <div>HTML data-motion: <b style={{color:'#32e6c4'}}>{document.documentElement.getAttribute('data-motion')}</b></div>
-      <div>Animation: <b>{cs?.animationName || '—'}</b></div>
-      <div>Duration: <b>{cs?.animationDuration || '—'}</b></div>
-      <div>Play state: <b>{cs?.animationPlayState || '—'}</b></div>
-      <div style={{marginTop:4, display:'flex', gap:4}}>
-        <button onClick={()=>{window.localStorage.setItem('cyberalerta-motion-preference','enabled');location.reload()}}
-          style={{background:'#32e6c4',color:'#030807',border:'none',borderRadius:3,padding:'2px 6px',cursor:'pointer',fontSize:9}}>Enabled</button>
-        <button onClick={()=>{window.localStorage.setItem('cyberalerta-motion-preference','reduced');location.reload()}}
-          style={{background:'#475569',color:'#fff',border:'none',borderRadius:3,padding:'2px 6px',cursor:'pointer',fontSize:9}}>Reduced</button>
-        <button onClick={()=>{window.localStorage.setItem('cyberalerta-motion-preference','system');location.reload()}}
-          style={{background:'#1e293b',color:'#94a3b8',border:'none',borderRadius:3,padding:'2px 6px',cursor:'pointer',fontSize:9}}>System</button>
-      </div>
-    </div>
-  )
-}
-
 export default function HeroSection(){
   const reduceMotion = usePrefersReducedMotion()
   const [locale] = useGuardianLocale()
@@ -250,8 +218,6 @@ export default function HeroSection(){
           <SentinelMockup reduceMotion={reduceMotion} scenario={scenario} cycleKey={index} copy={copy} />
         </div>
       </div>
-
-      {process.env.NODE_ENV === 'development' && <MotionDiagnostic />}
     </section>
   )
 }

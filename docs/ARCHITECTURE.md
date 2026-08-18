@@ -120,7 +120,7 @@ apps/
 | Cadastro pessoa protegida + contato de confiança | Implementado | UI em `/whatsapp-setup`, persistido em SQLite, sobrevive restart. |
 | Toggles de envio na UI (simulação/envio real) | Implementado | Sem editar `.env`; allowlist re-pinada automaticamente ao contato de confiança. |
 | Dataset rotulado + métricas | Implementado | 305 mensagens, harness com código de produção, regressão em testes (`metrics_v1.md`). |
-| Testes e2e frontend (Playwright) | Implementado | 3 specs: acesso, redirecionamento de login e reduced motion (`frontend/e2e/`). |
+| Testes e2e frontend (Playwright) | Implementado e coberto pelo CI | 25 testes em 3 specs: acesso, redirecionamento de login e reduced motion (`frontend/e2e/`). |
 | Agentes controlados | Implementados | Sem agente autônomo livre; LLM externa é opcional e nunca decide envio. |
 | Consentimento/opt-in | Implementado como base local | Não é consultoria jurídica nem compliance completo. |
 | Autenticação local | Implementado | Login email/senha, cookies HttpOnly, MFA/TOTP, RBAC e auditoria. |

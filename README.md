@@ -49,7 +49,7 @@ Golpes digitais por engenharia social exploram pressa, confiança familiar, medo
 
 ## Estado atual (resultados verificáveis)
 
-Números apurados diretamente no repositório em 2026-07-19, executando os comandos reais (não retirados de documentação antiga):
+Números apurados diretamente no repositório em 2026-07-19, executando os comandos reais (não retirados de documentação antiga). A suíte e2e foi corrigida e revalidada em 2026-08-18:
 
 | Métrica | Resultado | Como foi verificado |
 | --- | --- | --- |
@@ -57,10 +57,10 @@ Números apurados diretamente no repositório em 2026-07-19, executando os coman
 | Testes automatizados — Android Companion | **17/17 passed** | `./gradlew testDevDebugUnitTest`, executado nesta revisão. |
 | Typecheck — frontend | **0 erros** | `npx tsc --noEmit`, executado nesta revisão. |
 | Lint — frontend | **0 erros/avisos** | `npm run lint` (`eslint . --max-warnings=0`), executado nesta revisão. |
-| Testes e2e (Playwright) | 3 specs existem (`access`, `redirect`, `animation`) — **não executados com sucesso nesta revisão** | `npm run test:e2e` falhou por um path incorreto em `playwright.config.ts` (`./venv/...`, o venv real é `.venv`); não coberto pelo CI hoje. |
+| Testes e2e (Playwright) | **25 passed** no Chromium | `npm run test:e2e`, executado em modo local e com `CI=true`; coberto pelo job `e2e`. |
 | Dataset rotulado | 305 mensagens (150 golpe / 155 legítimas), sintético | `backend/data/scam_dataset_v1.jsonl`, ver [`docs/metrics_v1.md`](docs/metrics_v1.md). |
 | Precisão do alerta automático (regras, sem LLM) | 100% precisão, 10% recall, 0% FPR | Medido contra o dataset acima — ver métricas completas em [`docs/metrics_v1.md`](docs/metrics_v1.md). |
-| CI | 2 jobs (`pytest` backend, `tsc`+`eslint` frontend) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml), badge no topo deste README. |
+| CI | 3 jobs (`pytest` backend, `tsc`+`eslint` frontend, Playwright e2e) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml), badge no topo deste README. |
 | Plataformas com build validado | Backend, Web, Android (APK debug), Windows (Tauri, local) | Ver [Limitações atuais](#limitações-atuais) para o que falta em cada uma. |
 
 Análise por LLM/pipeline híbrido: **implementada e testada** contra um LLM real (Sprint 5), mas ainda **não conectada** à decisão de criar caso/notificar — isso é uma decisão de arquitetura em aberto, não uma métrica. Detalhe em [Arquitetura](#arquitetura-resumida).
@@ -177,6 +177,9 @@ cd backend && python -m pip install -r requirements-dev.txt && python -m pytest 
 # Frontend
 cd frontend && npm ci && npx tsc --noEmit && npm run lint
 
+# End-to-end
+cd frontend && npx playwright install chromium && npm run test:e2e
+
 # Android Companion
 cd apps/android-companion && ./gradlew testDevDebugUnitTest
 ```
@@ -196,7 +199,6 @@ Resultados desta revisão: ver [Estado atual](#estado-atual-resultados-verificá
 - **Sem validação com usuários em escala** — só um teste manual ponta a ponta em dispositivo real por plataforma (Android e Windows).
 - **Falsos positivos e negativos existem** — ver [`docs/metrics_v1.md`](docs/metrics_v1.md) para números reais, não estimativas.
 - **Dependência de modelo LLM externo** quando a camada híbrida está ativa (shadow mode por padrão, nunca decide sozinha).
-- **Testes e2e (Playwright) não confiáveis localmente hoje** — bug de path no `playwright.config.ts`, não coberto pelo CI.
 - **Necessita hardening** (segredos, observabilidade, isolamento multi-tenant, assinatura de instaladores) antes de qualquer uso além de demo/piloto controlado.
 
 ## Roadmap
@@ -206,7 +208,6 @@ Resultados desta revisão: ver [Estado atual](#estado-atual-resultados-verificá
 - Migrar persistência para Postgres em produção; workers assíncronos (Celery) e rate limit/idempotência distribuídos (Redis).
 - Assinar os instaladores Windows (code signing) e Android (release key).
 - Fechar lacunas de UI do Android Companion (lista de casos, admin de convite) e do Windows Shell (logout no console, deep link de caso).
-- Corrigir o path do `playwright.config.ts` e cobrir e2e no CI.
 - Observabilidade, logs estruturados, políticas completas de LGPD, provider oficial de WhatsApp com opt-in/compliance.
 
 ## Licença

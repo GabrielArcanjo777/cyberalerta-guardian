@@ -47,13 +47,6 @@
 | [Roadmap](../README.md#roadmap) (README) | Próximos passos priorizados. |
 | [`01-build-plan.md`](./01-build-plan.md) | Ordem histórica das sprints do plano de implementação. |
 
-## Divulgação
-
-| Documento | Conteúdo |
-| --- | --- |
-| [`GITHUB_REPOSITORY_SETUP.md`](./GITHUB_REPOSITORY_SETUP.md) | Descrição, tópicos e social preview sugeridos para o "About" do GitHub. |
-| [`LINKEDIN_POST.md`](./LINKEDIN_POST.md) | Textos prontos para divulgação, roteiro de vídeo e pontos para entrevista. |
-
 ## Histórico de sprints (contexto de evolução do projeto)
 
 Documentos escritos durante o desenvolvimento inicial (Sprints 18–27), mantidos como registro histórico das decisões de cada etapa:
