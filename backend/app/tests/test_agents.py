@@ -1,7 +1,15 @@
-from app.agents.trust_lock_agent import TrustLockAgent
-from app.agents.trust_evidence_agent import TrustEvidenceAgent
 from app.agents.recovery_agent import RecoveryAgent
+from app.agents.scam_classification_agent import ScamClassificationAgent
+from app.agents.trust_evidence_agent import TrustEvidenceAgent
+from app.agents.trust_lock_agent import TrustLockAgent
 from app.services.safety_policy import SafetyPolicyService
+
+
+def test_scam_classifier_requires_family_and_payment_signals():
+    agent = ScamClassificationAgent()
+
+    assert agent.analyze("whatsapp", "pix", "Mãe, troquei de número") == "falso familiar pedindo Pix"
+    assert agent.analyze("whatsapp", "mensagem", "Mãe, cheguei bem") == "golpe desconhecido"
 
 
 def test_trust_lock_agent_activates_on_high_risk():

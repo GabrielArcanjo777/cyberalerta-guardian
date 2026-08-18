@@ -1,5 +1,6 @@
 import './globals.css'
 import React from 'react'
+import Script from 'next/script'
 import Header from '@/components/Header'
 import GlobalAmbientBackground from '@/components/GlobalAmbientBackground'
 import TauriDeepLinkBridge from '@/components/TauriDeepLinkBridge'
@@ -24,10 +25,12 @@ export const metadata = {
 export default function RootLayout({children}:{children:React.ReactNode}){
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{__html: antiFlashScript}} />
-      </head>
       <body>
+        <Script
+          id="motion-preference"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{__html: antiFlashScript}}
+        />
         <div className="guardian-app-shell">
           <TauriDeepLinkBridge />
           <GlobalAmbientBackground />

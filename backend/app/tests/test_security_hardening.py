@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-from fastapi.testclient import TestClient
+import time as _time
 
+import pytest
+from fastapi.testclient import TestClient
+from main import app
+
+from app.channel_adapters.idempotency import InMemoryProviderMessageRegistry
+from app.channel_adapters.models import ChannelProvider, InboundMessage
 from app.core.config import config
 from app.core.security import _client_identifier
-from main import app
 
 
 class _FakeClient:
@@ -136,11 +141,6 @@ def test_production_refuses_rate_limit_disabled():
 
 
 # -- idempotency TTL + bounded growth -------------------------------------------
-
-
-import time as _time
-from app.channel_adapters.idempotency import InMemoryProviderMessageRegistry
-from app.channel_adapters.models import ChannelProvider, InboundMessage
 
 
 def _make_inbound(message_id: str, provider: ChannelProvider = ChannelProvider.EVOLUTION_DEMO) -> InboundMessage:

@@ -6,13 +6,15 @@ const STORAGE_KEY = 'cyberalerta-motion-preference'
 const mediaQuery = '(prefers-reduced-motion: reduce)'
 
 function subscribe(onStoreChange:()=>void){
+  const handleStorage = (event:StorageEvent) => {
+    if(event.key === STORAGE_KEY) onStoreChange()
+  }
+
   window.addEventListener('cyberalerta:motion-change', onStoreChange)
-  window.addEventListener('storage', (e:StorageEvent) => {
-    if(e.key === STORAGE_KEY) onStoreChange()
-  })
+  window.addEventListener('storage', handleStorage)
   return () => {
     window.removeEventListener('cyberalerta:motion-change', onStoreChange)
-    window.removeEventListener('storage', () => {})
+    window.removeEventListener('storage', handleStorage)
   }
 }
 

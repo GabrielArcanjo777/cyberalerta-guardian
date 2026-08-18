@@ -5,7 +5,6 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from threading import RLock
-from typing import Pattern
 
 from app.event_model import BotEventType, LocalEventBus, Message
 from app.pattern_intelligence.models import (
@@ -20,7 +19,6 @@ from app.pattern_intelligence.models import (
     RiskExplanation,
     utc_now,
 )
-
 
 LOW_THRESHOLD = 1
 MEDIUM_THRESHOLD = 25
@@ -55,7 +53,9 @@ def normalize_text(text: str) -> str:
 
 
 def sha1_text(text: str) -> str:
-    return hashlib.sha1(text.encode("utf-8")).hexdigest()
+    # SHA-1 is retained only for compatibility with persisted fingerprint fields.
+    # It is not used for passwords, signatures, or any security decision.
+    return hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def score_level(score: int) -> PatternLevel:
@@ -68,7 +68,7 @@ def score_level(score: int) -> PatternLevel:
     return PatternLevel.LOW
 
 
-def _patterns(*values: str) -> tuple[Pattern[str], ...]:
+def _patterns(*values: str) -> tuple[re.Pattern[str], ...]:
     return tuple(re.compile(value) for value in values)
 
 
@@ -78,7 +78,7 @@ class PatternRule:
     label: str
     weight: int
     explanation: str
-    patterns: tuple[Pattern[str], ...]
+    patterns: tuple[re.Pattern[str], ...]
 
     def match_terms(self, normalized_text: str) -> list[str]:
         terms: list[str] = []

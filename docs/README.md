@@ -37,6 +37,7 @@
 | Documento | Conteúdo |
 | --- | --- |
 | [Testes](../README.md#testes) (README) | Como rodar os testes de backend, frontend e Android. |
+| [`CODE_QUALITY_AUDIT.md`](./CODE_QUALITY_AUDIT.md) | Auditoria de segurança de dependências, bugs, Clean Code e riscos técnicos remanescentes. |
 | [`pattern-intelligence-testing.md`](./pattern-intelligence-testing.md) | Testes do Pattern Intelligence e ML realista (Sprint 25V5). |
 
 ## Limitações e roadmap
@@ -46,13 +47,6 @@
 | [Limitações atuais](../README.md#limitações-atuais) (README) | O que ainda não está pronto, de forma explícita. |
 | [Roadmap](../README.md#roadmap) (README) | Próximos passos priorizados. |
 | [`01-build-plan.md`](./01-build-plan.md) | Ordem histórica das sprints do plano de implementação. |
-
-## Divulgação
-
-| Documento | Conteúdo |
-| --- | --- |
-| [`GITHUB_REPOSITORY_SETUP.md`](./GITHUB_REPOSITORY_SETUP.md) | Descrição, tópicos e social preview sugeridos para o "About" do GitHub. |
-| [`LINKEDIN_POST.md`](./LINKEDIN_POST.md) | Textos prontos para divulgação, roteiro de vídeo e pontos para entrevista. |
 
 ## Histórico de sprints (contexto de evolução do projeto)
 
