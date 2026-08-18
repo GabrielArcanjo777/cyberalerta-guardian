@@ -137,7 +137,7 @@ class AppConfig:
         self.auth_cookie_secure = _env_bool("AUTH_COOKIE_SECURE", self.is_production)
         self.auth_cookie_samesite = os.getenv("AUTH_COOKIE_SAMESITE", "lax").strip().lower()
         self.auth_rate_limit_enabled = _env_bool("AUTH_RATE_LIMIT_ENABLED", True)
-        self.auth_require_sensitive_routes = _env_bool("AUTH_REQUIRE_SENSITIVE_ROUTES", False if self.is_development else True)
+        self.auth_require_sensitive_routes = _env_bool("AUTH_REQUIRE_SENSITIVE_ROUTES", not self.is_development)
         self.google_oauth_enabled = _env_bool("GOOGLE_OAUTH_ENABLED", False)
         self.google_client_id = os.getenv("GOOGLE_CLIENT_ID", "")
         self.google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")

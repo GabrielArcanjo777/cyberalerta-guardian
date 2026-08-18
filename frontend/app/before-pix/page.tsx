@@ -2,6 +2,7 @@
 
 import React, {useState} from 'react'
 import Link from 'next/link'
+import {useRouter} from 'next/navigation'
 import {analyzeMessage} from '@/lib/api'
 import TrustLockCard from '@/components/TrustLockCard'
 import TrustEvidenceCard from '@/components/TrustEvidenceCard'
@@ -54,6 +55,7 @@ const fallbackTrustedAlert: TrustedCircleAlertModel = {
 }
 
 export default function BeforePix(){
+  const router = useRouter()
   const [message,setMessage]=useState(initialMessage)
   const [action,setAction]=useState('pix')
   const [result,setResult]=useState<AnalyzeResponse | null>(null)
@@ -91,9 +93,7 @@ export default function BeforePix(){
     // Note: we intentionally do NOT persist the case/alert to localStorage.
     // The Family Console loads its own data; storing case content in the
     // browser would leak sensitive data to any script on the origin.
-    if(typeof window !== 'undefined'){
-      window.location.assign('/family-console')
-    }
+    router.push('/family-console')
   }
 
   return (

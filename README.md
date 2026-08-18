@@ -10,7 +10,7 @@
   <a href="https://github.com/GabrielArcanjo777/cyberalerta-guardian/actions/workflows/ci.yml"><img src="https://github.com/GabrielArcanjo777/cyberalerta-guardian/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
   <img src="https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white" alt="Python 3.13">
   <img src="https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white" alt="FastAPI 0.136">
-  <img src="https://img.shields.io/badge/Next.js-16.2-000000?logo=nextdotjs&logoColor=white" alt="Next.js 16.2">
+  <img src="https://img.shields.io/badge/Next.js-16.3-000000?logo=nextdotjs&logoColor=white" alt="Next.js 16.3">
   <img src="https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.0">
   <img src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=white" alt="Tauri 2">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Elastic%202.0-blue" alt="License: Elastic License 2.0"></a>
@@ -60,7 +60,7 @@ Números apurados diretamente no repositório em 2026-07-19, executando os coman
 | Testes e2e (Playwright) | **25 passed** no Chromium | `npm run test:e2e`, executado em modo local e com `CI=true`; coberto pelo job `e2e`. |
 | Dataset rotulado | 305 mensagens (150 golpe / 155 legítimas), sintético | `backend/data/scam_dataset_v1.jsonl`, ver [`docs/metrics_v1.md`](docs/metrics_v1.md). |
 | Precisão do alerta automático (regras, sem LLM) | 100% precisão, 10% recall, 0% FPR | Medido contra o dataset acima — ver métricas completas em [`docs/metrics_v1.md`](docs/metrics_v1.md). |
-| CI | 3 jobs (`pytest` backend, `tsc`+`eslint` frontend, Playwright e2e) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml), badge no topo deste README. |
+| CI | 4 jobs (`pytest`, `tsc`+`eslint`, auditoria de dependências e Playwright e2e) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml), badge no topo deste README. |
 | Plataformas com build validado | Backend, Web, Android (APK debug), Windows (Tauri, local) | Ver [Limitações atuais](#limitações-atuais) para o que falta em cada uma. |
 
 Análise por LLM/pipeline híbrido: **implementada e testada** contra um LLM real (Sprint 5), mas ainda **não conectada** à decisão de criar caso/notificar — isso é uma decisão de arquitetura em aberto, não uma métrica. Detalhe em [Arquitetura](#arquitetura-resumida).
@@ -126,10 +126,11 @@ Nenhum desses mecanismos é absoluto — ver [Limitações atuais](#limitações
 ## Tecnologias
 
 **Backend:** Python 3.13, FastAPI 0.136, Pydantic 2.13, Uvicorn, Pytest, SQLite.
-**Frontend:** Next.js 16.2, React 18.2, TypeScript, Tailwind CSS, Framer Motion, Playwright.
+**Frontend:** Next.js 16.3, React 18.2, TypeScript, Tailwind CSS, Framer Motion, Playwright.
 **Android Companion:** Kotlin 2.0, Jetpack Compose, Retrofit, Firebase Cloud Messaging.
 **Windows Desktop:** Tauri 2 (Rust) sobre o build estático do mesmo frontend Next.js.
 **CI:** GitHub Actions (pytest backend + typecheck/lint frontend).
+**Qualidade e segurança:** auditoria reproduzível em [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md).
 
 ## Estrutura do repositório
 

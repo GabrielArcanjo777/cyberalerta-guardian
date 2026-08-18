@@ -37,6 +37,7 @@
 | Documento | Conteúdo |
 | --- | --- |
 | [Testes](../README.md#testes) (README) | Como rodar os testes de backend, frontend e Android. |
+| [`CODE_QUALITY_AUDIT.md`](./CODE_QUALITY_AUDIT.md) | Auditoria de segurança de dependências, bugs, Clean Code e riscos técnicos remanescentes. |
 | [`pattern-intelligence-testing.md`](./pattern-intelligence-testing.md) | Testes do Pattern Intelligence e ML realista (Sprint 25V5). |
 
 ## Limitações e roadmap
