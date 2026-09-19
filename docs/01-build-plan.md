@@ -24,4 +24,4 @@
 
 ## Regras do desenvolvimento
 - Implementar uma sprint por vez.
-- Sempre parar ao final da sprint e pedir o próximo prompt.
+- Sempre parar ao final da sprint, validar o que foi concluído e então seguir para a próxima etapa.
