@@ -1,11 +1,11 @@
 # Dependências de runtime — versões pinadas para build reproduzível.
 # Para atualizar: suba a versão aqui, rode os testes e commite junto.
-fastapi==0.136.3
-uvicorn==0.48.0
-pydantic==2.13.4
+fastapi==0.163.0
+uvicorn==0.54.0
+pydantic==2.14.3
 httpx==0.28.1
-python-dotenv==1.2.2
+python-dotenv==1.2.4
 requests==2.34.2
-google-auth==2.55.0
+google-auth==2.62.2
 qrcode==8.2
 argon2-cffi==25.1.0
