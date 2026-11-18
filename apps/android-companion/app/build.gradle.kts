@@ -104,7 +104,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
     // Armazenamento seguro do session_id (bearer do device) — Secao 6.2/6.3.
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("androidx.security:security-crypto:1.1.0")
 
     // Push (Secao 3.6/4.3/7.2) — usa o BOM, sem pin de versao individual.
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
