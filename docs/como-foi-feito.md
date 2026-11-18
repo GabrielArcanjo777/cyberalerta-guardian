@@ -1,28 +1,31 @@
 # Como foi feito
 
-## Declaração de uso de IA
+## Declaração
 
-Este projeto foi construído com uso intensivo de IA generativa (LLM) na implementação. Não é um detalhe escondido — é parte do método, e está escrito aqui para que ninguém descubra depois.
+Este projeto foi desenvolvido com **agentes de IA**. Eu dirigi o processo: defini o problema, escolhi a arquitetura, delimitei o escopo e validei o resultado. Os agentes implementaram boa parte do código sob essa direção.
 
-## Divisão real do trabalho
+É um **projeto de estudo**. O objetivo é aprender engenharia de software na prática — arquitetura, testes, segurança, integração entre plataformas — e não lançar um produto.
 
-**Humano (eu):**
-- defini o problema, o escopo e o que o sistema **não** pode fazer
-- escolhi a arquitetura e rejeitei propostas
-- rodei os testes, quebrei coisas, corrigi
+## Como o trabalho foi dividido
+
+**Eu:**
+- defini o problema, o escopo e as regras que o sistema não pode violar
+- escolhi a arquitetura e rejeitei abordagens propostas
+- rodei os testes, encontrei as falhas e pedi correção
 - decidi o que ficava, o que saía e o que virava limitação documentada
-- escrevi e revisei a documentação
+- revisei toda a documentação
 
-**IA:**
-- escreveu a maior parte do código
-- propôs estrutura de módulos, nomes, testes e refatorações
-- sugeriu correções a partir de falhas de teste
+**Agentes:**
+- implementaram módulos, testes e refatorações
+- propuseram estrutura de pastas, nomes e alternativas de solução
 
-## O que isso significa se você for me entrevistar
+## O que isso me deu
 
-Consigo explicar a arquitetura, o fluxo de uma mensagem até o alerta, e por que cada regra existe — inclusive as que eu decidi manter contra a sugestão da IA.
+- prática de arquitetura num sistema com quatro componentes: API, painel web, app Android e app desktop
+- prática de revisão técnica: ler o que um agente escreveu e decidir se presta, se quebra algo, se dá para manter
+- prática de teste e CI: suíte de backend, suíte de Android, typecheck e lint no frontend
 
-Não consigo recitar de memória cada linha de cada arquivo, e não vou fingir que consigo. Se a pergunta for "o que acontece na linha 214 de `hybrid/service.py`", a resposta honesta é "abre o arquivo comigo".
+Dirigir agentes é uma habilidade real de engenharia. Quem só sabe escrever código na mão não consegue fazer isso — e quem só sabe pedir para a IA não consegue manter.
 
 ## O que está verificado
 
@@ -33,18 +36,13 @@ Não consigo recitar de memória cada linha de cada arquivo, e não vou fingir q
 | Typecheck frontend | `tsc --noEmit`, no CI |
 | Lint frontend | `eslint . --max-warnings=0`, no CI |
 
-## O que **não** está verificado
+## O que ainda não está verificado
 
 - nenhum teste com usuário real
 - nenhuma auditoria de segurança externa
-- nenhuma revisão de código por terceiros
-- o dataset é sintético e gerado com IA — as métricas de precisão valem como regressão, não como desempenho
+- o dataset é sintético e gerado com IA — as métricas valem como regressão, não como desempenho
 - o e2e do frontend não roda no CI (ver `demandas/001-melhorias-tecnicas`)
 
-## Consequência
+## Conclusão
 
-Trate como MVP de estudo. Não use em produção, não use para monitorar ninguém sem autorização explícita, e não confie nos números de acurácia como se fossem de campo.
-
-## Por que manter público
-
-Porque esconder o uso de IA não faz o código ficar melhor — só faz a pergunta aparecer na hora errada, na entrevista. Prefiro que ela apareça aqui.
+Projeto de estudo, código aberto, com limites declarados. Serve para mostrar o que eu consigo construir e manter com apoio de agentes — e para aprender o que ainda não sei.
