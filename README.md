@@ -24,6 +24,8 @@ Construído com apoio intensivo de IA (LLM) na implementação. O objetivo foi a
 
 Por isso este README lista o que **não** funciona com o mesmo peso do que funciona. Onde eu não sei explicar uma decisão, ela aparece em limitações, não em destaque.
 
+A divisão real do trabalho, o que está verificado e o que não está: [`docs/como-foi-feito.md`](docs/como-foi-feito.md).
+
 ## O que funciona hoje
 
 - `POST /analyze` retorna score de risco e sinais nomeados, por motor de regras determinísticas.

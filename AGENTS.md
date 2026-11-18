@@ -51,6 +51,7 @@ Toda ação com efeito externo — enviar mensagem, notificar, apagar dado — p
 | Preciso de | Vá para |
 |---|---|
 | Visão geral | `README.md` |
+| Como foi feito e o que foi feito com IA | `docs/como-foi-feito.md` |
 | Contexto e limites | `docs/contexto.md` |
 | Decisões e o porquê | `docs/decisoes.md` |
 | Como rodar | `docs/LOCAL_SETUP.md` |
