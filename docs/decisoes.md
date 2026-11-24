@@ -66,6 +66,26 @@ Registro curto do que foi decidido e por quê. Ordem cronológica. Não reescrev
 
 ---
 
+## ADR-008 — Job de CI que falha não pode aparecer verde
+
+**Decisão:** `continue-on-error` só enquanto existir uma demanda aberta para tirar. O e2e voltou a ser bloqueante na demanda 002.
+
+**Por quê:** o e2e e o Android falharam em todo push por quase uma semana e o PR continuava verde. Um check que não bloqueia vira decoração.
+
+**Consequência:** a causa de um job vermelho vai para `demandas/` com o trecho do log em `fontes/`.
+
+---
+
+## ADR-009 — Procedimentos repetidos viram skill em `.agents/skills/`
+
+**Decisão:** o que um agente (ou eu) executa mais de uma vez — verificar o projeto, rodar o e2e, medir o dataset — vira uma pasta com `SKILL.md` e, quando faz sentido, um script.
+
+**Por quê:** a tabela antiga em `agents/skills.md` listava comandos, mas não dizia pré-requisito nem quando a tarefa está pronta. O e2e, por exemplo, só roda se `python` no PATH tiver o `uvicorn`.
+
+**Consequência:** `agents/skills.md` virou `.agents/skills/README.md`, um índice.
+
+---
+
 ## Em aberto
 
 - Migrar de Evolution API (não oficial) para WhatsApp Cloud API (Meta).

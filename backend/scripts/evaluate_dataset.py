@@ -4,7 +4,7 @@
 Roda o MESMO código de produção (RiskAssessmentService, build_deterministic_assessment,
 HybridDecisionPolicy) — nada reimplementado — e mede:
 
-  1. Alerta determinístico (comportamento atual: risk_level == HIGH, score >= 70)
+  1. Alerta determinístico (comportamento atual: risk_level == HIGH, score >= 65)
      → precisão, recall, FPR, F1 tratando "alertaria" como classificador binário.
   2. Criação de caso (score >= 40) → mesmas métricas.
   3. Distribuição de decisões da Policy Engine SEM LLM (postura padrão segura):
@@ -91,7 +91,7 @@ def main() -> None:
     n_scam = sum(1 for r in rows if r["label"] == "scam")
     n_legit = sum(1 for r in rows if r["label"] == "legit")
 
-    # --- 1) alerta determinístico atual: HIGH (score >= 70) ------------------
+    # --- 1) alerta determinístico atual: HIGH (score >= HIGH_RISK_THRESHOLD) ------------------
     alert = _metrics(
         tp=sum(1 for r in rows if r["label"] == "scam" and r["score"] >= HIGH_RISK_THRESHOLD),
         fp=sum(1 for r in rows if r["label"] == "legit" and r["score"] >= HIGH_RISK_THRESHOLD),
