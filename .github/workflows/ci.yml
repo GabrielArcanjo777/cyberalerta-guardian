@@ -59,9 +59,8 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    # Primeira execução: o e2e nunca rodou em CI. Roda e reporta sem bloquear
-    # até estabilizar; depois remove este continue-on-error.
-    continue-on-error: true
+    # Bloqueante desde a demanda 002: a causa das falhas era o Next 16
+    # bloquear /_next/* vindo de 127.0.0.1 (ver frontend/next.config.js).
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
@@ -119,7 +118,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      # O padrão da action instala o pacote 'tools', que não existe mais no
+      # sdkmanager atual e derrubava o job. Só platform-tools é necessário aqui.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install SDK platform
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"

@@ -9,6 +9,10 @@ const isTauriBuild = process.env.BUILD_TARGET === 'tauri'
 const nextConfig = {
   reactStrictMode: true,
   devIndicators: false,
+  // Next 16 bloqueia recursos de dev (/_next/*) pedidos de outra origem.
+  // O Playwright abre o painel em 127.0.0.1; sem isso a página não hidrata
+  // e todo teste e2e que depende de JS no cliente falha.
+  allowedDevOrigins: ['127.0.0.1'],
   ...(isTauriBuild
     ? {
         output: 'export',
