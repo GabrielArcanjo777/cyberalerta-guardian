@@ -1,6 +1,6 @@
 # Métricas v1 — detector determinístico (dataset sintético)
 
-Gerado em 2026-07-11 11:53Z por `backend/scripts/evaluate_dataset.py` (código de produção real,
+Gerado em 2026-11-24 01:49Z por `backend/scripts/evaluate_dataset.py` (código de produção real,
 sem LLM — postura padrão). Dataset: `backend/data/scam_dataset_v1.jsonl`,
 **305 mensagens** (150 golpe / 155 legítimas), sintético e rotulado
 à mão (ver provenance em `backend/scripts/dataset_v1.py`).
@@ -9,11 +9,11 @@ sem LLM — postura padrão). Dataset: `backend/data/scam_dataset_v1.jsonl`,
 
 | TP | FP | FN | TN | Precisão | Recall | FPR | F1 |
 |---|---|---|---|---|---|---|---|
-| 15 | 0 | 135 | 155 | 100.0% | 10.0% | 0.0% | 18.2% |
+| 16 | 0 | 134 | 155 | 100.0% | 10.7% | 0.0% | 19.3% |
 
 
 Interpretação: das mensagens que disparariam alerta, 100.0% são golpe
-de verdade; o detector captura 10.0% dos golpes; 0.0% das
+de verdade; o detector captura 10.7% dos golpes; 0.0% das
 mensagens legítimas gerariam alerta indevido.
 
 ## 2. Criação de caso no console (score ≥ 40)
@@ -53,7 +53,7 @@ Com `HYBRID_REQUIRE_LLM_FOR_AUTO_ALERT=true` e LLM indisponível, o máximo é R
 - `s019` [FAMILY_IMPERSONATION] score=45 sinais=urgency,pix_or_payment — “Amor, esse e meu numero temporario. Me faz um pix de 200 agora que meu cartao bloqueou e t”
 - `s021` [FAMILY_IMPERSONATION] score=45 sinais=urgency,pix_or_payment — “Mae, meu whats antigo foi hackeado, usa so esse. Preciso que faca uma transferencia agora,”
 - `s022` [FAMILY_IMPERSONATION] score=60 sinais=pix_or_payment,new_number,emotional_pressure — “E o Joao, primo da Renata. To com numero novo. Consegue me adiantar 350 no pix hoje? E eme”
-- … e mais 120
+- … e mais 119
 
 ## Falsos positivos do alerta (legítimas com score ≥ 65)
 

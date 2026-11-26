@@ -7,10 +7,12 @@ Uma demanda é um pedido com contexto, critério de aceite e saída verificável
 ```text
 demandas/
 ├── README.md
-├── 001-melhoria-playwright-ci/
-│   ├── especificacao.md
-│   ├── analises/
-│   └── entregas/
+├── 002-e2e-e-android-no-ci/
+│   ├── README.md          estado e índice
+│   ├── especificacao.md   problema, objetivo, critério de aceite
+│   ├── fontes/            evidência bruta (logs, links, prints)
+│   ├── analises/          causa raiz, comparações
+│   └── entregaveis/       o que mudou e como foi verificado
 └── ...
 ```
 

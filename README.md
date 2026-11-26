@@ -33,7 +33,7 @@ A divisão real do trabalho, o que está verificado e o que não está: [`docs/c
 - Login local com Argon2id, MFA/TOTP e RBAC.
 - App Android (Kotlin/Compose) que recebe push pelo contato de confiança.
 - Casca Windows em Tauri reaproveitando o painel.
-- CI no GitHub Actions: `pytest` no backend, `tsc --noEmit` + `eslint` no frontend.
+- CI no GitHub Actions: `ruff` + `pytest` (359 testes) no backend, `tsc` + `eslint` no frontend, e2e com Playwright (25 testes) e testes unitários do Android.
 
 ## O que não funciona
 
@@ -43,9 +43,28 @@ A divisão real do trabalho, o que está verificado e o que não está: [`docs/c
 - Persistência só em SQLite.
 - Rate limit e idempotência ficam em memória — não sobrevivem a restart nem a múltiplos workers.
 - Android e Windows com build de debug, sem assinatura.
-- Testes e2e (Playwright) quebrados por path no config; fora do CI.
 - Sem observabilidade, sem logging estruturado, sem teste com usuários.
-- O dataset de 305 mensagens é sintético e gerado por IA. Os números de precisão medidos nele não valem como métrica de mundo real.
+- O dataset de 305 mensagens é sintético e gerado por IA. Os números medidos nele não valem como métrica de mundo real.
+- Nesse dataset, o alerta ao contato de confiança pega só 16 de 150 golpes (com zero alarme falso). É uma escolha — alerta falso faz a família parar de ouvir —, mas significa que a maior parte dos golpes vira caso para revisão, não alerta. Ver [`docs/metrics_v1.md`](docs/metrics_v1.md).
+
+## Arquitetura
+
+```text
+WhatsApp autorizado ──► Evolution API ──► webhook FastAPI (/webhook/evolution)
+                                              │
+                               normaliza o texto, aplica as regras
+                                              │
+                                 score + sinais nomeados
+                       ┌──────────────────────┼─────────────────────────┐
+                  score < 40             score ≥ 40                risco HIGH (≥ 65)
+                  não vira caso       vira caso no painel       alerta ao contato de confiança
+                                         (Next.js)              (WhatsApp, atrás de DRY_RUN e allowlist)
+
+Em paralelo (modo sombra, padrão): PII removida → LLM opcional → Policy Engine.
+Só registra a decisão para comparação; não muda o alerta.
+```
+
+Detalhe por componente e status real em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Como rodar
 
@@ -75,9 +94,9 @@ Setup completo em [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md).
 ## Testes
 
 ```bash
-cd backend && python -m pytest app/tests -q
-cd frontend && npx tsc --noEmit && npm run lint
-cd apps/android-companion && ./gradlew testDevDebugUnitTest
+bash .agents/skills/verificar-projeto/scripts/verificar.sh   # ruff, pytest, tsc, eslint
+cd frontend && CI=1 npx playwright test                      # e2e (sobe API e painel)
+cd apps/android-companion && ./gradlew testDevDebugUnitTest  # Android (JDK 17)
 ```
 
 ## Estrutura
@@ -87,8 +106,33 @@ backend/                 FastAPI — API, motor de risco, auth, devices
 frontend/                Next.js — painel web e demo assistida
 apps/android-companion/  Kotlin/Compose — app do contato de confiança
 apps/windows-shell/      Tauri — casca desktop
-docs/                    arquitetura, setup, métricas, guia de demo
+docs/                    arquitetura, setup, métricas, decisões, histórico
+demandas/                pedidos com especificação, evidência e entrega
+.agents/skills/          procedimentos reutilizáveis (verificar, e2e, dataset)
+AGENTS.md                regras para quem (pessoa ou agente) for mexer no código
 ```
+
+## O que eu aprendi
+
+- **Regra decide, LLM sugere.** Um modelo pode ser enganado pelo próprio texto que analisa (prompt injection). Por isso quem dispara alerta é um motor de regras auditável; a LLM só entra como insumo ([ADR-002](docs/decisoes.md)).
+- **Precisão e recall puxam para lados opostos.** Subir o limiar do alerta zera o alarme falso, mas deixa golpe passar. Medir num dataset, mesmo sintético, tornou essa troca visível em vez de opinião.
+- **Build real acha bug que leitura não acha.** O app Android só compilou de verdade depois de dois erros que nenhuma revisão tinha pegado (`18f4b26`).
+- **CI verde não é CI passando.** Os jobs de e2e e Android falharam por dias com `continue-on-error` e ninguém viu. A causa do e2e era uma linha de configuração do Next ([demanda 002](demandas/002-e2e-e-android-no-ci/README.md)).
+- **Lint barato paga.** O primeiro `ruff` achou um `import` faltando que fazia um teste de segurança nunca falhar.
+- **Segurança é padrão, não opção.** Envio real desligado por padrão, allowlist de números e o bot nunca falando com o remetente evitam que um teste mal configurado vire mensagem para um desconhecido.
+
+## Para quem for mexer no código
+
+[`AGENTS.md`](AGENTS.md) diz o que pode e o que não pode, quando parar e chamar uma pessoa e o que é "pronto". O resto:
+
+| Pergunta | Arquivo |
+|---|---|
+| O que já foi feito? | [`docs/historico.md`](docs/historico.md) |
+| Por que foi feito assim? | [`docs/decisoes.md`](docs/decisoes.md) |
+| Como foi produzido (e o papel da IA)? | [`docs/como-foi-feito.md`](docs/como-foi-feito.md) |
+| Onde estão os limites? | [`docs/contexto.md`](docs/contexto.md) |
+| De onde vêm as referências? | [`docs/referencias.md`](docs/referencias.md) |
+| O que está pendente? | [`demandas/`](demandas/README.md) |
 
 ## Aviso
 

@@ -2,6 +2,14 @@
 
 O que um agente consegue executar neste repositório, e com qual comando. Se não está aqui, o agente não deve improvisar.
 
+## Procedimentos com passo a passo
+
+| Skill | Para quê |
+|---|---|
+| [`verificar-projeto`](verificar-projeto/SKILL.md) | mesma checagem do CI antes de abrir PR |
+| [`rodar-e2e`](rodar-e2e/SKILL.md) | testes Playwright com API e painel no ar |
+| [`avaliar-dataset`](avaliar-dataset/SKILL.md) | medir o detector depois de mexer em regras |
+
 ## Rodar e verificar
 
 | Skill | Comando | Onde |
@@ -33,8 +41,7 @@ O que um agente consegue executar neste repositório, e com qual comando. Se nã
 ## Antes de abrir PR
 
 ```bash
-cd backend && python -m pytest app/tests -q
-cd frontend && npx tsc --noEmit && npm run lint
+bash .agents/skills/verificar-projeto/scripts/verificar.sh
 ```
 
-Se os dois passam e existe teste para o comportamento novo, o PR está pronto.
+Se o script termina em `OK: tudo verde` e existe teste para o comportamento novo, o PR está pronto.

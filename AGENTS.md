@@ -35,10 +35,14 @@
 
 Toda mudança precisa de:
 
-- `python -m pytest app/tests -q` verde
-- `npx tsc --noEmit` e `npm run lint` verdes
+- `ruff check .` e `python -m pytest app/tests -q` verdes (em `backend/`)
+- `npx tsc --noEmit` e `npm run lint` verdes (em `frontend/`)
+- `npx playwright test` verde se a mudança mexe no frontend
 - teste novo para comportamento novo
 - entrada em `docs/decisoes.md` se a mudança for estrutural
+- linha em `docs/historico.md` resumindo o que mudou
+
+O passo a passo está em `.agents/skills/verificar-projeto/SKILL.md`.
 
 **Pronto** = código + teste + doc + CI verde.
 
@@ -57,4 +61,6 @@ Toda ação com efeito externo — enviar mensagem, notificar, apagar dado — p
 | Como rodar | `docs/LOCAL_SETUP.md` |
 | Arquitetura por componente | `docs/ARCHITECTURE.md` |
 | Pedidos e backlog | `demandas/` |
-| Skills do agente | `agents/skills.md` |
+| Skills do agente (procedimentos reutilizáveis) | `.agents/skills/` |
+| Histórico do que já foi feito | `docs/historico.md` |
+| Referências externas | `docs/referencias.md` |
