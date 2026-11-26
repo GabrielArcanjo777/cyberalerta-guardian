@@ -32,7 +32,9 @@ Dirigir agentes é uma habilidade real de engenharia. Quem só sabe escrever có
 | Verificação | Como |
 |---|---|
 | Testes backend | `pytest app/tests -q`, local e no CI |
-| Testes Android | `./gradlew testDevDebugUnitTest`, local |
+| Testes Android | `./gradlew testDevDebugUnitTest`, no CI |
+| E2E | `npx playwright test`, no CI |
+| Lint backend | `ruff check .`, no CI |
 | Typecheck frontend | `tsc --noEmit`, no CI |
 | Lint frontend | `eslint . --max-warnings=0`, no CI |
 
@@ -41,7 +43,6 @@ Dirigir agentes é uma habilidade real de engenharia. Quem só sabe escrever có
 - nenhum teste com usuário real
 - nenhuma auditoria de segurança externa
 - o dataset é sintético e gerado com IA — as métricas valem como regressão, não como desempenho
-- o e2e do frontend não roda no CI (ver `demandas/001-melhorias-tecnicas`)
 
 ## Conclusão
 
